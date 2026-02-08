@@ -28,6 +28,15 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 
+def _default_repo_root() -> Path:
+    # scc-top/tools/scc/ops/*.py -> repo root is 4 levels up
+    return Path(os.environ.get("SCC_REPO_ROOT") or Path(__file__).resolve().parents[4]).resolve()
+
+
+def _default_exec_log_dir() -> str:
+    return os.environ.get("EXEC_LOG_DIR") or str(_default_repo_root() / "artifacts" / "executor_logs")
+
+
 def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -226,7 +235,7 @@ class PatternAgg:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--exec-log-dir", default="C:/scc/artifacts/executor_logs")
+    ap.add_argument("--exec-log-dir", default=_default_exec_log_dir())
     ap.add_argument("--failures-tail", type=int, default=2000)
     ap.add_argument("--jobs-tail", type=int, default=4000)
     ap.add_argument("--out-dir", default="")

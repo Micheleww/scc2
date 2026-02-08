@@ -9,6 +9,11 @@ import sys
 from typing import Any, Dict, List, Tuple
 
 
+def _default_repo_root() -> str:
+    # tools/scc/map/*.py -> repo root is 3 levels up
+    return str(pathlib.Path(__file__).resolve().parents[3])
+
+
 def _norm_rel(p: str) -> str:
     return str(p or "").replace("\\", "/").lstrip("./")
 
@@ -121,7 +126,7 @@ def _query_one(conn: sqlite3.Connection, q: str, limit: int) -> List[Dict[str, A
 def main() -> int:
     ap = argparse.ArgumentParser(description="Batch query map/map.sqlite; input JSON via --in or stdin.")
     ap.add_argument("--db", default="map/map.sqlite")
-    ap.add_argument("--repo-root", default="C:/scc")
+    ap.add_argument("--repo-root", default=_default_repo_root())
     ap.add_argument("--in", dest="in_path", default="", help="Path to JSON request; default stdin")
     ap.add_argument("--limit-per-query", type=int, default=12)
     ap.add_argument("--max-queries", type=int, default=120)

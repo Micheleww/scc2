@@ -1,11 +1,15 @@
-# 创建OpenCode桌面快捷方式（指向源代码目录）
-$WScriptShell = New-Object -ComObject WScript.Shell
-$Shortcut = $WScriptShell.CreateShortcut("$env:USERPROFILE\Desktop\OpenCode.lnk")
-$Shortcut.TargetPath = "C:\Users\Nwe-1\AppData\Roaming\npm\opencode.cmd"
-$Shortcut.WorkingDirectory = "C:\scc\opencode-dev\opencode-dev"
-$Shortcut.Description = "OpenCode AI Coding Assistant"
-$Shortcut.Save()
+﻿# Create OpenCode desktop shortcut (source workspace)
+$desktopPath = [Environment]::GetFolderPath('Desktop')
+$shortcutPath = Join-Path -Path $desktopPath -ChildPath 'OpenCode.lnk'
 
-Write-Host "OpenCode桌面快捷方式已更新！"
-Write-Host "位置：$env:USERPROFILE\Desktop\OpenCode.lnk"
-Write-Host "工作目录：C:\scc\opencode-dev\opencode-dev"
+$opencodeCmd = if ($env:APPDATA) { Join-Path -Path $env:APPDATA -ChildPath 'npm\\opencode.cmd' } else { 'opencode' }
+
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $opencodeCmd
+$shortcut.WorkingDirectory = 'C:\\scc\\opencode-dev\\opencode-dev'
+$shortcut.Description = 'OpenCode AI Coding Assistant'
+$shortcut.Save()
+
+Write-Host "Updated: $shortcutPath"
+Write-Host 'WorkingDirectory: C:\\scc\\opencode-dev\\opencode-dev'

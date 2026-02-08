@@ -11,6 +11,11 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 
+def _default_repo_root() -> str:
+    # tools/scc/ops/*.py -> repo root is 3 levels up
+    return str(pathlib.Path(__file__).resolve().parents[3])
+
+
 def _read_text(path: pathlib.Path) -> str:
     return path.read_text(encoding="utf-8-sig")
 
@@ -67,7 +72,7 @@ def _git_is_clean(repo: pathlib.Path) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Create an offline PR bundle (patch+metadata) for a task.")
-    ap.add_argument("--repo-root", default="C:/scc")
+    ap.add_argument("--repo-root", default=_default_repo_root())
     ap.add_argument("--task-id", required=True)
     ap.add_argument("--patch", default="", help="Patch path (default: artifacts/<task_id>/ssot_update.patch)")
     ap.add_argument("--title", default="")

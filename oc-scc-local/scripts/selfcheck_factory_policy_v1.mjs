@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import process from "node:process"
+import { fileURLToPath } from "node:url"
 import { computeDegradationActionV1, applyDegradationToWipLimitsV1, shouldAllowTaskUnderStopTheBleedingV1 } from "../src/factory_policy_v1.mjs"
 
 function fail(msg) {
@@ -8,7 +9,9 @@ function fail(msg) {
   process.exit(1)
 }
 
-const repoRoot = process.env.SCC_REPO_ROOT ?? "C:/scc"
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const repoRoot = process.env.SCC_REPO_ROOT ?? path.resolve(__dirname, "..", "..")
 console.log(`[selfcheck:factory_policy_v1] repoRoot=${repoRoot}`)
 const fpPath = path.join(repoRoot, "factory_policy.json")
 const fp = JSON.parse(fs.readFileSync(fpPath, "utf8").replace(/^\uFEFF/, ""))

@@ -9,6 +9,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 
+def _default_repo_root() -> str:
+    # tools/scc/ops/*.py -> repo root is 3 levels up
+    return str(Path(__file__).resolve().parents[3])
+
+
 def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
 
@@ -79,7 +84,7 @@ def _apply_update(registry: Dict[str, Any], update: Dict[str, Any]) -> Tuple[Dic
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Apply artifacts/<task_id>/ssot_update.json to docs/SSOT/registry.json (deterministic).")
-    ap.add_argument("--repo-root", default="C:/scc")
+    ap.add_argument("--repo-root", default=_default_repo_root())
     ap.add_argument("--task-id", required=True)
     ap.add_argument("--registry", default="docs/SSOT/registry.json")
     ap.add_argument("--apply", action="store_true", help="Write changes to registry (default: dry-run)")

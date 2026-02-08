@@ -9,6 +9,11 @@ import sys
 from typing import Any, Dict, List, Tuple
 
 
+def _default_repo_root() -> str:
+    # tools/scc/map/*.py -> repo root is 3 levels up
+    return str(pathlib.Path(__file__).resolve().parents[3])
+
+
 def _norm_rel(p: str) -> str:
     return str(p or "").replace("\\", "/").lstrip("./")
 
@@ -112,7 +117,7 @@ def main() -> int:
     ap.add_argument("--db", default="map/map.sqlite")
     ap.add_argument("--q", required=True)
     ap.add_argument("--limit", type=int, default=20)
-    ap.add_argument("--repo-root", default="C:/scc")
+    ap.add_argument("--repo-root", default=_default_repo_root())
     args = ap.parse_args()
 
     repo = pathlib.Path(args.repo_root).resolve()

@@ -29,6 +29,19 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
+def _default_repo_root() -> Path:
+    # scc-top/tools/scc/ops/*.py -> repo root is 4 levels up
+    return Path(os.environ.get("SCC_REPO_ROOT") or Path(__file__).resolve().parents[4]).resolve()
+
+
+def _default_exec_log_dir() -> str:
+    return os.environ.get("EXEC_LOG_DIR") or str(_default_repo_root() / "artifacts" / "executor_logs")
+
+
+def _default_board_dir() -> str:
+    return os.environ.get("BOARD_DIR") or str(_default_repo_root() / "artifacts" / "taskboard")
+
+
 def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -340,8 +353,8 @@ def render_md(report: Dict[str, Any]) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--task-id", default="")
-    ap.add_argument("--exec-log-dir", default="C:/scc/artifacts/executor_logs")
-    ap.add_argument("--board-dir", default="C:/scc/artifacts/taskboard")
+    ap.add_argument("--exec-log-dir", default=_default_exec_log_dir())
+    ap.add_argument("--board-dir", default=_default_board_dir())
     ap.add_argument("--out-dir", default="", help="Optional output directory. If empty, uses <exec_log_dir>/radius_audit.")
     args = ap.parse_args()
 

@@ -9,6 +9,11 @@ import sys
 from typing import Any, Dict, List, Optional
 
 
+def _default_repo_root() -> str:
+    # tools/scc/map/*.py -> repo root is 3 levels up
+    return str(pathlib.Path(__file__).resolve().parents[3])
+
+
 def _load_json(path: pathlib.Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
@@ -266,7 +271,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Build map/map.sqlite from map/map.json (deterministic).")
     ap.add_argument("--map", default="map/map.json", help="Path to map.json")
     ap.add_argument("--out", default="map/map.sqlite", help="Output sqlite path")
-    ap.add_argument("--repo-root", default="C:/scc", help="Repo root (for relative paths)")
+    ap.add_argument("--repo-root", default=_default_repo_root(), help="Repo root (for relative paths)")
     ap.add_argument("--version", default="map/version.json", help="Optional map/version.json to embed hash metadata")
     ap.add_argument("--force", action="store_true", help="Overwrite existing sqlite file")
     args = ap.parse_args()

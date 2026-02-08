@@ -10,6 +10,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 
+def _default_repo_root() -> str:
+    # tools/scc/ops/*.py -> repo root is 3 levels up
+    return str(pathlib.Path(__file__).resolve().parents[3])
+
+
 _ALLOWED_EVENT_TYPES = {
     "SUCCESS",
     "FAIL",
@@ -200,7 +205,7 @@ def _discover_task_dirs(artifacts_dir: pathlib.Path) -> List[pathlib.Path]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Backfill artifacts/<task_id>/events.jsonl for legacy tasks.")
-    ap.add_argument("--repo-root", default="C:/scc")
+    ap.add_argument("--repo-root", default=_default_repo_root())
     ap.add_argument("--artifacts-dir", default="artifacts")
     ap.add_argument("--task-id", default="", help="Only process this task_id (optional)")
     ap.add_argument("--dry-run", action="store_true")

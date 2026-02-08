@@ -16,6 +16,8 @@ import { loadJobsState, saveJobsState } from "./lib/jobs_store.mjs"
 import { hasShellMetacharacters, parseCmdline } from "./lib/cmdline.mjs"
 import { loadCircuitBreakerState as loadCircuitBreakerStateImpl, saveCircuitBreakerState as saveCircuitBreakerStateImpl, quarantineActive as quarantineActiveImpl } from "./lib/circuit_breaker_store.mjs"
 import { loadRepoHealthState as loadRepoHealthStateImpl, saveRepoHealthState as saveRepoHealthStateImpl, repoUnhealthyActive as repoUnhealthyActiveImpl } from "./lib/repo_health_store.mjs"
+import { loadAuditTriggerState as loadAuditTriggerStateImpl, saveAuditTriggerState as saveAuditTriggerStateImpl, loadFlowManagerState as loadFlowManagerStateImpl, saveFlowManagerState as saveFlowManagerStateImpl, loadFeedbackHookState as loadFeedbackHookStateImpl, saveFeedbackHookState as saveFeedbackHookStateImpl } from "./lib/flow_state_store.mjs"
+import { createLogger } from "./lib/logger.mjs"
 import {
   BOARD_LANES,
   BOARD_STATUS,
@@ -40,6 +42,7 @@ const gatewayPort = Number(process.env.GATEWAY_PORT ?? "18788")
 const sccUpstream = new URL(process.env.SCC_UPSTREAM ?? "http://127.0.0.1:18789")
 const opencodeUpstream = new URL(process.env.OPENCODE_UPSTREAM ?? "http://127.0.0.1:18790")
 const cfg = getConfig()
+const log = createLogger({ component: "oc-scc-local.gateway" })
 const codexBin = cfg.codexBin
 // Default to the strongest Codex model we can actually run (validated via codex exec).
 let codexModelDefault = process.env.CODEX_MODEL ?? "gpt-5.3-codex"
@@ -190,8 +193,8 @@ function computeRouterStatsSnapshot() {
     const out = path.join(SCC_REPO_ROOT, "metrics", "router_stats_latest.json")
     fs.mkdirSync(path.dirname(out), { recursive: true })
     fs.writeFileSync(out, JSON.stringify({ schema_version: "scc.router_stats.v1", t: new Date().toISOString(), tail, by_task_class: byTaskClass, by_model: byModel }, null, 2) + "\n", "utf8")
-  } catch {
-    // best-effort
+  } catch (e) {
+    log.warn("router stats snapshot write failed", { err: log.errToObject(e) })
   }
   return routerStatsCache
 }
@@ -727,68 +730,27 @@ function getLastCiFailure(taskId) {
 }
 
 function loadAuditTriggerState() {
-  const fallback = {
-    done_since_last: 0,
-    total_done: 0,
-    last_audit_at: null,
-    last_audit_batch: null,
-    last_audit_task_id: null,
-  }
-  const parsed = readJson(auditTriggerStateFile, null)
-  if (!parsed || typeof parsed !== "object") return fallback
-  return {
-    done_since_last: Number(parsed.done_since_last ?? 0),
-    total_done: Number(parsed.total_done ?? 0),
-    last_audit_at: parsed.last_audit_at ?? null,
-    last_audit_batch: parsed.last_audit_batch ?? null,
-    last_audit_task_id: parsed.last_audit_task_id ?? null,
-  }
+  return loadAuditTriggerStateImpl({ file: auditTriggerStateFile })
 }
 
 function saveAuditTriggerState(state) {
-  try {
-    updateJsonLocked(auditTriggerStateFile, {}, () => state, { lockTimeoutMs: 6000 })
-  } catch (e) {
-    if (cfg.strictWrites) throw e
-  }
+  return saveAuditTriggerStateImpl({ file: auditTriggerStateFile, state, strictWrites: cfg.strictWrites })
 }
 
 function loadFlowManagerState() {
-  const fallback = { last_created_at: 0, last_reasons_key: null }
-  const parsed = readJson(flowManagerStateFile, null)
-  if (!parsed || typeof parsed !== "object") return fallback
-  return { last_created_at: Number(parsed.last_created_at ?? 0), last_reasons_key: parsed.last_reasons_key ?? null }
+  return loadFlowManagerStateImpl({ file: flowManagerStateFile })
 }
 
 function saveFlowManagerState(state) {
-  try {
-    updateJsonLocked(flowManagerStateFile, {}, () => state, { lockTimeoutMs: 6000 })
-  } catch (e) {
-    if (cfg.strictWrites) throw e
-  }
+  return saveFlowManagerStateImpl({ file: flowManagerStateFile, state, strictWrites: cfg.strictWrites })
 }
 
 function loadFeedbackHookState() {
-  try {
-    if (!fs.existsSync(feedbackHookStateFile)) {
-      return { last_created_at: {} }
-    }
-    const raw = fs.readFileSync(feedbackHookStateFile, "utf8")
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== "object") throw new Error("invalid")
-    const last = parsed.last_created_at && typeof parsed.last_created_at === "object" ? parsed.last_created_at : {}
-    return { last_created_at: last }
-  } catch {
-    return { last_created_at: {} }
-  }
+  return loadFeedbackHookStateImpl({ file: feedbackHookStateFile })
 }
 
 function saveFeedbackHookState(state) {
-  try {
-    fs.writeFileSync(feedbackHookStateFile, JSON.stringify(state, null, 2), "utf8")
-  } catch {
-    // best-effort
-  }
+  return saveFeedbackHookStateImpl({ file: feedbackHookStateFile, state, strictWrites: cfg.strictWrites })
 }
 
 function readFailureReportLatest() {
@@ -11245,6 +11207,67 @@ const server = http.createServer(async (req, res) => {
     if (!rollup.ok || !alsoRollback) return sendJson(res, rollup.ok ? 200 : 500, { ...rollup, rollback: null })
     const rb = await runSccPythonOp({ scriptRel: "tools/scc/ops/playbook_rollback.py", args: [], timeoutMs: 300000 })
     return sendJson(res, rollup.ok && rb.ok ? 200 : 500, { ...rollup, rollback: rb })
+  }
+
+  // Prometheus-style metrics (minimal).
+  if (pathname === "/metrics" && method === "GET") {
+    try {
+      const board = listBoardTasks()
+      const statusCounts = {}
+      for (const t of board) {
+        const st = String(t?.status ?? "unknown")
+        statusCounts[st] = (statusCounts[st] ?? 0) + 1
+      }
+      const running = runningCounts()
+      const now = Date.now()
+      const lines = []
+      lines.push("# HELP scc_gateway_up 1 if gateway is running")
+      lines.push("# TYPE scc_gateway_up gauge")
+      lines.push("scc_gateway_up 1")
+
+      lines.push("# HELP scc_gateway_time_ms Current unix time in ms")
+      lines.push("# TYPE scc_gateway_time_ms gauge")
+      lines.push(`scc_gateway_time_ms ${now}`)
+
+      lines.push("# HELP scc_board_tasks_total Total tasks on board")
+      lines.push("# TYPE scc_board_tasks_total gauge")
+      lines.push(`scc_board_tasks_total ${board.length}`)
+
+      lines.push("# HELP scc_jobs_total Total jobs in queue map")
+      lines.push("# TYPE scc_jobs_total gauge")
+      lines.push(`scc_jobs_total ${jobs.size}`)
+
+      lines.push("# HELP scc_running_codex Running codex jobs")
+      lines.push("# TYPE scc_running_codex gauge")
+      lines.push(`scc_running_codex ${running.codex}`)
+
+      lines.push("# HELP scc_running_opencodecli Running opencodecli jobs")
+      lines.push("# TYPE scc_running_opencodecli gauge")
+      lines.push(`scc_running_opencodecli ${running.opencodecli}`)
+
+      lines.push("# HELP scc_quarantine_active Whether circuit breaker quarantine is active (0/1)")
+      lines.push("# TYPE scc_quarantine_active gauge")
+      lines.push(`scc_quarantine_active ${quarantineActive() ? 1 : 0}`)
+
+      // Board status breakdown
+      lines.push("# HELP scc_board_tasks_by_status Tasks by status")
+      lines.push("# TYPE scc_board_tasks_by_status gauge")
+      for (const [st, n] of Object.entries(statusCounts)) {
+        const label = String(st).replace(/\\\\/g, "_").replace(/\"/g, "'")
+        lines.push(`scc_board_tasks_by_status{status=\"${label}\"} ${n}`)
+      }
+
+      res.statusCode = 200
+      res.setHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+      res.end(lines.join("\n") + "\n")
+      return
+    } catch (e) {
+      log.warn("metrics render failed", { err: log.errToObject(e) })
+      res.statusCode = 500
+      res.setHeader("Content-Type", "text/plain; charset=utf-8")
+      res.end(`error: ${String(e?.message ?? e)}\n`)
+      return
+    }
   }
 
   if (pathname === "/health") {

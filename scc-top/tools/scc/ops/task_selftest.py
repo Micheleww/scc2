@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, List
 
 
+def _default_repo_root() -> Path:
+    # scc-top/tools/scc/ops/*.py -> repo root is 4 levels up
+    return Path(os.environ.get("SCC_REPO_ROOT") or Path(__file__).resolve().parents[4]).resolve()
+
+
 def _read_json(path: Path) -> Optional[Any]:
     try:
         return json.loads(path.read_text(encoding="utf-8", errors="replace"))
@@ -47,8 +52,7 @@ def _resolve_repo_path(p: str) -> Path:
     pp = Path(str(p))
     if pp.is_absolute():
         return pp
-    # Repo umbrella root in this environment.
-    return (Path("C:/scc") / pp).resolve()
+    return (_default_repo_root() / pp).resolve()
 
 
 def _find_task(tasks: Any, task_id: str) -> Optional[Dict[str, Any]]:
@@ -134,8 +138,9 @@ def main() -> int:
         return 2
 
     # Defaults match gateway defaults.
-    board_dir = Path(os.environ.get("BOARD_DIR") or "C:/scc/artifacts/taskboard")
-    exec_log_dir = Path(os.environ.get("EXEC_LOG_DIR") or "C:/scc/artifacts/executor_logs")
+    repo_root = _default_repo_root()
+    board_dir = Path(os.environ.get("BOARD_DIR") or str(repo_root / "artifacts" / "taskboard"))
+    exec_log_dir = Path(os.environ.get("EXEC_LOG_DIR") or str(repo_root / "artifacts" / "executor_logs"))
     board_file = Path(args.board_file) if args.board_file else (board_dir / "tasks.json")
     jobs_state = Path(args.jobs_state) if args.jobs_state else (exec_log_dir / "jobs_state.json")
     ci_gate_results = exec_log_dir / "ci_gate_results.jsonl"
@@ -286,8 +291,7 @@ def main() -> int:
             p = Path(str(f))
             if not p.is_absolute():
                 # Resolve relative to repo root if possible.
-                # We treat C:/scc as repo root umbrella.
-                p = (Path("C:/scc") / p).resolve()
+                p = (repo_root / p).resolve()
             if not p.exists():
                 missing.append(str(f))
         if missing:
