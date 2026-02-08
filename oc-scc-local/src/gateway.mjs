@@ -12,6 +12,7 @@ import { toYaml } from "./lib/yaml.mjs"
 import { readJsonlTail, countJsonlLines } from "./lib/jsonl_tail.mjs"
 import { getConfig } from "./lib/config.mjs"
 import { readJson, writeJsonAtomic, updateJsonLocked } from "./lib/state_store.mjs"
+import { loadJobsState, saveJobsState } from "./lib/jobs_store.mjs"
 import {
   BOARD_LANES,
   BOARD_STATUS,
@@ -1893,16 +1894,11 @@ function leader(event) {
 
 function saveState() {
   const arr = Array.from(jobs.values())
-  try {
-    updateJsonLocked(execStateFile, [], () => arr, { lockTimeoutMs: 6000 })
-  } catch (e) {
-    if (cfg.strictWrites) throw e
-  }
+  saveJobsState({ file: execStateFile, jobsArray: arr, strictWrites: cfg.strictWrites })
 }
 
 function loadState() {
-  const parsed = readJson(execStateFile, null)
-  return Array.isArray(parsed) ? parsed : []
+  return loadJobsState({ file: execStateFile })
 }
 
 function classifyFailure(job, result) {
