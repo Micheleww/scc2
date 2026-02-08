@@ -11,6 +11,7 @@ import addFormats from "ajv-formats"
 import { toYaml } from "./lib/yaml.mjs"
 import { readJsonlTail, countJsonlLines } from "./lib/jsonl_tail.mjs"
 import { getConfig } from "./lib/config.mjs"
+import { readJson, writeJsonAtomic, updateJsonLocked } from "./lib/state_store.mjs"
 import { createPromptRegistry } from "./prompt_registry.mjs"
 import { loadRoleSystem, normalizeRoleName, roleRequiresRealTestsFromPolicy, validateRoleSkills } from "./role_system.mjs"
 import { buildMapV1, loadMapV1, queryMapV1, writeMapV1Outputs } from "./map_v1.mjs"
@@ -710,73 +711,44 @@ function getLastCiFailure(taskId) {
 }
 
 function loadAuditTriggerState() {
-  try {
-    if (!fs.existsSync(auditTriggerStateFile)) {
-      return {
-        done_since_last: 0,
-        total_done: 0,
-        last_audit_at: null,
-        last_audit_batch: null,
-        last_audit_task_id: null,
-      }
-    }
-    const raw = fs.readFileSync(auditTriggerStateFile, "utf8")
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== "object") throw new Error("invalid")
-    return {
-      done_since_last: Number(parsed.done_since_last ?? 0),
-      total_done: Number(parsed.total_done ?? 0),
-      last_audit_at: parsed.last_audit_at ?? null,
-      last_audit_batch: parsed.last_audit_batch ?? null,
-      last_audit_task_id: parsed.last_audit_task_id ?? null,
-    }
-  } catch {
-    return {
-      done_since_last: 0,
-      total_done: 0,
-      last_audit_at: null,
-      last_audit_batch: null,
-      last_audit_task_id: null,
-    }
+  const fallback = {
+    done_since_last: 0,
+    total_done: 0,
+    last_audit_at: null,
+    last_audit_batch: null,
+    last_audit_task_id: null,
+  }
+  const parsed = readJson(auditTriggerStateFile, null)
+  if (!parsed || typeof parsed !== "object") return fallback
+  return {
+    done_since_last: Number(parsed.done_since_last ?? 0),
+    total_done: Number(parsed.total_done ?? 0),
+    last_audit_at: parsed.last_audit_at ?? null,
+    last_audit_batch: parsed.last_audit_batch ?? null,
+    last_audit_task_id: parsed.last_audit_task_id ?? null,
   }
 }
 
 function saveAuditTriggerState(state) {
   try {
-    fs.writeFileSync(auditTriggerStateFile, JSON.stringify(state, null, 2), "utf8")
-  } catch {
-    // best-effort
+    updateJsonLocked(auditTriggerStateFile, {}, () => state, { lockTimeoutMs: 6000 })
+  } catch (e) {
+    if (cfg.strictWrites) throw e
   }
 }
 
 function loadFlowManagerState() {
-  try {
-    if (!fs.existsSync(flowManagerStateFile)) {
-      return {
-        last_created_at: 0,
-        last_reasons_key: null,
-      }
-    }
-    const raw = fs.readFileSync(flowManagerStateFile, "utf8")
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== "object") throw new Error("invalid")
-    return {
-      last_created_at: Number(parsed.last_created_at ?? 0),
-      last_reasons_key: parsed.last_reasons_key ?? null,
-    }
-  } catch {
-    return {
-      last_created_at: 0,
-      last_reasons_key: null,
-    }
-  }
+  const fallback = { last_created_at: 0, last_reasons_key: null }
+  const parsed = readJson(flowManagerStateFile, null)
+  if (!parsed || typeof parsed !== "object") return fallback
+  return { last_created_at: Number(parsed.last_created_at ?? 0), last_reasons_key: parsed.last_reasons_key ?? null }
 }
 
 function saveFlowManagerState(state) {
   try {
-    fs.writeFileSync(flowManagerStateFile, JSON.stringify(state, null, 2), "utf8")
-  } catch {
-    // best-effort
+    updateJsonLocked(flowManagerStateFile, {}, () => state, { lockTimeoutMs: 6000 })
+  } catch (e) {
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -1908,23 +1880,17 @@ function leader(event) {
 }
 
 function saveState() {
+  const arr = Array.from(jobs.values())
   try {
-    const arr = Array.from(jobs.values())
-    fs.writeFileSync(execStateFile, JSON.stringify(arr, null, 2), "utf8")
-  } catch {
-    // best-effort
+    updateJsonLocked(execStateFile, [], () => arr, { lockTimeoutMs: 6000 })
+  } catch (e) {
+    if (cfg.strictWrites) throw e
   }
 }
 
 function loadState() {
-  try {
-    if (!fs.existsSync(execStateFile)) return []
-    const raw = fs.readFileSync(execStateFile, "utf8")
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  const parsed = readJson(execStateFile, null)
+  return Array.isArray(parsed) ? parsed : []
 }
 
 function classifyFailure(job, result) {
@@ -2564,41 +2530,35 @@ function loadMission() {
     missionDocUrl: `http://127.0.0.1:${gatewayPort}/docs/MISSION.md`,
     updatedAt: Date.now(),
   }
-  try {
-    if (!fs.existsSync(missionFile)) return fallback
-    const raw = fs.readFileSync(missionFile, "utf8")
-    const parsed = JSON.parse(raw)
-    return { ...fallback, ...(parsed && typeof parsed === "object" ? parsed : {}) }
-  } catch {
-    return fallback
-  }
+  const parsed = readJson(missionFile, null)
+  return { ...fallback, ...(parsed && typeof parsed === "object" ? parsed : {}) }
 }
 
 function saveMission(m) {
   try {
-    fs.writeFileSync(missionFile, JSON.stringify(m, null, 2), "utf8")
-  } catch {
-    // best-effort
+    writeJsonAtomic(missionFile, m)
+  } catch (e) {
+    if (cfg.strictWrites) throw e
   }
 }
 
 function loadBoard() {
-  try {
-    if (!fs.existsSync(boardFile)) return []
-    const raw = fs.readFileSync(boardFile, "utf8")
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  const parsed = readJson(boardFile, null)
+  return Array.isArray(parsed) ? parsed : []
 }
 
 function saveBoard() {
+  const arr = Array.from(boardTasks.values())
   try {
-    const arr = Array.from(boardTasks.values())
-    fs.writeFileSync(boardFile, JSON.stringify(arr, null, 2), "utf8")
-  } catch {
-    // best-effort
+    // Lock to avoid concurrent writes from overlapping requests.
+    updateJsonLocked(
+      boardFile,
+      [],
+      () => arr,
+      { lockTimeoutMs: 6000 },
+    )
+  } catch (e) {
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -2712,9 +2672,9 @@ function loadCircuitBreakerState() {
 
 function saveCircuitBreakerState(state) {
   try {
-    fs.writeFileSync(circuitBreakerStateFile, JSON.stringify(state, null, 2), "utf8")
-  } catch {
-    // best-effort
+    updateJsonLocked(circuitBreakerStateFile, {}, () => state, { lockTimeoutMs: 6000 })
+  } catch (e) {
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -2730,38 +2690,32 @@ const repoUnhealthyFailThreshold = Number(process.env.REPO_UNHEALTHY_FAIL_THRESH
 const repoUnhealthyCooldownMs = Number(process.env.REPO_UNHEALTHY_COOLDOWN_MS ?? "900000") // 15 min
 
 function loadRepoHealthState() {
-  try {
-    if (!fs.existsSync(repoHealthStateFile)) {
-      return {
-        schema_version: "scc.repo_health_state.v1",
-        updated_at: new Date().toISOString(),
-        failures: [],
-        unhealthy_until: 0,
-        unhealthy_reason: null,
-        unhealthy_task_created_at: null,
-      }
-    }
-    const raw = fs.readFileSync(repoHealthStateFile, "utf8")
-    const parsed = JSON.parse(raw.replace(/^\uFEFF/, ""))
-    const failures = Array.isArray(parsed?.failures) ? parsed.failures.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0) : []
-    return {
-      schema_version: "scc.repo_health_state.v1",
-      updated_at: parsed?.updated_at ?? new Date().toISOString(),
-      failures,
-      unhealthy_until: Number(parsed?.unhealthy_until ?? 0) || 0,
-      unhealthy_reason: parsed?.unhealthy_reason ?? null,
-      unhealthy_task_created_at: parsed?.unhealthy_task_created_at ?? null,
-    }
-  } catch {
-    return { schema_version: "scc.repo_health_state.v1", updated_at: new Date().toISOString(), failures: [], unhealthy_until: 0, unhealthy_reason: null, unhealthy_task_created_at: null }
+  const fallback = {
+    schema_version: "scc.repo_health_state.v1",
+    updated_at: new Date().toISOString(),
+    failures: [],
+    unhealthy_until: 0,
+    unhealthy_reason: null,
+    unhealthy_task_created_at: null,
+  }
+  const parsed = readJson(repoHealthStateFile, null)
+  if (!parsed || typeof parsed !== "object") return fallback
+  const failures = Array.isArray(parsed?.failures) ? parsed.failures.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0) : []
+  return {
+    schema_version: "scc.repo_health_state.v1",
+    updated_at: parsed?.updated_at ?? new Date().toISOString(),
+    failures,
+    unhealthy_until: Number(parsed?.unhealthy_until ?? 0) || 0,
+    unhealthy_reason: parsed?.unhealthy_reason ?? null,
+    unhealthy_task_created_at: parsed?.unhealthy_task_created_at ?? null,
   }
 }
 
 function saveRepoHealthState(state) {
   try {
-    fs.writeFileSync(repoHealthStateFile, JSON.stringify(state, null, 2), "utf8")
-  } catch {
-    // best-effort
+    updateJsonLocked(repoHealthStateFile, {}, () => state, { lockTimeoutMs: 6000 })
+  } catch (e) {
+    if (cfg.strictWrites) throw e
   }
 }
 
