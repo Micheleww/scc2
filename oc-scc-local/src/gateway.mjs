@@ -12,6 +12,18 @@ import { toYaml } from "./lib/yaml.mjs"
 import { readJsonlTail, countJsonlLines } from "./lib/jsonl_tail.mjs"
 import { getConfig } from "./lib/config.mjs"
 import { readJson, writeJsonAtomic, updateJsonLocked } from "./lib/state_store.mjs"
+import {
+  BOARD_LANES,
+  BOARD_STATUS,
+  computeJobPriorityForTask as computeJobPriorityForTaskImpl,
+  lanePriorityScore as lanePriorityScoreImpl,
+  loadBoard as loadBoardImpl,
+  loadMission as loadMissionImpl,
+  normalizeBoardStatus,
+  normalizeLane,
+  saveBoard as saveBoardImpl,
+  saveMission as saveMissionImpl,
+} from "./lib/board.mjs"
 import { createPromptRegistry } from "./prompt_registry.mjs"
 import { loadRoleSystem, normalizeRoleName, roleRequiresRealTestsFromPolicy, validateRoleSkills } from "./role_system.mjs"
 import { buildMapV1, loadMapV1, queryMapV1, writeMapV1Outputs } from "./map_v1.mjs"
@@ -2521,78 +2533,30 @@ function roleSkills(role) {
 }
 
 function loadMission() {
-  const fallback = {
-    id: "mission",
-    title: "SCC automated code factory",
-    goal: "SCC becomes a fully automated code-generation factory. Current parent task: SCC x OpenCode fusion.",
-    statusDocUrl: `http://127.0.0.1:${gatewayPort}/docs/STATUS.md`,
-    worklogUrl: `http://127.0.0.1:${gatewayPort}/docs/WORKLOG.md`,
-    missionDocUrl: `http://127.0.0.1:${gatewayPort}/docs/MISSION.md`,
-    updatedAt: Date.now(),
-  }
-  const parsed = readJson(missionFile, null)
-  return { ...fallback, ...(parsed && typeof parsed === "object" ? parsed : {}) }
+  return loadMissionImpl({ missionFile, gatewayPort })
 }
 
 function saveMission(m) {
-  try {
-    writeJsonAtomic(missionFile, m)
-  } catch (e) {
-    if (cfg.strictWrites) throw e
-  }
+  saveMissionImpl({ missionFile, mission: m, strictWrites: cfg.strictWrites })
 }
 
 function loadBoard() {
-  const parsed = readJson(boardFile, null)
-  return Array.isArray(parsed) ? parsed : []
+  return loadBoardImpl({ boardFile })
 }
 
 function saveBoard() {
   const arr = Array.from(boardTasks.values())
-  try {
-    // Lock to avoid concurrent writes from overlapping requests.
-    updateJsonLocked(
-      boardFile,
-      [],
-      () => arr,
-      { lockTimeoutMs: 6000 },
-    )
-  } catch (e) {
-    if (cfg.strictWrites) throw e
-  }
-}
-
-const BOARD_STATUS = ["backlog", "needs_split", "ready", "in_progress", "blocked", "done", "failed"]
-const BOARD_LANES = ["fastlane", "mainlane", "batchlane", "quarantine", "dlq"]
-
-function normalizeBoardStatus(v) {
-  const s = String(v ?? "").trim()
-  return BOARD_STATUS.includes(s) ? s : null
-}
-
-function normalizeLane(v) {
-  const s = String(v ?? "").trim()
-  return BOARD_LANES.includes(s) ? s : null
+  saveBoardImpl({ boardFile, tasksArray: arr, strictWrites: cfg.strictWrites })
 }
 
 function lanePriorityScore(lane) {
-  const l = normalizeLane(lane) ?? "mainlane"
   const fp = getFactoryPolicy ? getFactoryPolicy() : null
-  const fromPolicy = fp?.lanes?.[l]?.priority
-  const p = Number(fromPolicy)
-  if (Number.isFinite(p)) return Math.floor(p) * 10
-  if (l === "fastlane") return 900
-  if (l === "mainlane") return 500
-  if (l === "batchlane") return 100
-  if (l === "quarantine") return 50
-  if (l === "dlq") return 0
-  return 500
+  return lanePriorityScoreImpl(lane, fp)
 }
 
 function computeJobPriorityForTask(t) {
-  const base = lanePriorityScore(t?.lane)
-  const extra = Number.isFinite(Number(t?.priority)) ? Number(t.priority) : 0
-  return base + extra
+  const fp = getFactoryPolicy ? getFactoryPolicy() : null
+  return computeJobPriorityForTaskImpl(t, fp)
 }
 
 function routeLaneForEventType(eventType) {
