@@ -41,6 +41,8 @@ import { computeDegradationActionV1, applyDegradationToWipLimitsV1, shouldAllowT
 import { computeVerdictV1 } from "./verifier_judge_v1.mjs"
 import { createRouter } from "./router.mjs"
 import { registerCoreRoutes } from "./router_core.mjs"
+import { registerNavRoutes } from "./router_nav.mjs"
+import { registerSccDevRoutes } from "./router_sccdev.mjs"
 
 const gatewayPort = Number(process.env.GATEWAY_PORT ?? "18788")
 const sccUpstream = new URL(process.env.SCC_UPSTREAM ?? "http://127.0.0.1:18789")
@@ -48,6 +50,14 @@ const opencodeUpstream = new URL(process.env.OPENCODE_UPSTREAM ?? "http://127.0.
 const cfg = getConfig()
 const log = createLogger({ component: "oc-scc-local.gateway" })
 const errSink = createJsonlErrorSink({ file: path.join(cfg.execLogDir, "gateway_errors.jsonl") })
+
+function noteBestEffort(where, e, extra = null) {
+  try {
+    errSink.note({ level: "warn", where: String(where ?? "best_effort"), ...(extra && typeof extra === "object" ? extra : {}), err: log.errToObject(e) })
+  } catch {
+    // If even the error sink fails, avoid throwing from best-effort paths.
+  }
+}
 const codexBin = cfg.codexBin
 // Default to the strongest Codex model we can actually run (validated via codex exec).
 let codexModelDefault = process.env.CODEX_MODEL ?? "gpt-5.3-codex"
@@ -136,6 +146,8 @@ const routerStatsTtlMs = Number(process.env.ROUTER_STATS_TTL_MS ?? "120000")
 // Router extraction (incremental): we move self-contained routes first, then expand.
 const coreRouter = createRouter()
 registerCoreRoutes({ router: coreRouter })
+registerNavRoutes({ router: coreRouter })
+registerSccDevRoutes({ router: coreRouter })
 
 function estimateParamsB(model) {
   const s = String(model ?? "").toLowerCase()
@@ -319,8 +331,9 @@ function loadDesignerState() {
 function saveDesignerState(state) {
   try {
     fs.writeFileSync(designerStateFile, JSON.stringify(state, null, 2), "utf8")
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("saveDesignerState", e, { file: designerStateFile })
   }
 }
 
@@ -1973,8 +1986,9 @@ async function occliRunSingle(prompt, model = occliModelDefault, { timeoutMs } =
         if (attachedFile) {
           try {
             fs.unlinkSync(attachedFile)
-          } catch {
+          } catch (e) {
             // best-effort cleanup
+            noteBestEffort("opencode_exec_cleanup_attached_file", e, { file: attachedFile })
           }
         }
       },
@@ -2506,8 +2520,9 @@ function putBoardTask(t) {
 function appendIsolation(rec) {
   try {
     fs.appendFileSync(isolationFile, JSON.stringify(rec) + "\n", "utf8")
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("appendIsolation", e, { file: isolationFile })
   }
 }
 
@@ -2793,8 +2808,9 @@ function applyRepoHealthFromEvent({ event_type } = {}) {
             dispatchBoardTaskToExecutor(created.task.id)
           }
         }
-      } catch {
+      } catch (e) {
         // best-effort
+        noteBestEffort("repoHealth_unhealthy_task_autocreate", e)
       }
     }
   } else if (!repoUnhealthyActive() && next.unhealthy_until) {
@@ -2893,8 +2909,9 @@ function applyCircuitBreakersFromEvent(stateEvent) {
           dispatchBoardTaskToExecutor(created.task.id)
         }
       }
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("circuitBreaker_quarantine_task_autocreate", e)
     }
   }
 
@@ -2912,8 +2929,9 @@ function appendDlq(rec) {
     const file = dlqFilePath()
     fs.mkdirSync(path.dirname(file), { recursive: true })
     fs.appendFileSync(file, JSON.stringify(rec) + "\n", "utf8")
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("appendDlq", e)
   }
 }
 
@@ -3391,14 +3409,16 @@ function createBoardTask(payload) {
     try {
       ensureParentLedgers(task)
       bumpParentProgress({ parentId: task.id, type: "parent_created", details: { status: task.status, lane: task.lane ?? null } })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("boardTaskCreated_parent_progress", e, { task_id: task.id })
     }
   } else if (parentId) {
     try {
       bumpParentProgress({ parentId: parentId, type: "child_created", details: { task_id: id, role, status } })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("boardTaskCreated_child_progress", e, { parent_id: parentId, task_id: id })
     }
   }
   return { ok: true, task }
@@ -3773,8 +3793,9 @@ function maybeTriggerFactoryManagerFromLearnedPatterns(summary) {
       allowedTests: ["python tools/scc/gates/run_ci_gates.py --submit artifacts/{task_id}/submit.json"],
     })
     if (mine.ok) dispatchBoardTaskToExecutor(mine.task.id)
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("learnedPatternsHook_autotrigger", e)
   }
 
   saveLearnedPatternsHookState({ last_triggered_at: now, last_top_reason: topReason, last_top_count: topCount })
@@ -4536,8 +4557,9 @@ function updateBoardFromJob(job) {
             next_attempt: Number(t.dispatch_attempts ?? 0) + 1,
             notes: `Model failure (${reason}); advance occli model ladder to attempt=${nextAttempt} (next_model=${nextModel}).`,
           })
-        } catch {
+        } catch (e) {
           // best-effort
+          noteBestEffort("writeRetryPlanArtifact_model_failure", e, { task_id: t.id })
         }
         leader({
           level: "warn",
@@ -4686,8 +4708,9 @@ function updateBoardFromJob(job) {
         next_attempt: Number(t.dispatch_attempts ?? 0) + 1,
         notes: "Task failed; use retry_plan.json to determine next action and lane.",
       })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("writeRetryPlanArtifact_failed_task", e, { task_id: t.id })
     }
   }
   appendStateEvent({
@@ -4739,8 +4762,9 @@ function updateBoardFromJob(job) {
   try {
     applyRepoHealthFromEvent({ event_type: eventType })
     applyCircuitBreakersFromEvent({ event_type: eventType })
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("applyHealthBreakers_from_event", e, { event_type: eventType, task_id: t.id })
   }
   if (t.status === "failed") {
     // Auto-create a pins fixup task for pins-related failures (trigger -> handle, high priority).
@@ -4748,8 +4772,9 @@ function updateBoardFromJob(job) {
     // L8: apply playbooks to the retry plan deterministically (no new tasks).
     try {
       maybeApplyPlaybooks({ eventType, boardTask: t, job })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("maybeApplyPlaybooks", e, { event_type: eventType, task_id: t.id })
     }
   }
   if (t.status === "done") {
@@ -4915,19 +4940,22 @@ function dispatchBoardTaskToExecutor(id) {
             next_attempt: Number(t.dispatch_attempts ?? 0) + 1,
             notes: "Parent budget exhausted; require human input or budget increase.",
           })
-        } catch {
+        } catch (e) {
           // best-effort
+          noteBestEffort("writeRetryPlanArtifact_budget_exhausted", e, { task_id: t.id, parent_id: root })
         }
         try {
           bumpParentProgress({ parentId: root, type: "child_failed", details: { task_id: t.id, reason: "budget_exhausted" }, stallReason: "budget_exhausted" })
-        } catch {
+        } catch (e) {
           // best-effort
+          noteBestEffort("bumpParentProgress_budget_exhausted", e, { task_id: t.id, parent_id: root })
         }
         return { ok: false, error: "budget_exhausted", root_parent_id: root, used_tokens: usedTokens, max_tokens: maxTokens, used_verify_minutes: usedVerify, max_verify_minutes: maxVerify }
       }
     }
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("budgetGovernor_check", e, { task_id: t.id })
   }
   if (quarantineActive()) {
     const allowedDuring = new Set(["fastlane", "quarantine", "dlq"])
@@ -4964,8 +4992,9 @@ function dispatchBoardTaskToExecutor(id) {
         reason: "stop_the_bleeding",
         details: { action: degradation.action ?? null, signals: degradation.signals ?? null },
       })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("appendStateEvent_policy_violation_stop_the_bleeding", e, { task_id: t.id })
     }
     appendJsonl(routerFailuresFile, {
       t: new Date().toISOString(),
@@ -5120,8 +5149,9 @@ function dispatchBoardTaskToExecutor(id) {
           pointers: { sourceTaskId: t.id, reason: "retry_exhausted" },
         })
         if (created.ok) dispatchBoardTaskToExecutor(created.task.id)
-      } catch {
+      } catch (e) {
         // best-effort
+        noteBestEffort("retryExhausted_autocreate_task", e, { source_task_id: t.id })
       }
       appendStateEvent({
         schema_version: "scc.event.v1",
@@ -5148,8 +5178,9 @@ function dispatchBoardTaskToExecutor(id) {
         next_attempt: prevAttempts + 1,
         notes: `Retry budget exhausted (dispatch_attempts=${prevAttempts}, max=${maxAttempts}); route to DLQ.`,
       })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("writeRetryPlanArtifact_retry_exhausted", e, { task_id: t.id })
     }
     return { ok: false, error: "retry_exhausted", maxAttempts, attempts: prevAttempts }
   }
@@ -5328,8 +5359,9 @@ function dispatchBoardTaskToExecutor(id) {
           reason: "role_policy_violation",
           details: check,
         })
-      } catch {
+      } catch (e) {
         // best-effort
+        noteBestEffort("appendStateEvent_role_policy_violation", e, { task_id: t.id })
       }
       return { ok: false, error: "role_policy_violation", details: check }
     }
@@ -5349,8 +5381,9 @@ function dispatchBoardTaskToExecutor(id) {
       if (pre?.ok && pre.preflight) {
         try {
           writePreflightV1Output({ repoRoot: SCC_REPO_ROOT, taskId: t.id, outPath: `artifacts/${t.id}/preflight.json`, preflight: pre.preflight })
-        } catch {
+        } catch (e) {
           // best-effort
+          noteBestEffort("writePreflightV1Output", e, { task_id: t.id })
         }
         if (!pre.preflight.pass) {
           let recovered = false
@@ -5398,8 +5431,9 @@ function dispatchBoardTaskToExecutor(id) {
                     try {
                       applyRepoHealthFromEvent({ event_type: "SUCCESS" })
                       applyCircuitBreakersFromEvent({ event_type: "SUCCESS" })
-                    } catch {
+                    } catch (e) {
                       // best-effort
+                      noteBestEffort("applyHealthBreakers_success", e, { task_id: t.id })
                     }
                     recovered = true
                   } else {
@@ -5450,8 +5484,9 @@ function dispatchBoardTaskToExecutor(id) {
           try {
             applyRepoHealthFromEvent({ event_type: eventType })
             applyCircuitBreakersFromEvent({ event_type: eventType })
-          } catch {
+          } catch (e) {
             // best-effort
+            noteBestEffort("applyHealthBreakers_preflight_failed", e, { event_type: eventType, task_id: t.id })
           }
           try {
             writeRetryPlanArtifact({
@@ -5461,15 +5496,17 @@ function dispatchBoardTaskToExecutor(id) {
               next_attempt: Number(t.dispatch_attempts ?? 0) + 1,
               notes: "Dispatch-time preflight failed; follow retry plan before re-dispatch.",
             })
-          } catch {
+          } catch (e) {
             // best-effort
+            noteBestEffort("writeRetryPlanArtifact_preflight_failed", e, { task_id: t.id })
           }
           leader({ level: "warn", type: "dispatch_rejected", id: t.id, reason: "preflight_failed", event_type: eventType })
           if (eventType === "PINS_INSUFFICIENT") {
             try {
               maybeCreatePinsFixupTask({ boardTask: t, job: { id: `preflight_${t.id}`, reason } })
-            } catch {
+            } catch (e) {
               // best-effort
+              noteBestEffort("maybeCreatePinsFixupTask_preflight", e, { task_id: t.id })
             }
           }
           return { ok: false, error: "preflight_failed", reason, event_type: eventType, preflight: pre.preflight }
@@ -5489,8 +5526,9 @@ function dispatchBoardTaskToExecutor(id) {
   }
   try {
     if (effectivePins) writePinsArtifacts({ taskId: t.id, pins: effectivePins, requiredFiles: t.files })
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("writePinsArtifacts", e, { task_id: t.id })
   }
   const ctx = effectivePins
     ? createContextPackFromPins({ pins: effectivePins, maxBytes: 220_000 })
@@ -6142,8 +6180,9 @@ function applySplitFromJob({ parentId, jobId }) {
 
   try {
     writeSplitArtifacts({ taskId: parentId, jobId, stdout: String(job.stdout ?? ""), arr, check: { ok: true } })
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("writeSplitArtifacts_parse", e, { parent_id: parentId, job_id: jobId })
   }
 
   const created = []
@@ -6328,8 +6367,9 @@ function applySplitFromJob({ parentId, jobId }) {
   try {
     ensureParentLedgers(parent)
     bumpParentProgress({ parentId, type: "split_applied", details: { jobId, created: created.length, rejected: rejected.length } })
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("splitApplied_parent_progress", e, { parent_id: parentId, job_id: jobId })
   }
   leader({ level: "info", type: "board_task_split_applied", id: parentId, jobId, created: created.length, rejected: rejected.length })
   return { ok: true, created, rejected: rejected.slice(0, 30) }
@@ -6478,8 +6518,9 @@ function capturePreSnapshot({ boardTask, pins, maxFiles = 64, maxBytes = 1024 * 
         const buf = fs.readFileSync(abs)
         const sha256 = crypto.createHash("sha256").update(buf).digest("hex")
         files.push({ path: rel, exists: true, size: st.size, sha256 })
-      } catch {
+      } catch (e) {
         // best-effort snapshot; ignore per-file errors
+        noteBestEffort("capturePreSnapshot_file", e, { path: rel })
       }
     }
     // Optional rollback support: persist a content-backed snapshot for small files.
@@ -6516,8 +6557,9 @@ function capturePreSnapshot({ boardTask, pins, maxFiles = 64, maxBytes = 1024 * 
             const sha256 = crypto.createHash("sha256").update(buf).digest("hex")
             used += buf.length
             full.push({ path: rel, exists: true, size: st.size, sha256, content_b64: buf.toString("base64") })
-          } catch {
-            // ignore
+          } catch (e) {
+            // best-effort snapshot; ignore per-file errors
+            noteBestEffort("capturePreSnapshot_full_file", e, { path: rel })
           }
         }
         if (full.length) {
@@ -6531,8 +6573,9 @@ function capturePreSnapshot({ boardTask, pins, maxFiles = 64, maxBytes = 1024 * 
           )
         }
       }
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("capturePreSnapshot_full", e, { task_id: String(boardTask?.id ?? "") })
     }
     return { schema_version: "scc.pre_snapshot.v1", at: new Date().toISOString(), files }
   } catch {
@@ -6847,8 +6890,9 @@ function ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStat
         writePreflightV1Output({ repoRoot: SCC_REPO_ROOT, taskId, outPath: `artifacts/${taskId}/preflight.json`, preflight: pre.preflight })
       }
     }
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("ensureExternalArtifacts_preflight_output", e, { task_id: taskId })
   }
 
   const evidenceAbs = resolveUnderRoot(rel.evidence_dir)
@@ -6921,8 +6965,9 @@ function ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStat
     try {
       ensureDir(path.dirname(selftestAbs))
       fs.writeFileSync(selftestAbs, body + "\n", "utf8")
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("ensureExternalArtifacts_selftest_log", e, { task_id: taskId })
     }
   }
 
@@ -6973,8 +7018,9 @@ function ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStat
       try {
         fs.writeFileSync(submitAbs, JSON.stringify(submit, null, 2) + "\n", "utf8")
         job.submit = submit
-      } catch {
+      } catch (e) {
         // best-effort
+        noteBestEffort("ensureExternalArtifacts_submit_json", e, { task_id: taskId })
       }
     }
   }
@@ -7031,8 +7077,9 @@ function ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStat
     try {
       ensureDir(path.dirname(replayAbs))
       fs.writeFileSync(replayAbs, JSON.stringify(bundle, null, 2) + "\n", "utf8")
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("ensureExternalArtifacts_replay_bundle", e, { task_id: taskId })
     }
   }
 
@@ -7453,8 +7500,9 @@ function runCiGateCommand(cmd) {
           stderrPath = path.join(dir, `ci_${id}.stderr.log`)
           fs.writeFileSync(stdoutPath, stdoutText, "utf8")
           fs.writeFileSync(stderrPath, stderrText, "utf8")
-        } catch {
+        } catch (e) {
           // best-effort; CI still functions without persisted logs
+          noteBestEffort("ciGate_persist_logs", e)
         }
         resolve({
           ok,
@@ -8141,8 +8189,9 @@ function maybeCreatePinsFixupTask({ boardTask, job }) {
                 pinsSpec: built.pins,
                 detail: built.detail,
               })
-            } catch {
+            } catch (e) {
               // best-effort
+              noteBestEffort("autoPins_write_outputs", e, { task_id: boardTask.id })
             }
             appendStateEvent({
               schema_version: "scc.event.v1",
@@ -8758,8 +8807,9 @@ function saveOccliFlakeFuse() {
       JSON.stringify({ schema_version: "scc.executor_fuse.v1", executor: "opencodecli", until: occliFlakeFuseUntil }, null, 2),
       "utf8"
     )
-  } catch {
+  } catch (e) {
     // best-effort
+    noteBestEffort("saveOccliFlakeFuse", e, { file: occliFlakeFuseFile })
   }
 }
 function occliFusedNow() {
@@ -9339,8 +9389,9 @@ async function runJob(job) {
 
       try {
         if (written?.ok) writeTraceArtifact({ taskId: boardTask.id, job: done, boardTask })
-      } catch {
+      } catch (e) {
         // best-effort
+        noteBestEffort("writeTraceArtifact", e, { task_id: boardTask.id })
       }
       try {
         const root = rootParentIdForTask(boardTask)
@@ -9354,8 +9405,9 @@ async function runJob(job) {
           const type = done.status === "done" ? "child_done" : "child_failed"
           bumpParentProgress({ parentId: root, type, details: { task_id: boardTask.id, reason: done.reason ?? null }, usageDelta })
         }
-      } catch {
+      } catch (e) {
         // best-effort
+        noteBestEffort("bumpParentProgress_from_verdict", e, { task_id: boardTask.id })
       }
 
       // Verdict-driven escalation: ESCALATE tasks must enter DLQ (fail-closed) with a structured DLQ entry.
@@ -10778,16 +10830,28 @@ const server = http.createServer(async (req, res) => {
     sccUpstream,
     opencodeUpstream,
     SCC_REPO_ROOT,
+    SCC_PREFIXES,
     gatewayErrorsFile,
     readJsonlTail,
     sendJson,
     listBoardTasks,
     runningCounts,
     jobs,
+    listWorkers,
+    stateEventsFile,
+    repoHealthState,
     quarantineActive,
     repoUnhealthyActive,
     loadRepoHealthState,
     loadCircuitBreakerState,
+    wipLimits,
+    runningInternalByLane,
+    computeDegradationState,
+    applyDegradationToWipLimitsV1,
+    codexModelDefault,
+    codexPreferredOrder,
+    STRICT_DESIGNER_MODEL,
+    summarizeRouterStatsForUi,
     statusSnapshot,
     renderHomeHtml,
     log,
@@ -10806,73 +10870,6 @@ const server = http.createServer(async (req, res) => {
     } else if (rel.length > 0) {
       return serveStaticFromDir(req, res, { rootDir: sccDevUiDir, relPath: rel })
     }
-  }
-
-  if (pathname === "/sccdev/api/v1/snapshot" && method === "GET") {
-    const taskLimit = Number(url.searchParams.get("tasks") ?? "200")
-    const eventLimit = Number(url.searchParams.get("events") ?? "120")
-    const jobLimit = Number(url.searchParams.get("jobs") ?? "200")
-
-    const capTasks = Number.isFinite(taskLimit) ? Math.max(0, Math.min(1000, Math.floor(taskLimit))) : 200
-    const capEvents = Number.isFinite(eventLimit) ? Math.max(0, Math.min(2000, Math.floor(eventLimit))) : 120
-    const capJobs = Number.isFinite(jobLimit) ? Math.max(0, Math.min(2000, Math.floor(jobLimit))) : 200
-
-    const boardAll = listBoardTasks()
-    const tasks = boardAll
-      .slice()
-      .sort((a, b) => (b.updatedAt ?? b.createdAt ?? 0) - (a.updatedAt ?? a.createdAt ?? 0))
-      .slice(0, capTasks)
-
-    const jobArrAll = Array.from(jobs.values())
-    const jobArr = jobArrAll
-      .slice()
-      .sort((a, b) => (b.lastUpdate ?? b.startedAt ?? 0) - (a.lastUpdate ?? a.startedAt ?? 0))
-      .slice(0, capJobs)
-
-    const byStatus = {}
-    for (const j of jobArrAll) {
-      const s = String(j?.status ?? "unknown")
-      byStatus[s] = (byStatus[s] ?? 0) + 1
-    }
-
-    const workersAll = listWorkers()
-    const activeWindowMs = Number(process.env.WORKER_ACTIVE_WINDOW_MS ?? "120000")
-    const now = Date.now()
-    const active = workersAll.filter((w) => typeof w.lastSeen === "number" && now - w.lastSeen <= activeWindowMs)
-    const byExecutorActive = {}
-    for (const w of active) {
-      const ex = Array.isArray(w.executors) ? w.executors.join(",") : "unknown"
-      byExecutorActive[ex] = (byExecutorActive[ex] ?? 0) + 1
-    }
-
-    const ev = readJsonlTail(stateEventsFile, capEvents).filter(Boolean)
-
-    const limits = wipLimits()
-    const snap = runningInternalByLane()
-    const degradation = computeDegradationState({ snap })
-    const effective_limits = applyDegradationToWipLimitsV1({ limits, action: degradation.action })
-
-    const models = {
-      codexDefault: codexModelDefault,
-      codexPreferred: codexPreferredOrder ?? [],
-      strictDesignerModel: STRICT_DESIGNER_MODEL,
-      routerStatsSummary: summarizeRouterStatsForUi(),
-    }
-
-    return sendJson(res, 200, {
-      ok: true,
-      schema_version: "scc.sccdev_snapshot.v1",
-      t: new Date().toISOString(),
-      repoRoot: SCC_REPO_ROOT,
-      board: { counts: boardCounts(boardAll), tasks },
-      executor: {
-        jobs: { byStatus, items: jobArr },
-        workers: { items: workersAll, activeWindowMs, byExecutorActive },
-      },
-      factory: { wip: { limits, effective_limits, running: snap }, degradation, repo_health: repoHealthState },
-      models,
-      events: { file: stateEventsFile, items: ev },
-    })
   }
 
   // Map v1 (structured index): file-backed, deterministic, queryable.
@@ -10978,8 +10975,9 @@ const server = http.createServer(async (req, res) => {
         pinsSpec: out.pins,
         detail: out.detail,
       })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("pins_v1_write_outputs", e, { task_id: out.result.task_id })
     }
     return sendJson(res, 200, { ok: true, pins_result: out.result, pins_result_v2: out.result_v2 ?? null })
   }
@@ -11002,8 +11000,9 @@ const server = http.createServer(async (req, res) => {
         pinsSpec: out.pins,
         detail: out.detail,
       })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("pins_v2_write_outputs", e, { task_id: v2.task_id })
     }
     return sendJson(res, 200, { ok: true, pins_result_v2: v2 })
   }
@@ -11025,8 +11024,9 @@ const server = http.createServer(async (req, res) => {
     if (!out.ok) return sendJson(res, 400, out)
     try {
       writePreflightV1Output({ repoRoot: SCC_REPO_ROOT, taskId, outPath: `artifacts/${taskId}/preflight.json`, preflight: out.preflight })
-    } catch {
+    } catch (e) {
       // best-effort
+      noteBestEffort("preflight_v1_write_output_api", e, { task_id: taskId })
     }
     return sendJson(res, 200, { ok: true, preflight: out.preflight })
   }
@@ -11174,98 +11174,6 @@ const server = http.createServer(async (req, res) => {
     if (!rollup.ok || !alsoRollback) return sendJson(res, rollup.ok ? 200 : 500, { ...rollup, rollback: null })
     const rb = await runSccPythonOp({ scriptRel: "tools/scc/ops/playbook_rollback.py", args: [], timeoutMs: 300000 })
     return sendJson(res, rollup.ok && rb.ok ? 200 : 500, { ...rollup, rollback: rb })
-  }
-
-  if (pathname === "/nav" && method === "GET") {
-    return sendJson(res, 200, {
-      base: `http://127.0.0.1:${gatewayPort}`,
-      scc: SCC_PREFIXES,
-      opencode: "/opencode/*",
-      docs: "/docs/*",
-      board: "/board/*",
-      pools: "/pools",
-      config: {
-        schema: "/config/schema",
-        get: "/config",
-        set: "/config/set",
-      },
-      models: {
-        list: "/models",
-        set: "/models/set",
-      },
-      designer: {
-        state: "/designer/state",
-        freeze: "/designer/freeze",
-        context_pack: "/designer/context_pack",
-      },
-      map: "/map",
-      map_v1: {
-        summary: "/map/v1",
-        version: "/map/v1/version",
-        query: "/map/v1/query?q=...&limit=20",
-        link_report: "/map/v1/link_report",
-        build: "/map/v1/build",
-      },
-      axioms: "/axioms",
-      task_classes: "/task_classes",
-      pins_templates: "/pins/templates",
-      pins_candidates: "/pins/candidates",
-      pins_v1: { build: "/pins/v1/build" },
-      events: "/events",
-      preflight_v1: { check: "/preflight/v1/check" },
-      dlq: "/dlq",
-      learned_patterns: {
-        list: "/learned_patterns",
-        summary: "/learned_patterns/summary",
-      },
-      learn_v1: {
-        mine: "/learn/v1/mine",
-        tick: "/learn/v1/tick",
-      },
-      eval_v1: {
-        replay: "/eval/v1/replay",
-      },
-      playbooks_v1: {
-        publish: "/playbooks/v1/publish",
-      },
-      metrics_v1: {
-        rollup: "/metrics/v1/rollup",
-      },
-      instinct: {
-        patterns: "/instinct/patterns",
-        schemas: "/instinct/schemas",
-        playbooks: "/instinct/playbooks",
-        skills_draft: "/instinct/skills_draft",
-      },
-      replay: {
-        task: "/replay/task?task_id=...",
-      },
-      replay_v1: {
-        smoke: "/replay/v1/smoke",
-      },
-      verdict: {
-        get: "/verdict?task_id=...",
-      },
-      executor: {
-        atomic: "/executor/jobs/atomic",
-        jobs: "/executor/jobs",
-        leader: "/executor/leader",
-        failures: "/executor/debug/failures",
-        summary: "/executor/debug/summary",
-        workers: "/executor/workers",
-      },
-      prompts: {
-        registry: "/prompts/registry",
-        render: "/prompts/render",
-      },
-      factory: {
-        policy: "/factory/policy",
-        wip: "/factory/wip",
-        degradation: "/factory/degradation",
-        health: "/factory/health",
-        routing: "/factory/routing?event_type=CI_FAILED",
-      },
-    })
   }
 
   if (pathname === "/pools" && method === "GET") {
@@ -12863,8 +12771,9 @@ const server = http.createServer(async (req, res) => {
               reason: job.status === "done" ? "executor_exit_0" : (job.reason ?? job.error ?? "executor_error"),
             })
           }
-        } catch {
+        } catch (e) {
           // best-effort
+          noteBestEffort("appendStateEvent_executor_complete", e, { task_id: String(boardTask?.id ?? job.boardTaskId ?? "") })
         }
 
         if (boardTask && !isSplitJob) ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStats, snapshotDiff, ciGate: null })

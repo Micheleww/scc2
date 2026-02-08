@@ -77,3 +77,60 @@ test("contracts schemas enforce minimal strictness", () => {
   assert.equal(vVerdict(okVerdict), true, "verdict minimal valid should pass")
   assert.equal(vVerdict({ ...okVerdict, actions: [{ type: "retry", extra: 1 }] }), false, "verdict action additionalProperties should be rejected")
 })
+
+test("all contract schemas are AJV-valid and compile", () => {
+  const root = repoRootFromHere()
+  const contractsDir = path.join(root, "contracts")
+
+  const ajv = new Ajv({ allErrors: true, strict: false })
+  addFormats(ajv)
+
+  function normalizeRefs(obj) {
+    if (!obj || typeof obj !== "object") return obj
+    if (Array.isArray(obj)) {
+      for (let i = 0; i < obj.length; i++) normalizeRefs(obj[i])
+      return obj
+    }
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === "$ref" && typeof v === "string" && v.startsWith("contracts/")) {
+        // The repo uses repo-root-relative refs; AJV resolves refs relative to schema $id.
+        // For the test harness, rewrite them to absolute IDs under a synthetic base.
+        obj[k] = `https://scc.local/${v}`
+      } else {
+        normalizeRefs(v)
+      }
+    }
+    return obj
+  }
+
+  /** @type {string[]} */
+  const schemaFiles = []
+  for (const dirent of fs.readdirSync(contractsDir, { withFileTypes: true })) {
+    if (!dirent.isDirectory()) continue
+    const sub = path.join(contractsDir, dirent.name)
+    for (const f of fs.readdirSync(sub)) {
+      if (f.endsWith(".schema.json")) schemaFiles.push(path.join(sub, f))
+    }
+  }
+  schemaFiles.sort()
+  assert.ok(schemaFiles.length > 0, "expected to find at least 1 schema file")
+
+  for (const p of schemaFiles) {
+    const rel = path.relative(root, p).replaceAll("\\", "/")
+    const schema = loadJson(p)
+    const id = `https://scc.local/${rel}`
+    if (!schema.$id) schema.$id = id
+    normalizeRefs(schema)
+    ajv.addSchema(schema, id)
+    const ok = ajv.validateSchema(schema)
+    assert.equal(ok, true, `schema should be valid: ${rel}`)
+  }
+
+  // Ensure they compile (catches $ref cycles/missing defs early).
+  for (const p of schemaFiles) {
+    const rel = path.relative(root, p).replaceAll("\\", "/")
+    const id = `https://scc.local/${rel}`
+    const validate = ajv.getSchema(id)
+    assert.ok(validate, `schema should compile: ${rel}`)
+  }
+})
