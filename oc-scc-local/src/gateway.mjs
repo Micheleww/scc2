@@ -39,6 +39,8 @@ import { buildPinsFromMapV1, writePinsV1Outputs } from "./pins_builder_v1.mjs"
 import { runPreflightV1, writePreflightV1Output } from "./preflight_v1.mjs"
 import { computeDegradationActionV1, applyDegradationToWipLimitsV1, shouldAllowTaskUnderStopTheBleedingV1 } from "./factory_policy_v1.mjs"
 import { computeVerdictV1 } from "./verifier_judge_v1.mjs"
+import { createRouter } from "./router.mjs"
+import { registerCoreRoutes } from "./router_core.mjs"
 
 const gatewayPort = Number(process.env.GATEWAY_PORT ?? "18788")
 const sccUpstream = new URL(process.env.SCC_UPSTREAM ?? "http://127.0.0.1:18789")
@@ -130,6 +132,10 @@ const routerStatsEnabled = String(process.env.ROUTER_STATS_ENABLED ?? "true").to
 const routerStatsTail = Number(process.env.ROUTER_STATS_TAIL ?? "6000")
 const routerStatsMinSamples = Number(process.env.ROUTER_STATS_MIN_SAMPLES ?? "5")
 const routerStatsTtlMs = Number(process.env.ROUTER_STATS_TTL_MS ?? "120000")
+
+// Router extraction (incremental): we move self-contained routes first, then expand.
+const coreRouter = createRouter()
+registerCoreRoutes({ router: coreRouter })
 
 function estimateParamsB(model) {
   const s = String(model ?? "").toLowerCase()
@@ -10758,6 +10764,34 @@ const server = http.createServer(async (req, res) => {
   const method = req.method ?? "GET"
   const url = new URL(req.url ?? "/", "http://gateway.local")
   const pathname = url.pathname
+
+  // Core router (incremental extraction)
+  const core = await coreRouter.handle(req, res, {
+    gatewayPort,
+    http,
+    fs,
+    path,
+    URL,
+    execLogDir,
+    boardDir,
+    docsRoot,
+    sccUpstream,
+    opencodeUpstream,
+    SCC_REPO_ROOT,
+    gatewayErrorsFile,
+    readJsonlTail,
+    sendJson,
+    listBoardTasks,
+    runningCounts,
+    jobs,
+    quarantineActive,
+    repoUnhealthyActive,
+    loadRepoHealthState,
+    loadCircuitBreakerState,
+    log,
+    errSink,
+  })
+  if (core.handled) return
 
   // SCC Dev Monitor UI (local only, file-backed).
   if ((pathname === "/sccdev" || pathname === "/sccdev/") && method === "GET") {
