@@ -1,0 +1,36 @@
+{
+  "schema_version": "scc.role_policy.v1",
+  "role": "workbench_dev",
+  "context_mode": "blank_cli",
+  "allowed_context_refs": ["pins"],
+  "capabilities": {
+    "can_plan": true,
+    "can_modify_contracts": true,
+    "can_write_code": true,
+    "can_run_tests": true,
+    "can_emit_events": true
+  },
+  "permissions": {
+    "read": { "pins_required": true, "allow_paths": [], "deny_paths": ["**/secrets/**", "**/.scc_secrets/**"] },
+    "write": {
+      "allow_paths": ["oc-scc-local/**", "contracts/**", "tools/**", "scc-top/**", "docs/**", "scripts/**", ".github/**", "roles/**", "skills/**", "README.md"],
+      "deny_paths": ["**/secrets/**", "**/.scc_secrets/**"]
+    },
+    "tools": { "allow": ["git", "rg", "node", "npm", "python", "pytest", "powershell"], "deny": ["network"] }
+  },
+  "required_outputs": {
+    "artifacts": ["artifacts/report.md", "artifacts/selftest.log", "artifacts/evidence/", "artifacts/patch.diff", "artifacts/submit.json"],
+    "submit_schema": "contracts/submit/submit.schema.json"
+  },
+  "gates": {
+    "preflight_required": true,
+    "hygiene_required": true,
+    "max_attempts": 4,
+    "stop_conditions": ["PINS_INSUFFICIENT", "SCOPE_CONFLICT", "CI_FAILED"]
+  },
+  "events": {
+    "must_emit_on_fail": ["PINS_INSUFFICIENT", "CI_FAILED", "EXECUTOR_ERROR", "POLICY_VIOLATION"],
+    "must_emit_on_success": ["SUCCESS"]
+  }
+}
+

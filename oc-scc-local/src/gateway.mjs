@@ -10835,7 +10835,7 @@ const server = http.createServer(async (req, res) => {
     readJsonlTail,
     sendJson,
     listBoardTasks,
-    runningCounts,
+    runningCounts: runningCountsAll,
     jobs,
     listWorkers,
     stateEventsFile,

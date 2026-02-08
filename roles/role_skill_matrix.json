@@ -25,6 +25,7 @@
     "verifier_judge": ["evidence.verify_triplet", "tests.run_allowed", "policy.check_scope"],
     "ssot_curator": ["ssot.update_index", "ssot.sync_apply", "navigation"],
     "retry_orchestrator": ["retry.plan", "queue.partition", "routing.fallback"],
+    "workbench_dev": ["implementation", "patch_only", "glue_code", "min_diff", "map.query", "map.build", "tests.run_allowed", "policy.check_scope", "evidence.verify_triplet"],
     "stability_controller": ["stability.control", "queue.partition", "bottleneck_analysis", "routing.fallback"],
     "playbook_publisher": ["playbook.publish", "status.summarize_events", "gap_analysis"],
     "eval_curator": ["eval.curate_manifest", "replay.run_smoke", "smoke_tests", "tests.run_allowed"],

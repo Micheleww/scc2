@@ -23,6 +23,7 @@
     { "role": "preflight_gate", "policy": "roles/preflight_gate.json" },
     { "role": "qa", "policy": "roles/qa.json" },
     { "role": "retry_orchestrator", "policy": "roles/retry_orchestrator.json" },
+    { "role": "workbench_dev", "policy": "roles/workbench_dev.json" },
     { "role": "release_integrator", "policy": "roles/release_integrator.json" },
     { "role": "split", "policy": "roles/split.json" },
     { "role": "ssot_curator", "policy": "roles/ssot_curator.json" },
