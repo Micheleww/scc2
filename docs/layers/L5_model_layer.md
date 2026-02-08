@@ -154,6 +154,32 @@ L5 模型层
     └─ 提供成本数据给 → L12 成本层
 ```
 
+### 5.2.4 模型路由策略（来自 MODEL_ROUTING）
+
+**Strong -> Weak Ladder 路由**
+
+Gateway (`tools/oc-scc-local/src/gateway.mjs`) 支持 `opencodecli` 和 `codex` 作业的"强到弱"模型阶梯。
+
+**关键行为**:
+- 模型池 (`MODEL_POOL_FREE`, `MODEL_POOL_VISION`) 按估计参数量自动排序（如 `27B`, `70B`）
+- 优先使用 `kimi-k2.5`（如果可用）
+- 根据 `MODEL_ROUTING_MODE` 选择模型：
+  - `rr`: 池内轮询（之前的行为）
+  - `strong_first`: 始终使用池中最强模型
+  - `ladder`: 每任务阶梯（强 -> 弱）
+
+**故障自动重排队**:
+- 在模型节流/认证故障（`rate_limited`, `unauthorized`, `forbidden`）时
+- 任务自动重排队并推进阶梯（有界）
+
+**运行时配置** (`tools/oc-scc-local/config/runtime.env`):
+```
+MODEL_ROUTING_MODE=ladder
+AUTO_REQUEUE_MODEL_FAILURES=true
+AUTO_REQUEUE_MODEL_FAIL_MAX=2
+AUTO_REQUEUE_MODEL_FAIL_COOLDOWN_MS=60000
+```
+
 ---
 
 
