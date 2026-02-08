@@ -1146,7 +1146,17 @@ def create_app(config: Optional[ServerConfig] = None) -> FastAPI:
          return '<div class="small">phase=' + esc(ph) + (msg ? (' msg=' + esc(msg)) : '') + tokLine + ctxLine + '</div>';
        }
        function esc(s){
-         return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+         // Escape for HTML text/attribute contexts.
+         return String(s??'')
+           .replaceAll('&','&amp;')
+           .replaceAll('<','&lt;')
+           .replaceAll('>','&gt;')
+           .replaceAll('\"','&quot;')
+           .replaceAll(\"'\",'&#39;');
+       }
+       function jsStr(s){
+         // Safe JS string literal for inline handler args.
+         return JSON.stringify(String(s??''));
        }
        function fmtS(n){
          if (n == null) return '-';
@@ -1163,33 +1173,33 @@ def create_app(config: Optional[ServerConfig] = None) -> FastAPI:
              root.textContent = '失败: ' + JSON.stringify(data);
              return;
            }
-           let html = '<div class="small">ts_utc: '+(data.ts_utc||'-')+'</div>';
+           let html = '<div class="small">ts_utc: '+esc(data.ts_utc||'-')+'</div>';
            const runs = (data.runs||[]);
           if (!runs.length){
             html += '<div style="margin-top:8px">暂无运行。</div>';
             root.innerHTML = html;
             return;
           }
-          for (const r of runs){
-           const s = (r.summary||{});
-           html += '<div class="card" style="margin-top:12px">';
-           const stale = r.stale_120s ? '<span class="badge warn">stale&gt;120s</span>' : '';
-           const age = (r.age_s==null?'-':fmtS(r.age_s));
-           html += '<div class="row"><div class="mono" style="flex:1"><b>run_id</b>: '+(r.run_id||'-')+' '+stale+'</div>';
-           html += '<button class="danger" onclick="cancelRun(\\''+(r.run_id||'')+'\\')">取消 Run</button></div>';
-            html += '<div class="small">model='+(s.model||'-')+' max_outstanding='+(s.max_outstanding??'-')+' timeout_s='+(s.timeout_s??'-')+' updated='+(r.updated_utc||'-')+' age='+age+'</div>';
-            html += '<table class="table mono" style="margin-top:8px"><thead><tr><th>父任务</th><th>状态</th><th>耗时</th><th>产物</th><th>操作</th></tr></thead><tbody>';
-            for (const p of (s.parents||[])){
-              const pref = p.artifacts_prefix || '';
-              html += '<tr>';
-              html += '<td>'+ (p.id||'') +'</td>';
-              html += '<td>'+ badgeFor(p) +' exit='+(p.exit_code==null?'-':p.exit_code) + phaseLine(p) +'</td>';
-              html += '<td>'+ fmtS(p.duration_s) +'</td>';
-              html += '<td>'+(pref?('<button class=\"primary\" onclick=\"openOverlay(\\'/cp/files/list?prefix='+encodeURIComponent(pref)+'&recursive=true\\',\\'产物：'+esc(pref)+'\\')\">查看</button>'):'-')+'</td>';
+           for (const r of runs){
+            const s = (r.summary||{});
+            html += '<div class="card" style="margin-top:12px">';
+            const stale = r.stale_120s ? '<span class="badge warn">stale&gt;120s</span>' : '';
+            const age = (r.age_s==null?'-':fmtS(r.age_s));
+           html += '<div class="row"><div class="mono" style="flex:1"><b>run_id</b>: '+esc(r.run_id||'-')+' '+stale+'</div>';
+           html += '<button class="danger" onclick="cancelRun('+jsStr(r.run_id||'')+')">取消 Run</button></div>';
+             html += '<div class="small">model='+esc(s.model||'-')+' max_outstanding='+esc(s.max_outstanding??'-')+' timeout_s='+esc(s.timeout_s??'-')+' updated='+esc(r.updated_utc||'-')+' age='+esc(age)+'</div>';
+             html += '<table class="table mono" style="margin-top:8px"><thead><tr><th>父任务</th><th>状态</th><th>耗时</th><th>产物</th><th>操作</th></tr></thead><tbody>';
+             for (const p of (s.parents||[])){
+               const pref = p.artifacts_prefix || '';
+               html += '<tr>';
+               html += '<td>'+ esc(p.id||'') +'</td>';
+               html += '<td>'+ badgeFor(p) +' exit='+(p.exit_code==null?'-':p.exit_code) + phaseLine(p) +'</td>';
+               html += '<td>'+ fmtS(p.duration_s) +'</td>';
+               html += '<td>'+(pref?('<button class=\"primary\" onclick=\"openOverlay(\\'/cp/files/list?prefix='+encodeURIComponent(pref)+'&recursive=true\\',\\'产物：'+esc(pref)+'\\')\">查看</button>'):'-')+'</td>';
               const tail = p.log_tail || {};
               const stderr = (tail.stderr||'').trim();
               const stdout = (tail.stdout||'').trim();
-              html += '<td><button class="danger" onclick="cancelParent(\\''+(r.run_id||'')+'\\',\\''+(p.id||'')+'\\')">取消 Parent</button>';
+               html += '<td><button class="danger" onclick="cancelParent('+jsStr(r.run_id||'')+','+jsStr(p.id||'')+')">取消 Parent</button>';
               if (stderr || stdout){
                 html += '<details style="margin-top:6px"><summary class="small" style="cursor:pointer">日志</summary>';
                 if (stderr) html += '<div class="small">stderr tail</div><pre class="mono" style="white-space:pre-wrap; margin:6px 0; border:1px solid rgba(255,255,255,0.10); padding:8px; border-radius:10px;">'+esc(stderr)+'</pre>';

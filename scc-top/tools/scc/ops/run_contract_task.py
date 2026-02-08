@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shlex
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -54,8 +56,20 @@ def _repo_rel(p: Path) -> str:
 
 
 def _run_cmd(cmd: str, *, cwd: Path, env: Dict[str, str], timeout_s: int) -> Tuple[int, str, str]:
+    # Avoid `shell=True` to prevent command injection. Tasks/contracts can be externally supplied.
+    # If you really need a shell pipeline, run an explicit shell executable with args (powershell/bash).
+    if not isinstance(cmd, str):
+        raise TypeError("cmd must be string")
+
+    if re.search(r"[&|;<>`\r\n]", cmd) or (os.name == "nt" and re.search(r"[%^]", cmd)):
+        raise SystemExit(f"refusing to run unsafe command string (contains shell metacharacters): {cmd!r}")
+
+    argv = shlex.split(cmd, posix=(os.name != "nt"))
+    if not argv:
+        raise SystemExit("refusing to run empty command")
+
     p = subprocess.run(
-        cmd,
+        argv,
         cwd=str(cwd),
         env=env,
         capture_output=True,
@@ -63,7 +77,7 @@ def _run_cmd(cmd: str, *, cwd: Path, env: Dict[str, str], timeout_s: int) -> Tup
         encoding="utf-8",
         errors="replace",
         timeout=timeout_s,
-        shell=True,
+        shell=False,
     )
     return int(p.returncode), (p.stdout or ""), (p.stderr or "")
 

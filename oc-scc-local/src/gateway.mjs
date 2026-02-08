@@ -1361,12 +1361,12 @@ function toYaml(value, indent = 0) {
     const lines = []
     for (const item of value) {
       if (item && typeof item === "object") {
-        lines.push(`${pad}- ${toYaml(item, indent + 2).replace(/^\\s*/, "")}`)
+        lines.push(`${pad}- ${toYaml(item, indent + 2).replace(/^\s*/, "")}`)
       } else {
         lines.push(`${pad}- ${toYaml(item, 0)}`)
       }
     }
-    return lines.join("\\n")
+    return lines.join("\n")
   }
   if (typeof value === "object") {
     const keys = Object.keys(value)
@@ -1376,12 +1376,12 @@ function toYaml(value, indent = 0) {
       const v = value[k]
       if (v && typeof v === "object") {
         const rendered = toYaml(v, indent + 2)
-        lines.push(`${pad}${k}:\\n${rendered}`)
+        lines.push(`${pad}${k}:\n${rendered}`)
       } else {
         lines.push(`${pad}${k}: ${toYaml(v, 0)}`)
       }
     }
-    return lines.join("\\n")
+    return lines.join("\n")
   }
   return yamlEscapeScalar(String(value))
 }
@@ -2219,23 +2219,32 @@ const boardTasks = new Map()
 	  }
 	}
 
- 	let submitSchemaValidate = null
- 	let submitSchemaValidateError = null
- 	function validateSubmitSchema(submit) {
-	  if (!submitSchemaStrict) return { ok: true }
-	  if (submitSchemaValidateError) return { ok: false, reason: "submit_schema_unavailable", error: submitSchemaValidateError }
-	  if (!submitSchemaValidate) {
-	    try {
-	      const schemaPath = path.join(SCC_REPO_ROOT, "contracts", "submit", "submit.schema.json")
-	      const raw = fs.readFileSync(schemaPath, "utf8")
-	      const schema = JSON.parse(raw)
-	      const ajv = new Ajv({ allErrors: true, strict: false, allowUnionTypes: true })
-	      addFormats(ajv)
-	      submitSchemaValidate = ajv.compile(schema)
-	    } catch (e) {
-	      submitSchemaValidateError = String(e?.message ?? e)
-	      return { ok: false, reason: "submit_schema_unavailable", error: submitSchemaValidateError }
- 	}
+  let submitSchemaValidate = null
+  let submitSchemaValidateError = null
+  function validateSubmitSchema(submit) {
+    if (!submitSchemaStrict) return { ok: true }
+    if (submitSchemaValidateError) return { ok: false, reason: "submit_schema_unavailable", error: submitSchemaValidateError }
+    if (!submitSchemaValidate) {
+      try {
+        const schemaPath = path.join(SCC_REPO_ROOT, "contracts", "submit", "submit.schema.json")
+        const raw = fs.readFileSync(schemaPath, "utf8")
+        const schema = JSON.parse(raw.replace(/^\uFEFF/, ""))
+        const ajv = new Ajv({ allErrors: true, strict: false, allowUnionTypes: true })
+        addFormats(ajv)
+        submitSchemaValidate = ajv.compile(schema)
+      } catch (e) {
+        submitSchemaValidateError = String(e?.message ?? e)
+        return { ok: false, reason: "submit_schema_unavailable", error: submitSchemaValidateError }
+      }
+    }
+    const ok = Boolean(submitSchemaValidate(submit))
+    if (ok) return { ok: true }
+    return {
+      ok: false,
+      reason: "invalid_submit_schema",
+      errors: Array.isArray(submitSchemaValidate.errors) ? submitSchemaValidate.errors.slice(0, 12) : null,
+    }
+  }
 
   let verdictSchemaValidate = null
   let verdictSchemaValidateError = null
@@ -2263,15 +2272,6 @@ const boardTasks = new Map()
       errors: Array.isArray(verdictSchemaValidate.errors) ? verdictSchemaValidate.errors.slice(0, 12) : null,
     }
   }
-	  }
-	  const ok = Boolean(submitSchemaValidate(submit))
-	  if (ok) return { ok: true }
-	  return {
-	    ok: false,
-	    reason: "invalid_submit_schema",
-	    errors: Array.isArray(submitSchemaValidate.errors) ? submitSchemaValidate.errors.slice(0, 12) : null,
-	  }
-	}
 
 const ROLE_NAMES = roleSystem
   ? Array.from(roleSystem.roles).sort((a, b) => a.localeCompare(b))

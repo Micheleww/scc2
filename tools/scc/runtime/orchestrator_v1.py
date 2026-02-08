@@ -109,6 +109,7 @@ def main() -> int:
     ap.add_argument("--lane", default="", help="Lane override (fastlane/mainlane/batchlane/dlq/quarantine)")
     ap.add_argument("--executor", default="noop", choices=["noop", "command", "codex_diff"], help="Executor mode for runtime")
     ap.add_argument("--executor-cmd", default="", help="If executor=command, command to run")
+    ap.add_argument("--executor-argv-json", default="", help="If executor=command, JSON array argv to execute (preferred; shell-free).")
     ap.add_argument("--snapshot", action="store_true", help="Snapshot+rollback primitive")
     ap.add_argument("--codex-bin", default="codex", help="Codex CLI binary")
     ap.add_argument("--codex-model", default="", help="Codex model")
@@ -185,7 +186,10 @@ def main() -> int:
             args.executor,
         ]
         if args.executor == "command":
-            cmd += ["--executor-cmd", str(args.executor_cmd)]
+            if str(args.executor_argv_json or "").strip():
+                cmd += ["--executor-argv-json", str(args.executor_argv_json)]
+            else:
+                cmd += ["--executor-cmd", str(args.executor_cmd)]
         if args.executor == "codex_diff":
             cmd += ["--codex-bin", str(args.codex_bin), "--codex-model", str(args.codex_model or "")]
         if args.snapshot:

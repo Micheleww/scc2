@@ -8,6 +8,6 @@
   "properties": {
     "schema_version": { "const": "scc.envelope.v1" },
     "protocol": { "type": "string", "minLength": 1 },
-    "payload": {}
+    "payload": { "type": "object", "minProperties": 1 }
   }
 }

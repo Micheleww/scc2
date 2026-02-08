@@ -5,6 +5,8 @@ import argparse
 import json
 import os
 import pathlib
+import re
+import shlex
 import subprocess
 import sys
 import time
@@ -60,10 +62,34 @@ def _run(cmd: List[str], cwd: pathlib.Path, timeout_s: int, capture: bool = Fals
     return int(p.returncode), (p.stdout or ""), (p.stderr or "")
 
 
+def _parse_cmdline(cmd: str) -> List[str]:
+    """
+    Parse a command string into argv without invoking a shell.
+
+    Security: reject common shell metacharacters.
+    If you need a pipeline, wrap it explicitly as argv:
+    - Windows: powershell -NoProfile -Command "..."
+    - Linux:   bash -lc "..."
+    """
+    if not isinstance(cmd, str):
+        raise TypeError("cmd must be string")
+    if re.search(r"[&|;<>`\r\n]", cmd) or (os.name == "nt" and re.search(r"[%^]", cmd)):
+        raise ValueError(f"unsafe command string (shell metacharacters): {cmd!r}")
+    argv = shlex.split(cmd, posix=(os.name != "nt"))
+    if not argv:
+        raise ValueError("empty command")
+    return [str(x) for x in argv]
+
+
 def _run_shell(cmd: str, cwd: pathlib.Path, timeout_s: int, extra_env: Optional[Dict[str, str]] = None) -> Tuple[int, str]:
-    # Use cmd.exe for consistent Windows behavior. Keep output in evidence logs.
+    # Historical name; intentionally does NOT invoke a shell.
+    try:
+        argv = _parse_cmdline(cmd)
+    except Exception as e:
+        return 2, f"refusing to run command: {e}\n"
+
     p = subprocess.run(
-        ["cmd.exe", "/S", "/C", cmd],
+        argv,
         cwd=str(cwd),
         timeout=int(timeout_s),
         capture_output=True,
@@ -71,6 +97,7 @@ def _run_shell(cmd: str, cwd: pathlib.Path, timeout_s: int, extra_env: Optional[
         encoding="utf-8",
         errors="replace",
         env={**os.environ, "SCC_REPO_ROOT": str(REPO_ROOT), **(extra_env or {})},
+        shell=False,
     )
     out = (p.stdout or "") + (("\n" + p.stderr) if p.stderr else "")
     return int(p.returncode), out
@@ -96,7 +123,8 @@ def main() -> int:
     ap.add_argument("--child", required=True, help="Child task JSON (contracts/child_task/child_task.schema.json)")
     ap.add_argument("--task-id", default="", help="Task id (default: new uuid4)")
     ap.add_argument("--executor", default="noop", choices=["noop", "command", "codex_diff"], help="Execution mode")
-    ap.add_argument("--executor-cmd", default="", help="If executor=command, run this command in repo root (cmd.exe /C).")
+    ap.add_argument("--executor-cmd", default="", help="If executor=command, run this command in repo root (shell-free parsing; deprecated).")
+    ap.add_argument("--executor-argv-json", default="", help="If executor=command, JSON array argv to execute (preferred; shell-free).")
     ap.add_argument("--codex-bin", default="codex", help="Codex CLI binary (for executor=codex_diff)")
     ap.add_argument("--codex-model", default="", help="Model name override (for executor=codex_diff)")
     ap.add_argument("--secret", action="append", default=[], help="Secret key(s) to mount as env SCC_SECRET_<KEY> (repeatable)")
@@ -415,10 +443,22 @@ def main() -> int:
     exec_code = 0
     exec_summary = "noop"
     if args.executor == "command":
-        if not args.executor_cmd.strip():
-            print("FAIL: executor=command requires --executor-cmd")
-            return 2
-        exec_code, log = _run_shell(args.executor_cmd, cwd=REPO_ROOT, timeout_s=900, extra_env=extra_env)
+        argv_json = str(getattr(args, "executor_argv_json", "") or "").strip()
+        if argv_json:
+            try:
+                argv_obj = json.loads(argv_json)
+                if not isinstance(argv_obj, list) or not all(isinstance(x, str) and x.strip() for x in argv_obj):
+                    raise ValueError("argv must be a JSON array of non-empty strings")
+                exec_code, out, err = _run([str(x) for x in argv_obj], cwd=REPO_ROOT, timeout_s=900, capture=True, extra_env=extra_env)
+                log = (out or "") + (("\n" + err) if err else "")
+            except Exception as e:
+                print(f"FAIL: invalid --executor-argv-json: {e}")
+                return 2
+        else:
+            if not args.executor_cmd.strip():
+                print("FAIL: executor=command requires --executor-argv-json or --executor-cmd")
+                return 2
+            exec_code, log = _run_shell(args.executor_cmd, cwd=REPO_ROOT, timeout_s=900, extra_env=extra_env)
         _write_text(evidence_dir / "executor_command.log", log)
         exec_summary = f"command exit_code={exec_code}"
     elif args.executor == "codex_diff":

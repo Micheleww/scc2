@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shlex
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -40,9 +42,23 @@ def _date_utc() -> str:
 def _run_cmd(
     *, repo_root: Path, cmd: str, cwd: Optional[str], timeout_s: Optional[int], env: Optional[dict]
 ) -> Tuple[int, str, str]:
+    # Avoid `shell=True` to prevent command injection. Contracts may come from outside this process.
+    # If you really need a shell pipeline, wrap it explicitly as: ["powershell", "-NoProfile", "-Command", "..."].
+    if not isinstance(cmd, str):
+        raise TypeError("command must be a string")
+
+    # Fail-closed on shell metacharacters; these are the common injection primitives on Windows+POSIX.
+    # Note: allow colon/equals/slash/backslash for paths and flags.
+    if re.search(r"[&|;<>`\r\n]", cmd) or (os.name == "nt" and re.search(r"[%^]", cmd)):
+        raise SystemExit(f"refusing to run unsafe command string (contains shell metacharacters): {cmd!r}")
+
+    argv = shlex.split(cmd, posix=(os.name != "nt"))
+    if not argv:
+        raise SystemExit("refusing to run empty command")
+
     p = subprocess.run(
-        cmd,
-        shell=True,
+        argv,
+        shell=False,
         cwd=str((repo_root / cwd).resolve()) if cwd else str(repo_root),
         env=env,
         capture_output=True,

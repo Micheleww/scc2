@@ -3,11 +3,11 @@
   "$id": "contracts/event/event.schema.json",
   "title": "SCC Event v1 (jsonl row)",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["schema_version", "t", "event_type", "task_id"],
   "properties": {
     "schema_version": { "const": "scc.event.v1" },
-    "t": { "type": "string", "minLength": 1 },
+    "t": { "type": "string", "minLength": 1, "format": "date-time" },
     "event_type": {
       "enum": [
         "SUCCESS",
