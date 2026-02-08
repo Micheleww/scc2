@@ -2138,7 +2138,8 @@ function loadJsonSafe(absPath) {
     if (!absPath || !fs.existsSync(absPath)) return null
     const raw = fs.readFileSync(absPath, "utf8")
     return JSON.parse(raw.replace(/^\uFEFF/, ""))
-  } catch {
+  } catch (e) {
+    errSink.note({ level: "warn", where: "loadJsonSafe", file: String(absPath ?? ""), err: log.errToObject(e) })
     return null
   }
 }
@@ -2149,7 +2150,8 @@ function writeJsonSafe(absPath, obj) {
     fs.mkdirSync(path.dirname(absPath), { recursive: true })
     fs.writeFileSync(absPath, JSON.stringify(obj, null, 2) + "\n", "utf8")
     return true
-  } catch {
+  } catch (e) {
+    errSink.note({ level: "warn", where: "writeJsonSafe", file: String(absPath ?? ""), err: log.errToObject(e) })
     return false
   }
 }
@@ -2160,7 +2162,8 @@ function appendJsonlSafe(absPath, obj) {
     fs.mkdirSync(path.dirname(absPath), { recursive: true })
     fs.appendFileSync(absPath, JSON.stringify(obj) + "\n", "utf8")
     return true
-  } catch {
+  } catch (e) {
+    errSink.note({ level: "warn", where: "appendJsonlSafe", file: String(absPath ?? ""), err: log.errToObject(e) })
     return false
   }
 }
