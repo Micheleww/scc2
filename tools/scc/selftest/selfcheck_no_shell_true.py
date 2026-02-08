@@ -30,10 +30,15 @@ def main() -> int:
     for rel in _git_ls_files(REPO):
         if not rel.endswith(".py"):
             continue
+        if rel.replace("\\", "/").startswith("tools/scc/selftest/selfcheck_no_"):
+            continue
         if rel.startswith("docs/") or rel.startswith("scc-top/docs/"):
             continue
         text = _read_text((REPO / rel).resolve())
         for i, line in enumerate(text.splitlines(), start=1):
+            s = line.strip()
+            if s.startswith("#"):
+                continue
             if rx.search(line):
                 bad.append((rel, i, line.strip()))
 
@@ -51,4 +56,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

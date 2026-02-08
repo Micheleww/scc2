@@ -18,6 +18,8 @@ import { loadCircuitBreakerState as loadCircuitBreakerStateImpl, saveCircuitBrea
 import { loadRepoHealthState as loadRepoHealthStateImpl, saveRepoHealthState as saveRepoHealthStateImpl, repoUnhealthyActive as repoUnhealthyActiveImpl } from "./lib/repo_health_store.mjs"
 import { loadAuditTriggerState as loadAuditTriggerStateImpl, saveAuditTriggerState as saveAuditTriggerStateImpl, loadFlowManagerState as loadFlowManagerStateImpl, saveFlowManagerState as saveFlowManagerStateImpl, loadFeedbackHookState as loadFeedbackHookStateImpl, saveFeedbackHookState as saveFeedbackHookStateImpl } from "./lib/flow_state_store.mjs"
 import { createLogger } from "./lib/logger.mjs"
+import { createJsonlErrorSink } from "./lib/error_sink.mjs"
+import { readJsonBody, readRequestBody, sendJson, sendText, sha1, sha256Hex, stableStringify } from "./utils.mjs"
 import {
   BOARD_LANES,
   BOARD_STATUS,
@@ -43,6 +45,7 @@ const sccUpstream = new URL(process.env.SCC_UPSTREAM ?? "http://127.0.0.1:18789"
 const opencodeUpstream = new URL(process.env.OPENCODE_UPSTREAM ?? "http://127.0.0.1:18790")
 const cfg = getConfig()
 const log = createLogger({ component: "oc-scc-local.gateway" })
+const errSink = createJsonlErrorSink({ file: path.join(cfg.execLogDir, "gateway_errors.jsonl") })
 const codexBin = cfg.codexBin
 // Default to the strongest Codex model we can actually run (validated via codex exec).
 let codexModelDefault = process.env.CODEX_MODEL ?? "gpt-5.3-codex"
@@ -196,7 +199,7 @@ function computeRouterStatsSnapshot() {
     fs.writeFileSync(out, JSON.stringify({ schema_version: "scc.router_stats.v1", t: new Date().toISOString(), tail, by_task_class: byTaskClass, by_model: byModel }, null, 2) + "\n", "utf8")
   } catch (e) {
     log.warn("router stats snapshot write failed", { err: log.errToObject(e) })
-    appendJsonlSafe(gatewayErrorsFile, { t: new Date().toISOString(), level: "warn", where: "router_stats_snapshot", err: log.errToObject(e) })
+    errSink.note({ level: "warn", where: "router_stats_snapshot", err: log.errToObject(e) })
   }
   return routerStatsCache
 }
@@ -558,21 +561,6 @@ function serveStaticFromDir(req, res, { rootDir, relPath }) {
   }
 }
 
-function sendJson(res, status, obj) {
-  const body = JSON.stringify(obj, null, 2)
-  res.statusCode = status
-  res.setHeader("content-type", "application/json; charset=utf-8")
-  res.setHeader("content-length", Buffer.byteLength(body))
-  res.end(body)
-}
-
-function sendText(res, status, body) {
-  res.statusCode = status
-  res.setHeader("content-type", "text/plain; charset=utf-8")
-  res.setHeader("content-length", Buffer.byteLength(body))
-  res.end(body)
-}
-
 function updateCodexModelPolicy({ codexDefault, codexPreferred, paidPool, strictDesignerModel }) {
   if (codexDefault != null) {
     const v = String(codexDefault).trim()
@@ -597,43 +585,6 @@ function updateCodexModelPolicy({ codexDefault, codexPreferred, paidPool, strict
     STRICT_DESIGNER_MODEL = v
   }
   return { ok: true, codexModelDefault, codexPreferredOrder, modelsPaid, STRICT_DESIGNER_MODEL }
-}
-
-function readRequestBody(req, { maxBytes = 2_000_000 } = {}) {
-  return new Promise((resolve) => {
-    const chunks = []
-    let total = 0
-    const limit = Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : 2_000_000
-    req.on("data", (buf) => {
-      total += buf.length
-      if (total > limit) {
-        resolve({ ok: false, error: "body_too_large", maxBytes: limit })
-        try {
-          req.destroy()
-        } catch {
-          // ignore
-        }
-        return
-      }
-      chunks.push(buf)
-    })
-    req.on("end", () => {
-      const raw = Buffer.concat(chunks).toString("utf8")
-      resolve({ ok: true, raw })
-    })
-    req.on("error", (e) => resolve({ ok: false, error: "read_failed", message: String(e?.message ?? e) }))
-  })
-}
-
-async function readJsonBody(req, { maxBytes = 2_000_000 } = {}) {
-  const body = await readRequestBody(req, { maxBytes })
-  if (!body.ok) return body
-  try {
-    const data = JSON.parse(String(body.raw ?? "").replace(/^\uFEFF/, ""))
-    return { ok: true, data }
-  } catch (e) {
-    return { ok: false, error: "json_invalid", message: String(e?.message ?? e) }
-  }
 }
 
 function readDocFile(relPath) {
@@ -1054,8 +1005,8 @@ function buildContractForTask(task, goal) {
 function appendJsonl(file, value) {
   try {
     fs.appendFileSync(file, JSON.stringify(value) + "\n", "utf8")
-  } catch {
-    // best-effort logging; do not break request execution
+  } catch (e) {
+    errSink.note({ level: "warn", where: "appendJsonl", file: String(file ?? ""), err: log.errToObject(e) })
   }
 }
 
@@ -1067,8 +1018,8 @@ function appendStateEvent(value) {
     const file = path.join(SCC_REPO_ROOT, "artifacts", taskId, "events.jsonl")
     fs.mkdirSync(path.dirname(file), { recursive: true })
     appendJsonl(file, value)
-  } catch {
-    // best-effort; do not break execution
+  } catch (e) {
+    errSink.note({ level: "warn", where: "appendStateEvent", err: log.errToObject(e) })
   }
 }
 
@@ -1263,31 +1214,6 @@ function ensureDir(dir) {
   } catch {
     // ignore
   }
-}
-
-function sha1(text) {
-  return crypto.createHash("sha1").update(String(text ?? ""), "utf8").digest("hex")
-}
-
-function sha256Hex(text) {
-  return crypto.createHash("sha256").update(String(text ?? ""), "utf8").digest("hex")
-}
-
-function stableStringify(value) {
-  const seen = new WeakSet()
-  const normalize = (v) => {
-    if (v && typeof v === "object") {
-      if (seen.has(v)) throw new Error("stableStringify: cyclic object")
-      seen.add(v)
-      if (Array.isArray(v)) return v.map(normalize)
-      const keys = Object.keys(v).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-      const out = {}
-      for (const k of keys) out[k] = normalize(v[k])
-      return out
-    }
-    return v
-  }
-  return JSON.stringify(normalize(value))
 }
 
 function normalizeForSignature(text) {
@@ -11265,7 +11191,7 @@ const server = http.createServer(async (req, res) => {
       return
     } catch (e) {
       log.warn("metrics render failed", { err: log.errToObject(e) })
-      appendJsonlSafe(gatewayErrorsFile, { t: new Date().toISOString(), level: "warn", where: "/metrics", err: log.errToObject(e) })
+      errSink.note({ level: "warn", where: "/metrics", err: log.errToObject(e) })
       res.statusCode = 500
       res.setHeader("Content-Type", "text/plain; charset=utf-8")
       res.end(`error: ${String(e?.message ?? e)}\n`)

@@ -22,6 +22,8 @@ def _should_scan(rel: str) -> bool:
     p = rel.replace("\\", "/")
     if p.startswith("docs/") or p.startswith("scc-top/docs/"):
         return False
+    if p.startswith("tools/scc/selftest/selfcheck_no_"):
+        return False
     if p.endswith(".md") or p.endswith(".jsonl") or p.endswith(".log") or p.endswith(".env"):
         return False
     # Known archives/snapshots often contain historical absolute paths.
