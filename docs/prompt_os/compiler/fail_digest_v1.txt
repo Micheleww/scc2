@@ -1,0 +1,43 @@
+== SCC Fail Handling Digest v1 ==
+
+FAIL CODE TABLE:
+  Code                  | Severity | Retry? | Action
+  PINS_INSUFFICIENT     | MED      | Yes    | Request more pins, retry once
+  SCOPE_CONFLICT        | HIGH     | No     | Fail task, log violation
+  CI_FAILED             | MED      | Yes    | Fix code, retry (max 2)
+  SCHEMA_VIOLATION      | HIGH     | Yes    | Fix submit.json, retry once
+  BUDGET_EXCEEDED       | MED      | No     | Halt, report partial progress
+  EXECUTOR_ERROR        | HIGH     | Yes    | Check tool, retry once
+  POLICY_VIOLATION      | CRIT     | No     | Fail task, escalate to human
+  CIRCUIT_OPEN          | HIGH     | No     | Pause dispatch, wait cooldown
+  ROLE_INVALID          | HIGH     | No     | Reject task, check role config
+  CONTRACT_BREACH       | HIGH     | No     | Fail task, log breach details
+
+ON FAILURE:
+  1. Capture error details (code, message, stack if available)
+  2. Write to artifacts/evidence/error.log
+  3. Check if retryable (see table above)
+  4. If retryable AND attempt < max_attempts:
+     → Emit fail code event
+     → Set status to "retry"
+     → Re-enter execution with incremented attempt
+  5. If NOT retryable OR attempts exhausted:
+     → Emit fail code event
+     → Set status to "failed"
+     → Include partial evidence in submit.json
+     → If CRIT severity: escalate to human
+
+ESCALATION CHAIN:
+  Level 0: Auto-retry (handled by scheduler)
+  Level 1: Peer review (reviewer role examines failure)
+  Level 2: Splitter re-decomposes (task too complex)
+  Level 3: Planner re-plans (approach flawed)
+  Level 4: Human intervention (system/policy issue)
+
+NEVER:
+  - Silently swallow errors (no empty catch blocks)
+  - Retry indefinitely (max 2 retries per task)
+  - Escalate without evidence
+  - Mark failed task as done
+
+== END FAIL DIGEST ==

@@ -1,0 +1,41 @@
+== SCC IO Digest v1 ==
+
+INPUT (you receive):
+  context_pack: XML block with pinned file content (max 220KB)
+  goal: Natural language task description
+  files[]: Array of file paths you may modify
+  pins[]: Array of {path, line_window?, reason} for context
+  role: Your assigned role name
+  attempt: Current attempt number
+
+OUTPUT (you must produce):
+  artifacts/submit.json:
+    {
+      "task_id": "string",
+      "status": "done|failed",
+      "summary": "1-2 sentence description of what was done",
+      "files_modified": ["path/to/file"],
+      "tests_passed": true|false,
+      "evidence": ["artifacts/evidence/..."],
+      "events": ["SUCCESS"|"CI_FAILED"|...]
+    }
+  artifacts/report.md: Human-readable summary
+  artifacts/selftest.log: Test execution output
+  artifacts/evidence/: Directory with proof (diffs, screenshots, logs)
+  artifacts/patch.diff: Git diff of all changes
+
+EVIDENCE REQUIREMENTS:
+  - At least 1 evidence file per modified source file
+  - Test output captured in selftest.log
+  - All file modifications reflected in patch.diff
+
+FAIL CODES (emit via events[] when applicable):
+  PINS_INSUFFICIENT — needed context not in pins
+  SCOPE_CONFLICT — attempted write outside files[]
+  CI_FAILED — tests did not pass
+  SCHEMA_VIOLATION — submit.json invalid
+  BUDGET_EXCEEDED — token or time limit hit
+  EXECUTOR_ERROR — tool crashed or unavailable
+  POLICY_VIOLATION — broke hard policy or security rule
+
+== END IO DIGEST ==

@@ -13,6 +13,7 @@
     { "role": "eval_curator", "policy": "roles/eval_curator.json" },
     { "role": "executor", "policy": "roles/executor.json" },
     { "role": "factory_manager", "policy": "roles/factory_manager.json" },
+    { "role": "gateway_engineer", "policy": "roles/gateway_engineer.json" },
     { "role": "integrator", "policy": "roles/integrator.json" },
     { "role": "lessons_miner", "policy": "roles/lessons_miner.json" },
     { "role": "map_curator", "policy": "roles/map_curator.json" },

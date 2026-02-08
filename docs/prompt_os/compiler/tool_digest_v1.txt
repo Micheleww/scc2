@@ -1,0 +1,41 @@
+== SCC Tool Digest v1 ==
+
+AVAILABLE TOOLS (check role.permissions.tools.allow):
+  git     — version control (add, commit, diff, log, status)
+  rg      — ripgrep fast file search
+  node    — JavaScript/Node.js execution
+  python  — Python execution
+  pytest  — Python test runner
+  npm     — Node.js package manager
+  jq      — JSON processor
+
+RESTRICTED (denied by default):
+  network — curl/fetch/wget (requires explicit allow)
+  docker  — container ops (CI only)
+
+PERMISSION CHECK:
+  1. deny list → match = BLOCKED
+  2. allow list → match = ALLOWED
+  3. no match → BLOCKED (default deny)
+
+TOOL RULES:
+  - Only modify files in task.files[]
+  - Capture all stdout/stderr for evidence
+  - Timeout: 120s default, 600s max for tests
+  - Clean up temp files on completion
+  - Never modify global configs (.gitconfig, .npmrc)
+
+IF TOOL FAILS:
+  - Check degradation matrix for fallback
+  - rg fails → use grep
+  - python fails → try node equivalent
+  - git/node fail → HALT (critical tools)
+  - Log failure, emit EXECUTOR_ERROR if no fallback
+
+BUDGET AWARENESS:
+  - Monitor token usage during execution
+  - If >70% budget used: reduce context, summarize
+  - If >90% budget used: complete current step, halt
+  - Emit BUDGET_EXCEEDED when limit hit
+
+== END TOOL DIGEST ==

@@ -28,6 +28,7 @@
     "stability_controller": ["stability.control", "queue.partition", "bottleneck_analysis", "routing.fallback"],
     "playbook_publisher": ["playbook.publish", "status.summarize_events", "gap_analysis"],
     "eval_curator": ["eval.curate_manifest", "replay.run_smoke", "smoke_tests", "tests.run_allowed"],
-    "lessons_miner": ["lessons.mine", "status.summarize_events", "log_review"]
+    "lessons_miner": ["lessons.mine", "status.summarize_events", "log_review"],
+    "gateway_engineer": ["implementation", "patch.apply_minimal", "tests.run_allowed", "policy.check_scope", "evidence.verify_triplet"]
   }
 }
