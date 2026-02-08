@@ -462,6 +462,61 @@ queued → started → produced → verified(pass|fail) → done | dlq
 **最小事件类型**:
 - TASK_QUEUED, TASK_STARTED, TASK_PRODUCED, TASK_VERIFIED, TASK_DONE, TASK_DLQ
 
+### 2.2.9 Contract Minimum Spec（来自SSOT）
+
+**目标**: 定义任何可执行任务所需的最小合同字段
+
+**最小字段（强制）**:
+| 字段 | 说明 |
+|------|------|
+| `goal` | 要实现什么 |
+| `project_id` | 此任务所属的生产项目（必须在catalog中存在） |
+| `scope_allow` | 允许的更改（或EMPTY） |
+| `constraints` | 硬约束 |
+| `acceptance` | 可执行检查（面向机器；命令+证据期望） |
+| `stop_condition` | 何时停止/失败关闭规则 |
+| `commands_hint` | 执行器/验证器的建议命令 |
+
+**必需引用**:
+- `inputs_ref`: 需要的pins/map/paths/oids
+- `outputs_expected`: 预期的artifacts/verdict
+
+**验证器规则（强制）**:
+- 验证器必须仅按acceptance结果判断
+- 没有检查就不能有"看起来不错"的裁决
+
+**模板**:
+```yaml
+goal:
+scope_allow:
+constraints:
+acceptance:
+stop_condition:
+commands_hint:
+inputs_ref:
+outputs_expected:
+```
+
+### 2.2.10 Contractize Pipeline（来自SSOT）
+
+**目标**: 将派生的任务树转换为SSOT下的每任务合同JSON文件
+
+**输入/输出**:
+- 输入: `docs/DERIVED/task_tree.json`
+- 输出合同: `docs/ssot/04_contracts/generated/<task_id>.json`
+
+**作业运行器**:
+```bash
+python tools/scc/ops/contractize_job.py --taskcode CONTRACTIZE_PIPELINE_V010 --area control_plane --run-mvm
+```
+
+**说明**:
+- 作业为生成的合同铸造OID（Postgres注册表）并内联嵌入JSON
+- 作业在 `docs/REPORT/<area>/artifacts/<TaskCode>/` 下生成REPORT + 证据包
+
+**下一步（分发）**:
+合同生成后，leader可选择子集并通过现有委托运行手册分发
+
 ---
 
 
