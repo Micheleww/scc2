@@ -127,6 +127,15 @@ def run(repo: pathlib.Path) -> list[str]:
         if data.get("schema_version") != "scc.eval_manifest.v1":
             errors.append("eval/eval_manifest.json: schema_version != scc.eval_manifest.v1")
 
+    # Context Pack contracts (enterprise execution entrypoint)
+    for p in (
+        "contracts/context_pack/context_pack.schema.json",
+        "contracts/context_pack/context_pack_ref.schema.json",
+        "contracts/context_pack/context_pack_proof.schema.json",
+    ):
+        if not (repo / p).exists():
+            errors.append(f"missing {p}")
+
     # Connectors registry (control-plane)
     cr = repo / "connectors" / "registry.json"
     if not cr.exists():

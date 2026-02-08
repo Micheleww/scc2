@@ -43,6 +43,8 @@ def _facts_from_map(map_obj: dict) -> dict:
             # Keep SSOT entry_points stable: treat selfcheck/test scripts as non-entrypoints.
             if ":selfcheck:" in sid:
                 continue
+            if ":test" in sid:
+                continue
             entry_ids.add(sid)
 
     file_index = map_obj.get("file_index") or {}

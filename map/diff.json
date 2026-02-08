@@ -1,24 +1,22 @@
 {
   "schema_version": "scc.map_diff.v1",
-  "generated_at": "2026-02-08T12:12:13.224Z",
+  "generated_at": "2026-02-08T23:11:30.633Z",
   "previous": {
-    "hash": "sha256:8a710bc9ae957087b19a27ca8ed42e8ed36bd903824794082e2b1d49ac6c5899",
-    "facts_hash": "sha256:ac6373ff720620c3e43a7d1bb73c7d64c5e49e830d1b68426abbe45a3b6dc031"
-  },
-  "current": {
     "hash": "sha256:edf3211492a9c37d3c3afbfa6a42a594f883819a7083bcbaf6ab1f7486ffc376",
     "facts_hash": "sha256:99752875ef2c083ed0e414c00153bd5e6ff27cafdb99b2927671cfa470ec355e"
   },
+  "current": {
+    "hash": "sha256:ba8d50351159782a78ae202061d101ece8b5bb1faba76c9bc00c02242a23ad23",
+    "facts_hash": "sha256:cf9337f58321e78479241c597b5dcf088ffd4bbb18d1d3a8a338182ef242b31b"
+  },
   "added": {
-    "modules": [
-      "scc-top/_docker_ctx_scc/tools/chatgpt_chat_archive_mvp",
-      "scc-top/tools/scc_dev_electron"
-    ],
-    "entry_points": [
-      "pkg:oc-scc-local/package.json:test",
-      "pkg:scc-top/tools/scc_dev_electron/package.json:start"
-    ],
-    "contracts": []
+    "modules": [],
+    "entry_points": [],
+    "contracts": [
+      "contracts/context_pack/context_pack.schema.json",
+      "contracts/context_pack/context_pack_proof.schema.json",
+      "contracts/context_pack/context_pack_ref.schema.json"
+    ]
   },
   "removed": {
     "modules": [],

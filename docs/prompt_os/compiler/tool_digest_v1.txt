@@ -1,0 +1,40 @@
+[SCC TOOL DIGEST v1]
+
+== AVAILABLE TOOLS ==
+Tools are role-gated by policy (tools.allow / tools.deny). Only assume a tool exists if it is explicitly allowed.
+
+Common tools (names may vary by runtime):
+  git        -> version control (status, diff, log, commit)
+  rg         -> fast code/text search (ripgrep)
+  fs.read    -> read files
+  fs.write   -> write files
+  fs.list    -> list directories
+  fs.delete  -> delete files (high risk)
+  patch/apply_patch -> apply minimal diffs (preferred over full rewrites)
+  bash/shell -> run commands in a controlled environment
+  python     -> run scripts / one-off checks
+  node       -> run JavaScript / TypeScript tooling
+  pytest     -> run Python tests
+  network/web/http -> fetch remote resources (ONLY if explicitly allowed)
+
+== TOOL RULES ==
+1. IF a tool is not in tools.allow THEN do not use it.
+2. IF a tool is in tools.deny THEN never use it.
+3. IF network is not explicitly allowed THEN treat all URLs/remote lookups as disallowed.
+4. IF you need to change files THEN stay within pins.allowed_paths (scope-first).
+5. Prefer: rg/search -> targeted reads -> minimal patch -> run allowed tests.
+6. Never fabricate tool output; only report what tools actually returned.
+7. Keep workspace clean: no stray files, no new deps without approval.
+8. All tool invocations may be logged; avoid secrets in commands/output.
+
+== RISK LEVELS (GUIDE) ==
+LOW:    rg, git diff/status, fs.read
+MEDIUM: fs.write, apply_patch, python/node execution, pytest
+HIGH:   fs.delete, network/web, broad recursive writes, privilege changes
+
+== API / MODEL CALL RULES (IF APPLICABLE) ==
+- Retry transient API failures with exponential backoff: 2s, 4s, 8s (max 3).
+- Track per-call token usage and validate response format before acting.
+- Use tier fallback when configured: Tier1 -> Tier2 -> Tier3.
+
+[END TOOL DIGEST]

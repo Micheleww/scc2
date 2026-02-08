@@ -46,6 +46,13 @@ import { registerSccDevRoutes } from "./router_sccdev.mjs"
 import { registerConfigRoutes } from "./router_config.mjs"
 import { registerModelsRoutes } from "./router_models.mjs"
 import { registerPromptsRoutes } from "./router_prompts.mjs"
+import {
+  packJsonPathForId as packJsonPathForIdV1,
+  packTxtPathForId as packTxtPathForIdV1,
+  loadJsonFile as loadJsonFileV1,
+  renderSccContextPackV1 as renderSccContextPackV1Impl,
+  validateSccContextPackV1 as validateSccContextPackV1Impl,
+} from "./context_pack_v1.mjs"
 
 const gatewayPort = Number(process.env.GATEWAY_PORT ?? "18788")
 const sccUpstream = new URL(process.env.SCC_UPSTREAM ?? "http://127.0.0.1:18789")
@@ -293,6 +300,8 @@ const threadDir = path.join(execLogDir, "threads")
 const requirePins = String(process.env.EXEC_REQUIRE_PINS ?? "false").toLowerCase() === "true"
 const requirePinsTemplate = String(process.env.EXEC_REQUIRE_PINS_TEMPLATE ?? "false").toLowerCase() === "true"
 const requireContract = String(process.env.EXEC_REQUIRE_CONTRACT ?? "false").toLowerCase() === "true"
+// Enterprise default: all executions must be preceded by a rendered slot-based Context Pack v1 (fail-closed).
+const requireContextPackV1 = String(process.env.CONTEXT_PACK_V1_REQUIRED ?? "true").toLowerCase() !== "false"
 const autoPinsCandidates = String(process.env.AUTO_PINS_CANDIDATES ?? "true").toLowerCase() !== "false"
 const autoFilesFromText = String(process.env.AUTO_FILES_FROM_TEXT ?? "true").toLowerCase() !== "false"
 const autoPinsFromFiles = String(process.env.AUTO_PINS_FROM_FILES ?? "true").toLowerCase() !== "false"
@@ -5718,9 +5727,100 @@ function dispatchBoardTaskToExecutor(id) {
     reason: "dispatch",
   })
 
+  // Render slot-based Context Pack v1 as the single legal carrier for execution.
+  // Fail-closed by default (enterprise mode), but can be disabled via CONTEXT_PACK_V1_REQUIRED=false.
+  let cpv1 = null
+  try {
+    const out = renderSccContextPackV1Impl({ repoRoot: SCC_REPO_ROOT, taskId: t.id, role: "executor", mode: "execute", budgetTokens: null, getBoardTask })
+    if (out?.ok) {
+      cpv1 = out
+      try {
+        const p = path.join(SCC_REPO_ROOT, "artifacts", String(t.id), "context_pack_v1.json")
+        writeJsonAtomic(p, {
+          schema_version: "scc.context_pack_ref.v1",
+          task_id: t.id,
+          context_pack_id: out.context_pack_id,
+          hash: out.hash,
+          rendered_paths: out.rendered_paths,
+          created_at: new Date().toISOString(),
+          proof_required: true,
+          proof_algo: "sha256(nonce_utf8||bytes)",
+        })
+      } catch (e) {
+        // best-effort: not a correctness blocker; pack itself is already written under artifacts/scc_runs.
+        noteBestEffort("context_pack_v1_ref_write_failed", e, { task_id: t.id, context_pack_id: out?.context_pack_id ?? null })
+      }
+    } else if (requireContextPackV1) {
+      try {
+        const nowTs = Date.now()
+        t.status = "failed"
+        t.lastJobStatus = "failed"
+        t.lastJobReason = "context_pack_v1_render_failed"
+        t.lastJobFinishedAt = nowTs
+        t.updatedAt = nowTs
+        putBoardTask(t)
+        appendStateEvent({
+          schema_version: "scc.event.v1",
+          t: new Date().toISOString(),
+          event_type: "POLICY_VIOLATION",
+          task_id: t.id,
+          parent_id: t.parentId ?? null,
+          kind: t.kind ?? null,
+          status: t.status,
+          role: t.role ?? null,
+          area: t.area ?? null,
+          lane: t.lane ?? null,
+          task_class: t.task_class_id ?? t.task_class_candidate ?? null,
+          executor: null,
+          model: null,
+          reason: "context_pack_v1_render_failed",
+          details: out ?? null,
+        })
+      } catch (e) {
+        noteBestEffort("appendStateEvent_context_pack_v1_render_failed", e, { task_id: t.id })
+      }
+      appendJsonl(routerFailuresFile, { t: new Date().toISOString(), task_id: t.id, reason: "context_pack_v1_render_failed", details: out ?? null })
+      return { ok: false, error: "context_pack_v1_render_failed", details: out ?? null }
+    }
+  } catch (e) {
+    if (requireContextPackV1) {
+      try {
+        const nowTs = Date.now()
+        t.status = "failed"
+        t.lastJobStatus = "failed"
+        t.lastJobReason = "context_pack_v1_render_exception"
+        t.lastJobFinishedAt = nowTs
+        t.updatedAt = nowTs
+        putBoardTask(t)
+        appendStateEvent({
+          schema_version: "scc.event.v1",
+          t: new Date().toISOString(),
+          event_type: "POLICY_VIOLATION",
+          task_id: t.id,
+          parent_id: t.parentId ?? null,
+          kind: t.kind ?? null,
+          status: t.status,
+          role: t.role ?? null,
+          area: t.area ?? null,
+          lane: t.lane ?? null,
+          task_class: t.task_class_id ?? t.task_class_candidate ?? null,
+          executor: null,
+          model: null,
+          reason: "context_pack_v1_render_exception",
+          details: { message: String(e?.message ?? e) },
+        })
+      } catch (e2) {
+        noteBestEffort("appendStateEvent_context_pack_v1_render_exception", e2, { task_id: t.id })
+      }
+      appendJsonl(routerFailuresFile, { t: new Date().toISOString(), task_id: t.id, reason: "context_pack_v1_render_exception", error: String(e?.message ?? e) })
+      return { ok: false, error: "context_pack_v1_render_exception" }
+    }
+  }
+
   const job = makeJob({ prompt, model: payload.model, executor: payload.executor, taskType: payload.taskType, timeoutMs })
   job.runner = payload.runner === "internal" ? "internal" : "external"
   job.contextPackId = ctx.id
+  job.contextPackV1Id = cpv1?.context_pack_id ?? null
   job.contextBytes = Number.isFinite(ctx.bytes) ? ctx.bytes : null
   job.contextFiles = Number.isFinite(ctx.fileCount) ? ctx.fileCount : null
   job.contextFilesList = Array.isArray(ctx.files) ? ctx.files : null
@@ -6928,6 +7028,12 @@ function ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStat
     // Always overwrite: external executors are untrusted and may forge artifacts.
     writeFileAlways(path.join(evidenceAbs, "stdout.txt"), String(job.stdout ?? ""))
     writeFileAlways(path.join(evidenceAbs, "stderr.txt"), String(job.stderr ?? ""))
+    if (job.contextPackV1Proof) {
+      writeFileAlways(path.join(evidenceAbs, "context_pack_v1_proof.json"), JSON.stringify(job.contextPackV1Proof, null, 2) + "\n")
+    }
+    if (job.policy_violations) {
+      writeFileAlways(path.join(evidenceAbs, "policy_violations.json"), JSON.stringify(job.policy_violations, null, 2) + "\n")
+    }
     if (ciGate) {
       writeFileAlways(path.join(evidenceAbs, "ci_gate.json"), JSON.stringify(ciGate, null, 2) + "\n")
     }
@@ -6962,11 +7068,16 @@ function ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStat
     lines.push(`- status: ${job.status ?? ""}`)
     lines.push(`- exit_code: ${job.exit_code ?? ""}`)
     if (ciGate) lines.push(`- ci_gate_ok: ${String(ciGate.ok ?? "")}`)
+    if (job.contextPackV1Id) lines.push(`- context_pack_v1_id: ${String(job.contextPackV1Id)}`)
+    if (job.attestationNonce) lines.push(`- attestation_nonce: ${String(job.attestationNonce)}`)
+    if (job.error === "policy_violation") lines.push(`- policy_violation: ${String(job.reason ?? "policy_violation")}`)
     if (touched.length) lines.push(`- touched_files: ${touched.slice(0, 50).join(", ")}`)
     lines.push("")
     lines.push("Evidence:")
     lines.push(`- ${rel.evidence_dir}stdout.txt`)
     lines.push(`- ${rel.evidence_dir}stderr.txt`)
+    if (job.contextPackV1Proof) lines.push(`- ${rel.evidence_dir}context_pack_v1_proof.json`)
+    if (job.policy_violations) lines.push(`- ${rel.evidence_dir}policy_violations.json`)
     if (ciGate) lines.push(`- ${rel.evidence_dir}ci_gate.json`)
     lines.push(`- ${rel.patch_diff}`)
     writeFileAlways(reportAbs, lines.join("\n") + "\n")
@@ -7093,6 +7204,8 @@ function ensureExternalArtifactsAndSubmit({ job, boardTask, patchText, patchStat
         submit_json: rel.submit_json,
         preflight_json: `artifacts/${taskId}/preflight.json`,
         pins_json: rel.pins_json,
+        context_pack_v1_json: job.contextPackV1Id ? `artifacts/scc_runs/${job.contextPackV1Id}/rendered_context_pack.json` : null,
+        context_pack_v1_txt: job.contextPackV1Id ? `artifacts/scc_runs/${job.contextPackV1Id}/rendered_context_pack.txt` : null,
       },
       replay: {
         dispatch_via: "tools/scc/ops/replay_bundle_dispatch.py",
@@ -7146,6 +7259,8 @@ function getContextPack(id) {
   }
 }
 
+// Slot-based Context Pack v1 lives in `oc-scc-local/src/context_pack_v1.mjs` and is exposed via gateway endpoints.
+
 const makeJob = ({ prompt, model, executor, taskType, timeoutMs }) => ({
   id: newJobId(),
   prompt,
@@ -7171,6 +7286,8 @@ const makeJob = ({ prompt, model, executor, taskType, timeoutMs }) => ({
   warned_long: false,
   threadId: null,
   contextPackId: null,
+  // Slot-based Context Pack v1 (legal carrier; separate from ctxDir markdown pins slices).
+  contextPackV1Id: null,
 })
 
 const ATOMIC_DEFAULT_RULES = [
@@ -9123,7 +9240,108 @@ async function runJob(job) {
 
   let result
   let failureHint = null
+
+  // Internal runner proof: make Context Pack v1 attestation universal (internal and external).
+  // External workers compute these hashes client-side and the gateway verifies them on /complete.
+  // For internal runs, the gateway computes them directly from the run snapshot.
+  try {
+    if (requireContextPackV1 && current.contextPackV1Id) {
+      const runId = String(current.contextPackV1Id ?? "").trim()
+      if (runId) {
+        if (!String(current.attestationNonce ?? "").trim()) {
+          try {
+            current.attestationNonce = crypto.randomBytes(16).toString("hex")
+          } catch {
+            current.attestationNonce = String(Math.random()).slice(2) + String(Date.now())
+          }
+        }
+        const nonce = String(current.attestationNonce ?? "").trim()
+        const readBytes = (abs) => {
+          try {
+            return fs.readFileSync(abs)
+          } catch {
+            return null
+          }
+        }
+        const sha = (buf) => {
+          if (!buf) return null
+          return `sha256:${crypto.createHash("sha256").update(buf).digest("hex")}`
+        }
+        const attest = (buf) => {
+          if (!buf) return null
+          return `sha256:${crypto.createHash("sha256").update(nonce, "utf8").update(buf).digest("hex")}`
+        }
+
+        const runDir = path.join(SCC_REPO_ROOT, "artifacts", "scc_runs", runId)
+        const packAbs = path.join(runDir, "rendered_context_pack.json")
+        const packBuf = readBytes(packAbs)
+        const tbDir = path.join(runDir, "task_bundle")
+        const files = ["manifest.json", "pins.json", "preflight.json", "task.json"]
+        const replayAbs = path.join(tbDir, "replay_bundle.json")
+        if (fs.existsSync(replayAbs)) files.push("replay_bundle.json")
+
+        const missing = []
+        if (!packBuf) missing.push("rendered_context_pack.json")
+        for (const f of files) {
+          const p = path.join(tbDir, f)
+          if (!fs.existsSync(p)) missing.push(`task_bundle/${f}`)
+        }
+        if (missing.length) throw new Error(`context_pack_v1_run_missing_files: ${missing.join(", ")}`)
+
+        const filesSha = {}
+        const filesAtt = {}
+        for (const f of files) {
+          const buf = readBytes(path.join(tbDir, f))
+          filesSha[f] = sha(buf)
+          filesAtt[f] = attest(buf)
+        }
+
+        current.contextPackV1Proof = {
+          schema_version: "scc.context_pack_v1_proof.v1",
+          t: new Date().toISOString(),
+          context_pack_v1_id_job: runId,
+          context_pack_v1_id_payload: null,
+          attestation_nonce_job: nonce,
+          attestation_nonce_payload: null,
+          pack_json_sha256_payload: sha(packBuf),
+          pack_json_attest_sha256_payload: attest(packBuf),
+          task_bundle_manifest_sha256_payload: filesSha["manifest.json"] ?? null,
+          task_bundle_files_sha256_payload: filesSha,
+          task_bundle_files_attest_sha256_payload: filesAtt,
+          computed_by: "gateway_internal",
+        }
+        jobs.set(job.id, current)
+        saveState()
+      }
+    }
+  } catch (e) {
+    // Fail-closed: do not run model if the execution entrypoint cannot be proven.
+    result = {
+      ok: false,
+      code: 1,
+      stdout: "",
+      stderr: `[gateway] context_pack_v1 proof compute failed: ${String(e?.message ?? e)}`,
+    }
+  }
+  if (result && result.ok === false) {
+    // Skip execution; completion pipeline will persist artifacts and verdict with failure.
+  }
+
   const prefixParts = []
+  if (current.contextPackV1Id) {
+    const id = String(current.contextPackV1Id ?? "").trim()
+    const p = id ? packTxtPathForIdV1({ repoRoot: SCC_REPO_ROOT, id }) : null
+    if (p && fs.existsSync(p)) {
+      try {
+        // Keep model input bounded; pack itself already token-slim by construction.
+        const text = fs.readFileSync(p, "utf8")
+        prefixParts.push(`<context_pack_v1 id="${id}">\n${text}\n</context_pack_v1>\n`)
+      } catch (e) {
+        // best-effort: do not crash job start, but leave an audit hint in logs.
+        noteBestEffort("context_pack_v1_read_failed", e, { id, path: p })
+      }
+    }
+  }
   if (current.contextPackId) {
     const ctxText = getContextPack(current.contextPackId)
     if (ctxText) prefixParts.push(`<context_pack id="${current.contextPackId}">\n${ctxText}\n</context_pack>\n`)
@@ -9138,8 +9356,9 @@ async function runJob(job) {
   }
   const injected = prefixParts.length ? prefixParts.join("\n") + "\n" + current.prompt : current.prompt
 
-  if (job.executor === "opencodecli") {
-    result = await occliRunSingle(injected, job.model || occliModelDefault, { timeoutMs: current.timeoutMs ?? undefined })
+  if (!result) {
+    if (job.executor === "opencodecli") {
+      result = await occliRunSingle(injected, job.model || occliModelDefault, { timeoutMs: current.timeoutMs ?? undefined })
     // Retry once with default model if submit missing
     const firstSubmit = extractSubmitResult(result.stdout)
     if (result.ok && !firstSubmit && (current.attempts ?? 1) < 2) {
@@ -9148,11 +9367,12 @@ async function runJob(job) {
       result = await occliRunSingle(injected, occliModelDefault, { timeoutMs: current.timeoutMs ?? undefined })
       job.model = occliModelDefault
     }
-  } else {
-    result = await codexRunSingle(injected, job.model || codexModelDefault, { timeoutMs: current.timeoutMs ?? undefined })
-    if (result?.model_used && typeof result.model_used === "string" && result.model_used.trim()) {
-      // Preserve configured job.model, but record the actual model used after fallbacks.
-      current.model_effective = result.model_used.trim()
+    } else {
+      result = await codexRunSingle(injected, job.model || codexModelDefault, { timeoutMs: current.timeoutMs ?? undefined })
+      if (result?.model_used && typeof result.model_used === "string" && result.model_used.trim()) {
+        // Preserve configured job.model, but record the actual model used after fallbacks.
+        current.model_effective = result.model_used.trim()
+      }
     }
   }
 
@@ -10508,6 +10728,7 @@ function claimNextJob({ executor, worker }) {
   }
   const queued = Array.from(jobs.values())
     .filter((j) => j.status === "queued" && j.runner === "external" && j.executor === executor)
+    .filter((j) => (!requireContextPackV1 ? true : Boolean(String(j.contextPackV1Id ?? "").trim())))
     .filter((j) => canRunModel(j.model))
     .sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
   return queued[0] ?? null
@@ -10515,6 +10736,18 @@ function claimNextJob({ executor, worker }) {
 
 function buildInjectedPrompt(job) {
   const prefixParts = []
+  if (job.contextPackV1Id) {
+    const id = String(job.contextPackV1Id ?? "").trim()
+    const p = id ? packTxtPathForIdV1({ repoRoot: SCC_REPO_ROOT, id }) : null
+    if (p && fs.existsSync(p)) {
+      try {
+        const text = fs.readFileSync(p, "utf8")
+        prefixParts.push(`<context_pack_v1 id="${id}">\n${text}\n</context_pack_v1>\n`)
+      } catch (e) {
+        noteBestEffort("context_pack_v1_read_failed_buildInjectedPrompt", e, { id, path: p })
+      }
+    }
+  }
   if (job.contextPackId) {
     const ctxText = getContextPack(job.contextPackId)
     if (ctxText) prefixParts.push(`<context_pack id="${job.contextPackId}">\n${ctxText}\n</context_pack>\n`)
@@ -11788,6 +12021,94 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
+  // Slot-based Context Pack v1 (legal semantics via SLOT0..SLOT6; required for execution entrypoints).
+  if (pathname === "/scc/context/render" && method === "POST") {
+    const body = await readJsonBody(req, { maxBytes: 1_000_000 })
+    if (!body.ok) return sendJson(res, 400, { ok: false, error: body.error, message: body.message ?? null })
+    const payload = body.data && typeof body.data === "object" ? body.data : {}
+    const task_id = String(payload.task_id ?? payload.taskId ?? "").trim()
+    const role = String(payload.role ?? "executor").trim().toLowerCase()
+    const mode = String(payload.mode ?? "execute").trim().toLowerCase()
+    const budget_tokens = payload.budget_tokens ?? payload.budgetTokens ?? null
+    if (!task_id) return sendJson(res, 400, { ok: false, error: "missing_task_id" })
+    const out = renderSccContextPackV1Impl({ repoRoot: SCC_REPO_ROOT, taskId: task_id, role, mode, budgetTokens: budget_tokens, getBoardTask })
+    if (!out.ok) return sendJson(res, 400, { ok: false, error: out.error, detail: out.detail ?? null, message: out.message ?? null })
+    return sendJson(res, 200, out)
+  }
+
+  if (pathname.startsWith("/scc/context/pack/") && method === "GET") {
+    const id = pathname.slice("/scc/context/pack/".length).trim()
+    const fmt = String(url.searchParams.get("format") ?? "").trim().toLowerCase()
+    const jsonPath = packJsonPathForIdV1({ repoRoot: SCC_REPO_ROOT, id })
+    const txtPath = packTxtPathForIdV1({ repoRoot: SCC_REPO_ROOT, id })
+    if (!jsonPath || !txtPath) return sendJson(res, 400, { ok: false, error: "invalid_context_pack_id" })
+    if (!fs.existsSync(jsonPath)) return sendJson(res, 404, { ok: false, error: "context_pack_missing", id, path: jsonPath })
+    try {
+      if (fmt === "raw") {
+        // Raw file bytes (as UTF-8 text) for deterministic hashing/replay.
+        return sendText(res, 200, fs.readFileSync(jsonPath, "utf8"))
+      }
+      if (fmt === "txt" || fmt === "text") {
+        const text = fs.readFileSync(txtPath, "utf8")
+        return sendText(res, 200, text)
+      }
+      const data = loadJsonFileV1(jsonPath)
+      if (!data) return sendJson(res, 500, { ok: false, error: "context_pack_read_failed", id, path: jsonPath })
+      return sendJson(res, 200, { ok: true, id, path: `artifacts/scc_runs/${id}/rendered_context_pack.json`, pack: data })
+    } catch (e) {
+      return sendJson(res, 500, { ok: false, error: "context_pack_read_failed", id, message: String(e?.message ?? e) })
+    }
+  }
+
+  // API-first fetch for deterministic task_bundle snapshot associated with a Context Pack v1 run.
+  // This is intentionally allowlisted and read-only to keep Level-2 "hard gate" semantics simple.
+  if (pathname.startsWith("/scc/context/run/") && pathname.includes("/task_bundle/") && method === "GET") {
+    const rest = pathname.slice("/scc/context/run/".length)
+    const idx = rest.indexOf("/task_bundle/")
+    if (idx <= 0) return sendJson(res, 400, { ok: false, error: "invalid_path" })
+    const runId = rest.slice(0, idx).trim()
+    const file = rest.slice(idx + "/task_bundle/".length).trim()
+    const fmt = String(url.searchParams.get("format") ?? "").trim().toLowerCase()
+    const allowed = new Set(["manifest.json", "pins.json", "preflight.json", "replay_bundle.json", "task.json"])
+    if (!runId) return sendJson(res, 400, { ok: false, error: "missing_run_id" })
+    if (!allowed.has(file)) return sendJson(res, 403, { ok: false, error: "file_not_allowed", file })
+
+    const jsonPath = packJsonPathForIdV1({ repoRoot: SCC_REPO_ROOT, id: runId })
+    if (!jsonPath) return sendJson(res, 400, { ok: false, error: "invalid_run_id" })
+    const runDir = path.dirname(jsonPath)
+    const abs = path.join(runDir, "task_bundle", file)
+    if (!fs.existsSync(abs)) return sendJson(res, 404, { ok: false, error: "task_bundle_file_missing", run_id: runId, file })
+    try {
+      if (fmt === "raw") {
+        // Raw file bytes (as UTF-8 text) for deterministic hashing/replay.
+        return sendText(res, 200, fs.readFileSync(abs, "utf8"))
+      }
+      const raw = fs.readFileSync(abs, "utf8")
+      const data = JSON.parse(String(raw).replace(/^\uFEFF/, ""))
+      return sendJson(res, 200, { ok: true, run_id: runId, file, path: `artifacts/scc_runs/${runId}/task_bundle/${file}`, data })
+    } catch (e) {
+      return sendJson(res, 500, { ok: false, error: "task_bundle_file_read_failed", run_id: runId, file, message: String(e?.message ?? e) })
+    }
+  }
+
+  if (pathname === "/scc/context/validate" && method === "POST") {
+    const body = await readJsonBody(req, { maxBytes: 2_000_000 })
+    if (!body.ok) return sendJson(res, 400, { ok: false, error: body.error, message: body.message ?? null })
+    const payload = body.data && typeof body.data === "object" ? body.data : {}
+    const context_pack_id = String(payload.context_pack_id ?? payload.contextPackId ?? "").trim()
+    let pack = payload.pack && typeof payload.pack === "object" ? payload.pack : null
+    if (!pack && context_pack_id) {
+      const p = packJsonPathForIdV1({ repoRoot: SCC_REPO_ROOT, id: context_pack_id })
+      if (!p) return sendJson(res, 400, { ok: false, error: "invalid_context_pack_id" })
+      pack = fs.existsSync(p) ? loadJsonFileV1(p) : null
+      if (!pack) return sendJson(res, 404, { ok: false, error: "context_pack_missing", id: context_pack_id, path: p })
+    }
+    if (!pack) return sendJson(res, 400, { ok: false, error: "missing_pack" })
+    const out = validateSccContextPackV1Impl({ repoRoot: SCC_REPO_ROOT, pack })
+    const code = out.ok ? 200 : 400
+    return sendJson(res, code, { ok: out.ok, ...out })
+  }
+
   if (pathname === "/events" && method === "GET") {
     const limit = Number(url.searchParams.get("limit") ?? "50")
     const areaFilter = String(url.searchParams.get("area") ?? "").trim()
@@ -12293,14 +12614,28 @@ const server = http.createServer(async (req, res) => {
         const threadId = payload.threadId ? String(payload.threadId).trim() : null
         if (threadId) return sendJson(res, 400, { error: "thread_not_allowed_for_executor" })
         const contextPackId = payload.contextPackId ? String(payload.contextPackId).trim() : null
+        const contextPackV1Id = payload.contextPackV1Id ? String(payload.contextPackV1Id).trim() : null
         const taskType = payload.taskType ? String(payload.taskType).trim() : "atomic"
         const timeoutMs = payload.timeoutMs ? Number(payload.timeoutMs) : null
         const runner = payload.runner ? String(payload.runner).trim() : "internal"
         if (!prompt) return sendJson(res, 400, { error: "missing_prompt" })
+
+        // Enterprise fail-closed: do not allow external jobs without a legal Context Pack v1.
+        if (runner === "external" && requireContextPackV1 && !contextPackV1Id) {
+          return sendJson(res, 400, { error: "missing_context_pack_v1", message: "External jobs require payload.contextPackV1Id" })
+        }
+        if (contextPackV1Id) {
+          const p = packJsonPathForIdV1({ repoRoot: SCC_REPO_ROOT, id: contextPackV1Id })
+          const pack = p && fs.existsSync(p) ? loadJsonFileV1(p) : null
+          if (!pack) return sendJson(res, 404, { error: "context_pack_v1_missing", id: contextPackV1Id })
+          const v = validateSccContextPackV1Impl({ repoRoot: SCC_REPO_ROOT, pack })
+          if (!v.ok) return sendJson(res, 400, { error: "invalid_context_pack_v1", details: v })
+        }
         const job = makeJob({ prompt, model, executor, taskType, timeoutMs })
         job.runner = runner === "external" ? "external" : "internal"
         job.threadId = threadId
         job.contextPackId = contextPackId
+        job.contextPackV1Id = contextPackV1Id
         jobs.set(job.id, job)
         schedule()
         return sendJson(res, 202, job)
@@ -12331,6 +12666,7 @@ const server = http.createServer(async (req, res) => {
         const maxBytes = Number(payload.maxBytes ?? 220_000)
         const taskType = payload.taskType ? String(payload.taskType).trim() : "atomic"
         const runner = payload.runner ? String(payload.runner).trim() : "internal"
+        const contextPackV1Id = payload.contextPackV1Id ? String(payload.contextPackV1Id).trim() : null
         const timeoutMsRaw = payload.timeoutMs ? Number(payload.timeoutMs) : null
         const timeoutMs = Number.isFinite(timeoutMsRaw) ? timeoutMsRaw : executor === "opencodecli" ? timeoutOccliMs : timeoutCodexMs
         if (!goal) return sendJson(res, 400, { error: "missing_goal" })
@@ -12341,6 +12677,18 @@ const server = http.createServer(async (req, res) => {
           return sendJson(res, 400, { error: "missing_files_for_codex" })
         }
         if (files.length > 16) return sendJson(res, 400, { error: "too_many_files" })
+
+        // External atomic helper is allowed only with an explicit Context Pack v1 id.
+        if (runner === "external" && requireContextPackV1 && !contextPackV1Id) {
+          return sendJson(res, 400, { error: "missing_context_pack_v1", message: "External atomic jobs require payload.contextPackV1Id" })
+        }
+        if (contextPackV1Id) {
+          const p = packJsonPathForIdV1({ repoRoot: SCC_REPO_ROOT, id: contextPackV1Id })
+          const pack = p && fs.existsSync(p) ? loadJsonFileV1(p) : null
+          if (!pack) return sendJson(res, 404, { error: "context_pack_v1_missing", id: contextPackV1Id })
+          const v = validateSccContextPackV1Impl({ repoRoot: SCC_REPO_ROOT, pack })
+          if (!v.ok) return sendJson(res, 400, { error: "invalid_context_pack_v1", details: v })
+        }
 
         const ctx = pins
           ? createContextPackFromPins({ pins, maxBytes })
@@ -12365,6 +12713,7 @@ const server = http.createServer(async (req, res) => {
         job.runner = runner === "external" ? "external" : "internal"
         job.threadId = threadId
         job.contextPackId = ctx.id
+        job.contextPackV1Id = contextPackV1Id
         jobs.set(job.id, job)
         schedule()
         leader({ level: "info", type: "atomic_job_created", id: job.id, executor, model, taskType, contextPackId: ctx.id })
@@ -12528,6 +12877,15 @@ const server = http.createServer(async (req, res) => {
       const pick = claimNextJob({ executor, worker: w })
       if (pick) {
         const now = Date.now()
+        // Nonce-bound attestation: binds completion proofs to this specific claim/lease.
+        // Policy: sha256(nonce_utf8 || file_bytes). Used for deterministic replay/audit.
+        if (!String(pick.attestationNonce ?? "").trim()) {
+          try {
+            pick.attestationNonce = crypto.randomBytes(16).toString("hex")
+          } catch {
+            pick.attestationNonce = String(Math.random()).slice(2) + String(Date.now())
+          }
+        }
         pick.status = "running"
         pick.workerId = id
         pick.leaseUntil = now + workerLeaseMsDefault
@@ -12546,6 +12904,39 @@ const server = http.createServer(async (req, res) => {
           model: pick.model,
           taskType: pick.taskType,
           timeoutMs: pick.timeoutMs,
+          attestation: pick.attestationNonce
+            ? {
+                nonce: pick.attestationNonce,
+                algo: "sha256(nonce_utf8||bytes)",
+              }
+            : null,
+          contextPackV1Id: pick.contextPackV1Id ?? null,
+          contextPackV1: pick.contextPackV1Id
+            ? {
+                id: pick.contextPackV1Id,
+                pack_json: `artifacts/scc_runs/${pick.contextPackV1Id}/rendered_context_pack.json`,
+                pack_txt: `artifacts/scc_runs/${pick.contextPackV1Id}/rendered_context_pack.txt`,
+                fetch_json: `/scc/context/pack/${pick.contextPackV1Id}`,
+                fetch_json_raw: `/scc/context/pack/${pick.contextPackV1Id}?format=raw`,
+                fetch_txt: `/scc/context/pack/${pick.contextPackV1Id}?format=txt`,
+              }
+            : null,
+          taskBundle: pick.contextPackV1Id
+            ? {
+                id: pick.contextPackV1Id,
+                dir: `artifacts/scc_runs/${pick.contextPackV1Id}/task_bundle`,
+                fetch_manifest: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/manifest.json`,
+                fetch_manifest_raw: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/manifest.json?format=raw`,
+                fetch_pins: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/pins.json`,
+                fetch_pins_raw: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/pins.json?format=raw`,
+                fetch_preflight: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/preflight.json`,
+                fetch_preflight_raw: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/preflight.json?format=raw`,
+                fetch_replay_bundle: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/replay_bundle.json`,
+                fetch_replay_bundle_raw: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/replay_bundle.json?format=raw`,
+                fetch_task: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/task.json`,
+                fetch_task_raw: `/scc/context/run/${pick.contextPackV1Id}/task_bundle/task.json?format=raw`,
+              }
+            : null,
           prompt: buildInjectedPrompt(pick),
         })
       }
@@ -12599,6 +12990,9 @@ const server = http.createServer(async (req, res) => {
     const job = jobs.get(id)
     if (!job) return sendJson(res, 404, { error: "not_found" })
     if (job.runner !== "external") return sendJson(res, 400, { error: "not_external_job" })
+    if (requireContextPackV1 && !String(job.contextPackV1Id ?? "").trim()) {
+      return sendJson(res, 400, { error: "missing_context_pack_v1", message: "External job missing job.contextPackV1Id (enterprise fail-closed)" })
+    }
     let body = ""
     req.on("data", (d) => {
       body += d
@@ -12638,6 +13032,194 @@ const server = http.createServer(async (req, res) => {
         job.stderr = stderr
         job.error = ok ? null : "executor_error"
         job.reason = ok ? null : classifyFailure(job, { stderr, timedOut: false })
+
+        // Enterprise fail-closed: external workers must prove they executed against the bound Context Pack v1 run
+        // and the deterministic task_bundle snapshot associated with it.
+        try {
+          if (requireContextPackV1) {
+            const wantId = String(job.contextPackV1Id ?? "").trim()
+            const gotId = String(payload.contextPackV1Id ?? payload.context_pack_v1_id ?? "").trim()
+            const wantManifestPath = wantId ? path.join(SCC_REPO_ROOT, "artifacts", "scc_runs", wantId, "task_bundle", "manifest.json") : null
+
+            const violations = []
+            if (!wantId) violations.push({ code: "missing_context_pack_v1_on_job", message: "job.contextPackV1Id missing (should be impossible when required)" })
+            if (!gotId) violations.push({ code: "missing_context_pack_v1_on_complete", message: "payload.contextPackV1Id missing" })
+            if (wantId && gotId && wantId !== gotId) violations.push({ code: "context_pack_v1_mismatch", want: wantId, got: gotId })
+
+            const gotManifestSha = String(payload.task_bundle_manifest_sha256 ?? payload.taskBundleManifestSha256 ?? "").trim()
+            if (!gotManifestSha) violations.push({ code: "missing_task_bundle_manifest_sha256", message: "payload.task_bundle_manifest_sha256 missing" })
+
+            let wantManifestSha = null
+            if (wantManifestPath && fs.existsSync(wantManifestPath)) {
+              const buf = fs.readFileSync(wantManifestPath)
+              wantManifestSha = `sha256:${crypto.createHash("sha256").update(buf).digest("hex")}`
+            } else {
+              violations.push({ code: "missing_task_bundle_manifest_file", path: wantManifestPath })
+            }
+            if (wantManifestSha && gotManifestSha && wantManifestSha !== gotManifestSha) {
+              violations.push({ code: "task_bundle_manifest_sha256_mismatch", want: wantManifestSha, got: gotManifestSha })
+            }
+
+            const gotPackJsonSha = String(payload.context_pack_v1_json_sha256 ?? payload.contextPackV1JsonSha256 ?? "").trim()
+            if (!gotPackJsonSha) violations.push({ code: "missing_context_pack_v1_json_sha256", message: "payload.context_pack_v1_json_sha256 missing" })
+            const wantPackPath = wantId ? path.join(SCC_REPO_ROOT, "artifacts", "scc_runs", wantId, "rendered_context_pack.json") : null
+            let wantPackSha = null
+            if (wantPackPath && fs.existsSync(wantPackPath)) {
+              const buf = fs.readFileSync(wantPackPath)
+              wantPackSha = `sha256:${crypto.createHash("sha256").update(buf).digest("hex")}`
+            } else {
+              violations.push({ code: "missing_context_pack_v1_json_file", path: wantPackPath })
+            }
+            if (wantPackSha && gotPackJsonSha && wantPackSha !== gotPackJsonSha) {
+              violations.push({ code: "context_pack_v1_json_sha256_mismatch", want: wantPackSha, got: gotPackJsonSha })
+            }
+
+            // Nonce-bound attestation: prove the worker computed hashes using bytes after claim time.
+            const wantNonce = String(job.attestationNonce ?? "").trim()
+            const gotNonce = String(payload.attestation_nonce ?? payload.attestationNonce ?? payload?.attestation?.nonce ?? "").trim()
+            if (!wantNonce) violations.push({ code: "missing_attestation_nonce_on_job", message: "job.attestationNonce missing" })
+            if (!gotNonce) violations.push({ code: "missing_attestation_nonce_on_complete", message: "payload.attestation_nonce missing" })
+            if (wantNonce && gotNonce && wantNonce !== gotNonce) violations.push({ code: "attestation_nonce_mismatch", want: wantNonce, got: gotNonce })
+
+            const gotPackAttest = String(payload.context_pack_v1_json_attest_sha256 ?? payload.contextPackV1JsonAttestSha256 ?? "").trim()
+            if (!gotPackAttest) violations.push({ code: "missing_context_pack_v1_json_attest_sha256", message: "payload.context_pack_v1_json_attest_sha256 missing" })
+            if (wantNonce && wantPackPath && fs.existsSync(wantPackPath) && gotPackAttest) {
+              const buf = fs.readFileSync(wantPackPath)
+              const want = `sha256:${crypto.createHash("sha256").update(wantNonce, "utf8").update(buf).digest("hex")}`
+              if (want !== gotPackAttest) violations.push({ code: "context_pack_v1_json_attest_sha256_mismatch", want, got: gotPackAttest })
+            }
+
+            const gotFiles = payload.task_bundle_files_sha256 ?? payload.taskBundleFilesSha256 ?? null
+            if (!gotFiles || typeof gotFiles !== "object") {
+              violations.push({ code: "missing_task_bundle_files_sha256", message: "payload.task_bundle_files_sha256 missing or invalid" })
+            } else {
+              const requiredFiles = ["pins.json", "preflight.json", "task.json", "manifest.json"]
+              for (const f of requiredFiles) {
+                const got = String(gotFiles[f] ?? "").trim()
+                if (!got) violations.push({ code: "missing_task_bundle_file_sha256", file: f })
+              }
+              const runDir2 = wantId ? path.join(SCC_REPO_ROOT, "artifacts", "scc_runs", wantId, "task_bundle") : null
+              const shaFile = (absPath) => {
+                try {
+                  const buf = fs.readFileSync(absPath)
+                  return `sha256:${crypto.createHash("sha256").update(buf).digest("hex")}`
+                } catch {
+                  return null
+                }
+              }
+              if (runDir2) {
+                const wantPins = shaFile(path.join(runDir2, "pins.json"))
+                const wantPre = shaFile(path.join(runDir2, "preflight.json"))
+                const wantTask = shaFile(path.join(runDir2, "task.json"))
+                const wantMan = shaFile(path.join(runDir2, "manifest.json"))
+                const wantReplay = fs.existsSync(path.join(runDir2, "replay_bundle.json")) ? shaFile(path.join(runDir2, "replay_bundle.json")) : null
+
+                const cmp = (file, want) => {
+                  if (!want) return violations.push({ code: "task_bundle_file_missing_or_unreadable", file })
+                  const got = String(gotFiles?.[file] ?? "").trim()
+                  if (got && want !== got) violations.push({ code: "task_bundle_file_sha256_mismatch", file, want, got })
+                }
+                cmp("pins.json", wantPins)
+                cmp("preflight.json", wantPre)
+                cmp("task.json", wantTask)
+                cmp("manifest.json", wantMan)
+                if (wantReplay) cmp("replay_bundle.json", wantReplay)
+              }
+            }
+
+            const gotAtt = payload.task_bundle_files_attest_sha256 ?? payload.taskBundleFilesAttestSha256 ?? null
+            if (!gotAtt || typeof gotAtt !== "object") {
+              violations.push({ code: "missing_task_bundle_files_attest_sha256", message: "payload.task_bundle_files_attest_sha256 missing or invalid" })
+            } else if (wantNonce) {
+              const runDir2 = wantId ? path.join(SCC_REPO_ROOT, "artifacts", "scc_runs", wantId, "task_bundle") : null
+              const attestFile = (file) => {
+                try {
+                  const abs = runDir2 ? path.join(runDir2, file) : null
+                  if (!abs || !fs.existsSync(abs)) return null
+                  const buf = fs.readFileSync(abs)
+                  return `sha256:${crypto.createHash("sha256").update(wantNonce, "utf8").update(buf).digest("hex")}`
+                } catch {
+                  return null
+                }
+              }
+              if (runDir2) {
+                const required = ["manifest.json", "pins.json", "preflight.json", "task.json"]
+                for (const f of required) {
+                  const got = String(gotAtt?.[f] ?? "").trim()
+                  if (!got) {
+                    violations.push({ code: "missing_task_bundle_file_attest_sha256", file: f })
+                    continue
+                  }
+                  const want = attestFile(f)
+                  if (!want) violations.push({ code: "task_bundle_file_missing_or_unreadable", file: f })
+                  else if (want !== got) violations.push({ code: "task_bundle_file_attest_sha256_mismatch", file: f, want, got })
+                }
+                // replay_bundle is optional
+                const wantReplayAtt = fs.existsSync(path.join(runDir2, "replay_bundle.json")) ? attestFile("replay_bundle.json") : null
+                const gotReplayAtt = String(gotAtt?.["replay_bundle.json"] ?? "").trim()
+                if (wantReplayAtt && gotReplayAtt && wantReplayAtt !== gotReplayAtt) {
+                  violations.push({ code: "task_bundle_file_attest_sha256_mismatch", file: "replay_bundle.json", want: wantReplayAtt, got: gotReplayAtt })
+                }
+              }
+            }
+
+            // Persist proof material for audit/replay (even if violations exist).
+            // NOTE: payload-derived values are untrusted; they are recorded for forensic traceability only.
+            job.contextPackV1Proof = {
+              schema_version: "scc.context_pack_v1_proof.v1",
+              t: new Date().toISOString(),
+              context_pack_v1_id_job: wantId || null,
+              context_pack_v1_id_payload: gotId || null,
+              attestation_nonce_job: wantNonce || null,
+              attestation_nonce_payload: gotNonce || null,
+              pack_json_sha256_payload: gotPackJsonSha || null,
+              pack_json_attest_sha256_payload: gotPackAttest || null,
+              task_bundle_manifest_sha256_payload: gotManifestSha || null,
+              task_bundle_files_sha256_payload: gotFiles && typeof gotFiles === "object" ? gotFiles : null,
+              task_bundle_files_attest_sha256_payload: gotAtt && typeof gotAtt === "object" ? gotAtt : null,
+            }
+
+            if (violations.length) {
+              job.status = "failed"
+              job.error = "policy_violation"
+              job.reason = violations[0]?.code ?? "policy_violation"
+              job.policy_violations = violations
+
+              // Record a policy violation event for auditing/routing.
+              const boardTask = job?.boardTaskId ? getBoardTask(String(job.boardTaskId)) : null
+              const tid = String(boardTask?.id ?? job.boardTaskId ?? "").trim()
+              if (tid) {
+                appendStateEvent({
+                  schema_version: "scc.event.v1",
+                  t: new Date().toISOString(),
+                  task_id: tid,
+                  parent_id: boardTask?.parentId ?? null,
+                  role: boardTask?.role ?? null,
+                  area: boardTask?.area ?? null,
+                  executor: job.executor ?? null,
+                  model: job.model ?? null,
+                  event_type: "POLICY_VIOLATION",
+                  reason: job.reason,
+                  details: { phase: "external_complete_policy", job_id: job.id, violations: violations.slice(0, 8) },
+                })
+              }
+            }
+          }
+        } catch (e) {
+          // Fail-closed: inability to verify policy becomes a policy violation.
+          if (requireContextPackV1) {
+            job.status = "failed"
+            job.error = "policy_violation"
+            job.reason = "external_complete_policy_check_failed"
+            job.policy_violations = [{ code: "external_complete_policy_check_failed", message: String(e?.message ?? e) }]
+            job.contextPackV1Proof = {
+              schema_version: "scc.context_pack_v1_proof.v1",
+              t: new Date().toISOString(),
+              error: "external_complete_policy_check_failed",
+              message: String(e?.message ?? e),
+            }
+          }
+        }
 
         const w = getWorker(workerId)
         if (w && w.runningJobId === job.id) {
@@ -12727,8 +13309,9 @@ const server = http.createServer(async (req, res) => {
         }
 
         const isCiFixup = String(boardTask?.task_class_id ?? "") === "ci_fixup_v1"
+        const policyViolated = job.error === "policy_violation"
         let ciGate = null
-        if (!isSplitJob && (job.status === "done" || isCiFixup)) {
+        if (!policyViolated && !isSplitJob && (job.status === "done" || isCiFixup)) {
           ciGate = await runCiGateForTask({ job, boardTask })
           if (ciGate?.required && !ciGate.ran && ciGateStrict) {
             job.status = "failed"

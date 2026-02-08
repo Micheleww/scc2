@@ -2,7 +2,7 @@
   "schema_version": "scc.role_policy.v1",
   "role": "executor",
   "context_mode": "blank_cli",
-  "allowed_context_refs": ["pins"],
+  "allowed_context_refs": ["pins", "context_pack_v1"],
   "capabilities": {
     "can_plan": false,
     "can_modify_contracts": false,

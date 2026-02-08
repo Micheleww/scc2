@@ -1,0 +1,184 @@
+# L12 成本与预算层
+
+> **对应SSOT分区**: `05_runbooks/`（操作手册）  
+> **对应技术手册**: 第5章  
+> **层定位**: 成本追踪、预算管理、资源配额
+
+---
+
+## 12.1 层定位与职责
+
+### 12.1.1 核心职责
+
+L12是SCC架构的**成本管理层**，为全系统提供：
+
+1. **成本追踪** - 实时成本监控（token使用量）
+2. **预算管理** - 预算分配和告警
+3. **资源配额** - 模型调用配额管理
+4. **成本报告** - 定期成本分析和报告
+5. **效率指标** - 系统效率度量
+
+### 12.1.2 在架构中的位置
+
+```
+┌─────────────────────────────────────────────┐
+│ L12 成本与预算层                              │
+│ ├─ 成本追踪（token使用量）                    │
+│ ├─ 预算管理（预算/告警）                      │
+│ ├─ 资源配额（调用配额）                       │
+│ └─ 成本报告（定期报告）                       │
+└──────────────────┬──────────────────────────┘
+                   │ 被依赖
+                   ▼
+┌─────────────────────────────────────────────┐
+│ L5 模型层, L11 调度层, L14 质量层            │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## 12.2 来自05_runbooks/的核心内容
+
+### 12.2.1 最小指标（来自metrics_spec.md）
+
+| 指标 | 说明 | 目标 |
+|------|------|------|
+| pass_rate | 无需人工干预通过的任务% | > 80% |
+| mean_retries | 每任务平均重试次数 | < 1.5 |
+| time_to_green | queued→passed持续时间(p50/p95) | p50 < 5min |
+| top_fail_codes | 失败分类分布 | 可追踪 |
+| oid_coverage | 强制树中嵌入oid+注册表项的对象% | 100% |
+| ingestion_lag | 原始捕获→任务派生延迟 | < 1min |
+
+### 12.2.2 成本追踪规范
+
+```yaml
+cost_tracking:
+  per_task:
+    - model_name
+    - prompt_tokens
+    - completion_tokens
+    - total_tokens
+    - estimated_cost_usd
+  aggregation:
+    - by_project
+    - by_capability
+    - by_time_period
+```
+
+---
+
+## 12.3 核心功能与脚本
+
+| 功能 | 说明 | 脚本/工具 | 命令示例 |
+|------|------|-----------|----------|
+| Token追踪 | 追踪token使用 | `token_tracker.py` | `token_tracker.py log --model kimi-k2.5 --tokens 1500` |
+| 成本报告 | 生成成本报告 | `cost_report.py` | `cost_report.py --daily --project quantsys` |
+| 预算检查 | 检查预算 | `budget_checker.py` | `budget_checker.py --project quantsys --limit 1000` |
+| 效率指标 | 计算效率指标 | `efficiency_metrics.py` | `efficiency_metrics.py --report` |
+| 告警管理 | 成本告警 | `cost_alert.py` | `cost_alert.py check --threshold 0.8` |
+
+---
+
+## 12.4 脚本使用示例
+
+```bash
+# 1. 记录token使用
+python tools/scc/ops/token_tracker.py log \
+  --model kimi-k2.5 \
+  --prompt-tokens 2000 \
+  --completion-tokens 500 \
+  --task-id TASK-001 \
+  --project quantsys
+
+# 2. 生成每日成本报告
+python tools/scc/ops/cost_report.py \
+  --daily \
+  --project quantsys \
+  --format html \
+  --output reports/cost_2026-02-09.html
+
+# 3. 检查项目预算
+python tools/scc/ops/budget_checker.py \
+  --project quantsys \
+  --limit 1000 \
+  --current-spend 850 \
+  --alert-threshold 0.9
+
+# 4. 计算效率指标
+python tools/scc/ops/efficiency_metrics.py \
+  --report \
+  --include-pass-rate \
+  --include-mean-retries \
+  --include-time-to-green
+
+# 5. 检查成本告警
+python tools/scc/ops/cost_alert.py check \
+  --threshold 0.8 \
+  --project quantsys \
+  --notify
+```
+
+---
+
+## 12.5 关键文件针脚
+
+```yaml
+L12_cost_layer:
+  ssot_partition: "05_runbooks"
+  chapter: 5
+  description: "成本与预算层 - 提供成本追踪、预算管理、效率指标"
+  
+  core_spec_files:
+    - path: scc-top/docs/ssot/05_runbooks/metrics_spec.md
+      description: "指标规范，定义最小指标集"
+  
+  tools:
+    - tools/scc/ops/token_tracker.py
+    - tools/scc/ops/cost_report.py
+    - tools/scc/ops/budget_checker.py
+    - tools/scc/ops/efficiency_metrics.py
+    - tools/scc/ops/cost_alert.py
+  
+  related_chapters:
+    - technical_manual/chapter_05_cost_layer.md
+```
+
+---
+
+## 12.6 本章小结
+
+### 12.6.1 核心概念
+
+| 概念 | 说明 |
+|------|------|
+| Token追踪 | 记录模型的token使用量 |
+| 成本报告 | 按项目/能力/时间聚合成本 |
+| 效率指标 | pass_rate, mean_retries, time_to_green等 |
+| 预算告警 | 成本接近预算阈值时告警 |
+
+### 12.6.2 关键规则
+
+1. **成本追踪**: 每个任务必须记录token使用量
+2. **预算告警**: 达到预算80%时触发告警
+3. **效率目标**: pass_rate > 80%, mean_retries < 1.5
+4. **定期报告**: 每日/每周生成成本报告
+
+### 12.6.3 依赖关系
+
+```
+L12 成本与预算层
+    │
+    ├─ 依赖 → L5模型层（token数据）
+    ├─ 依赖 → L11调度层（任务数据）
+    │
+    ├─ 提供成本给 → L14 质量层
+    └─ 提供指标给 → L16 观测层
+```
+
+---
+
+
+---
+
+**导航**: [← L11](./L11_routing_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L13](./L13_security_layer.md)

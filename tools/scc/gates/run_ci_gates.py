@@ -12,6 +12,8 @@ if str(_REPO_ROOT) not in sys.path:
 
 from tools.scc.gates import (
     connector_gate,
+    context_pack_gate,
+    context_pack_proof_gate,
     contracts_gate,
     doclink_gate,
     map_gate,
@@ -466,6 +468,8 @@ def main() -> int:
             results.append({"t": now, "gate": name, "status": "PASS", "errors": [], "warnings": []})
 
     run_gate("contracts", lambda: contracts_gate.run(repo, submit, submit_path))
+    run_gate("context_pack", lambda: context_pack_gate.run(repo, submit, strict=bool(args.strict)))
+    run_gate("context_pack_proof", lambda: context_pack_proof_gate.run(repo, submit, strict=bool(args.strict)))
     run_gate("hygiene", lambda: validate_submit(submit, repo))
     run_gate("secrets", lambda: secrets_gate.run(repo, submit))
     run_gate("events", lambda: event_gate.run(repo, submit))

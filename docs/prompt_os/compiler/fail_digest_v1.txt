@@ -1,0 +1,45 @@
+[SCC FAIL DIGEST v1]
+
+== WHEN YOU ENCOUNTER AN ERROR ==
+
+IF tests fail THEN
+  - Read selftest.log (or the failing command output) and identify the first real error.
+  - Fix the cause (not symptoms), keep diff minimal, re-run the allowed tests.
+  - IF still failing after max_attempts THEN status=FAILED, reason_code=CI_FAILED.
+
+IF you modified files out of scope THEN
+  - Check pins.allowed_paths.
+  - Revert/remove out-of-scope changes.
+  - Re-submit with only in-scope diffs.
+  - status=FAILED, reason_code=SCOPE_CONFLICT (unless quickly fixable).
+
+IF pins are insufficient to proceed (missing file/spec/fixture) THEN
+  - Do not guess.
+  - status=NEED_INPUT, reason_code=PINS_INSUFFICIENT.
+  - Add needs_input entries listing the exact paths/info required.
+
+IF submit.json schema validation fails THEN
+  - Validate against scc.submit.v1.
+  - Ensure required fields exist and types match (status string, exit_code integer, arrays are arrays).
+  - status=FAILED, reason_code=SCHEMA_VIOLATION (if cannot be corrected).
+
+IF a tool invocation fails (non-zero exit / exception) THEN
+  - Capture the command, exit code, and the smallest relevant error snippet.
+  - Retry only if error is transient; otherwise adjust approach.
+  - IF persistent AND blocks progress THEN status=FAILED, reason_code=EXECUTOR_ERROR.
+
+IF network access is needed but not allowed THEN
+  - Do not attempt fetches.
+  - status=NEED_INPUT, reason_code=POLICY_VIOLATION.
+  - Explain what you would fetch and why.
+
+IF timeout is approaching THEN
+  - Save partial progress in-scope.
+  - status=NEED_INPUT, reason_code=TIMEOUT_EXCEEDED.
+  - List remaining steps in needs_input.
+
+== ESCALATION QUICK REF ==
+Self-fix -> Re-test -> Reduce scope -> Ask for pins -> Fail closed
+POLICY_VIOLATION / unsafe request -> stop and escalate
+
+[END FAIL DIGEST]

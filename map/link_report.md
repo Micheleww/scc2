@@ -1,7 +1,7 @@
 # Map Link Report (v1)
 
-- generated_at: 2026-02-08T12:12:13.225Z
-- map_hash: sha256:edf3211492a9c37d3c3afbfa6a42a594f883819a7083bcbaf6ab1f7486ffc376
+- generated_at: 2026-02-08T23:11:30.633Z
+- map_hash: sha256:ba8d50351159782a78ae202061d101ece8b5bb1faba76c9bc00c02242a23ad23
 
 ## Missing doc_refs counts
 - modules_missing: 45
@@ -92,43 +92,43 @@
 - `pkg:scc-top/tools/web_console/package.json:start`
 
 ### key_symbols
-- `sha256FileOrNull@oc-scc-local/scripts/lib/trace_v1.mjs:5`
-- `buf@oc-scc-local/scripts/lib/trace_v1.mjs:8`
-- `writeTraceV1@oc-scc-local/scripts/lib/trace_v1.mjs:15`
-- `tid@oc-scc-local/scripts/lib/trace_v1.mjs:16`
-- `root@oc-scc-local/scripts/lib/trace_v1.mjs:18`
-- `artDir@oc-scc-local/scripts/lib/trace_v1.mjs:21`
-- `submitPath@oc-scc-local/scripts/lib/trace_v1.mjs:22`
-- `now@oc-scc-local/scripts/lib/trace_v1.mjs:25`
-- `trace@oc-scc-local/scripts/lib/trace_v1.mjs:26`
-- `parseArgs@oc-scc-local/scripts/map_build_v1.mjs:7`
-- `out@oc-scc-local/scripts/map_build_v1.mjs:8`
-- `a@oc-scc-local/scripts/map_build_v1.mjs:20`
-- `next@oc-scc-local/scripts/map_build_v1.mjs:21`
-- `args@oc-scc-local/scripts/map_build_v1.mjs:75`
-- `repoRoot@oc-scc-local/scripts/map_build_v1.mjs:76`
-- `roots@oc-scc-local/scripts/map_build_v1.mjs:77`
-- `excludes@oc-scc-local/scripts/map_build_v1.mjs:78`
-- `startedAt@oc-scc-local/scripts/map_build_v1.mjs:80`
-- `res@oc-scc-local/scripts/map_build_v1.mjs:81`
-- `wrote@oc-scc-local/scripts/map_build_v1.mjs:90`
-- `ms@oc-scc-local/scripts/map_build_v1.mjs:91`
-- `sqlite@oc-scc-local/scripts/map_build_v1.mjs:93`
-- `wantSqlite@oc-scc-local/scripts/map_build_v1.mjs:94`
-- `stdout@oc-scc-local/scripts/map_build_v1.mjs:103`
-- `parseArgs@oc-scc-local/scripts/map_query_v1.mjs:7`
-- `out@oc-scc-local/scripts/map_query_v1.mjs:8`
-- `a@oc-scc-local/scripts/map_query_v1.mjs:10`
-- `next@oc-scc-local/scripts/map_query_v1.mjs:11`
-- `args@oc-scc-local/scripts/map_query_v1.mjs:41`
-- `repoRoot@oc-scc-local/scripts/map_query_v1.mjs:42`
-- `backend@oc-scc-local/scripts/map_query_v1.mjs:43`
-- `wantSqlite@oc-scc-local/scripts/map_query_v1.mjs:44`
-- `strict@oc-scc-local/scripts/map_query_v1.mjs:45`
-- `v@oc-scc-local/scripts/map_query_v1.mjs:46`
-- `sqlitePath@oc-scc-local/scripts/map_query_v1.mjs:50`
-- `q@oc-scc-local/scripts/map_query_v1.mjs:56`
-- `limit@oc-scc-local/scripts/map_query_v1.mjs:57`
-- `stdout@oc-scc-local/scripts/map_query_v1.mjs:58`
-- `loaded@oc-scc-local/scripts/map_query_v1.mjs:67`
-- `out@oc-scc-local/scripts/map_query_v1.mjs:68`
+- `extract_content@docs/merge_batch1.py:39`
+- `insert_into_target@docs/merge_batch1.py:60`
+- `merge_fail_codes@docs/merge_batch2.py:7`
+- `merge_glossary@docs/merge_batch2.py:38`
+- `__dirname@oc-scc-local/scripts/compile_prompts.mjs:18`
+- `ROOT_DIR@oc-scc-local/scripts/compile_prompts.mjs:19`
+- `SOURCE_DIR@oc-scc-local/scripts/compile_prompts.mjs:20`
+- `OUTPUT_DIR@oc-scc-local/scripts/compile_prompts.mjs:21`
+- `CONFIG@oc-scc-local/scripts/compile_prompts.mjs:24`
+- `constitution@oc-scc-local/scripts/compile_prompts.mjs:66`
+- `hardPolicies@oc-scc-local/scripts/compile_prompts.mjs:67`
+- `conflictOrder@oc-scc-local/scripts/compile_prompts.mjs:68`
+- `legalPrefix@oc-scc-local/scripts/compile_prompts.mjs:70`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:93`
+- `hash@oc-scc-local/scripts/compile_prompts.mjs:96`
+- `refs@oc-scc-local/scripts/compile_prompts.mjs:107`
+- `sourceFiles@oc-scc-local/scripts/compile_prompts.mjs:110`
+- `content@oc-scc-local/scripts/compile_prompts.mjs:113`
+- `metadata@oc-scc-local/scripts/compile_prompts.mjs:114`
+- `refsIndex@oc-scc-local/scripts/compile_prompts.mjs:128`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:142`
+- `schemas@oc-scc-local/scripts/compile_prompts.mjs:155`
+- `failCodes@oc-scc-local/scripts/compile_prompts.mjs:156`
+- `evidenceSpec@oc-scc-local/scripts/compile_prompts.mjs:157`
+- `ioDigest@oc-scc-local/scripts/compile_prompts.mjs:159`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:180`
+- `toolCatalog@oc-scc-local/scripts/compile_prompts.mjs:192`
+- `toolDigest@oc-scc-local/scripts/compile_prompts.mjs:194`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:213`
+- `failCodes@oc-scc-local/scripts/compile_prompts.mjs:225`
+- `failDigest@oc-scc-local/scripts/compile_prompts.mjs:227`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:246`
+- `fullPath@oc-scc-local/scripts/compile_prompts.mjs:259`
+- `files@oc-scc-local/scripts/compile_prompts.mjs:271`
+- `entries@oc-scc-local/scripts/compile_prompts.mjs:274`
+- `relativePath@oc-scc-local/scripts/compile_prompts.mjs:277`
+- `fullPath@oc-scc-local/scripts/compile_prompts.mjs:278`
+- `computeHash@oc-scc-local/scripts/compile_prompts.mjs:295`
+- `extractMetadata@oc-scc-local/scripts/compile_prompts.mjs:302`
+- `metadata@oc-scc-local/scripts/compile_prompts.mjs:303`

@@ -28,7 +28,62 @@ if (-not $Name) { $Name = "opencodecli-worker" }
 
 $IdleExitSeconds = if ($env:WORKER_IDLE_EXIT_SECONDS) { [int]$env:WORKER_IDLE_EXIT_SECONDS } else { 180 }
 $idleSince = $null
-$StallSeconds = if ($env:WORKER_STALL_SECONDS) { [int]$env:WORKER_STALL_SECONDS } else { 240 }
+$StallSeconds = if ($env:WORKER_STALL_SECONDS) { [int]$env:WORKER_STALL_SECONDS } else { 900 }
+$RequireContextPackV1 = $true
+if ($env:CONTEXT_PACK_V1_REQUIRED) {
+  $RequireContextPackV1 = ([string]$env:CONTEXT_PACK_V1_REQUIRED).ToLower().Trim() -ne "false"
+}
+
+function Resolve-Url([string]$base, [string]$u) {
+  if (-not $u) { return $null }
+  $s = [string]$u
+  if ($s.StartsWith("/")) { return $base.TrimEnd("/") + $s }
+  return $s
+}
+
+function Fetch-ToTemp([string]$url) {
+  if (-not $url) { return $null }
+  $tmp = Join-Path $env:TEMP ("scc-fetch-" + ([Guid]::NewGuid().ToString("n")) + ".tmp")
+  Invoke-WebRequest -UseBasicParsing -Method GET -TimeoutSec 20 -OutFile $tmp $url | Out-Null
+  return $tmp
+}
+
+function Sha256-File([string]$path) {
+  if (-not $path -or -not (Test-Path $path)) { return $null }
+  try {
+    $h = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLower()
+    return "sha256:$h"
+  } catch {
+    return $null
+  }
+}
+
+function Attest-Sha256([string]$nonce, [string]$path) {
+  if (-not $nonce -or -not $path -or -not (Test-Path $path)) { return $null }
+  try {
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+      $nbytes = [System.Text.Encoding]::UTF8.GetBytes([string]$nonce)
+      [void]$sha.TransformBlock($nbytes, 0, $nbytes.Length, $null, 0)
+      $fs = [System.IO.File]::OpenRead($path)
+      try {
+        $buf = New-Object byte[] 65536
+        while (($read = $fs.Read($buf, 0, $buf.Length)) -gt 0) {
+          [void]$sha.TransformBlock($buf, 0, $read, $null, 0)
+        }
+      } finally {
+        try { $fs.Dispose() } catch {}
+      }
+      [void]$sha.TransformFinalBlock([byte[]]@(), 0, 0)
+      $hex = -join ($sha.Hash | ForEach-Object { $_.ToString("x2") })
+      return "sha256:$hex"
+    } finally {
+      try { $sha.Dispose() } catch {}
+    }
+  } catch {
+    return $null
+  }
+}
 
 function Post-Json($url, $obj) {
   $json = ($obj | ConvertTo-Json -Depth 8 -Compress)
@@ -95,9 +150,251 @@ while ($true) {
     $jobId = $job.id
     $model = if ($job.model) { [string]$job.model } else { $ModelDefault }
     $prompt = [string]$job.prompt
+    $attestationNonce = $null
+    if ($job.PSObject.Properties.Name -contains "attestation" -and $job.attestation -and ($job.attestation.PSObject.Properties.Name -contains "nonce")) {
+      $attestationNonce = [string]$job.attestation.nonce
+    }
+    $contextPackV1Id = $null
+    if ($job.PSObject.Properties.Name -contains "contextPackV1Id") {
+      $contextPackV1Id = [string]$job.contextPackV1Id
+    }
+
+    $taskBundleManifestSha256 = $null
+    $contextPackV1JsonSha256 = $null
+    $taskBundleFilesSha256 = $null
+    $contextPackV1JsonAttestSha256 = $null
+    $taskBundleFilesAttestSha256 = $null
+    try {
+      if ($job.PSObject.Properties.Name -contains "taskBundle" -and $job.taskBundle) {
+        $manifestUrl = $null
+        if ($job.taskBundle.PSObject.Properties.Name -contains "fetch_manifest_raw") {
+          $manifestUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_manifest_raw)
+        } elseif ($job.taskBundle.PSObject.Properties.Name -contains "fetch_manifest") {
+          $manifestUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_manifest)
+          if ($manifestUrl -and ($manifestUrl -notmatch "format=raw")) { $manifestUrl = $manifestUrl + "?format=raw" }
+        }
+        $pinsUrl = $null
+        if ($job.taskBundle.PSObject.Properties.Name -contains "fetch_pins_raw") { $pinsUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_pins_raw) }
+        elseif ($job.taskBundle.PSObject.Properties.Name -contains "fetch_pins") {
+          $pinsUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_pins)
+          if ($pinsUrl -and ($pinsUrl -notmatch "format=raw")) { $pinsUrl = $pinsUrl + "?format=raw" }
+        }
+        $preUrl = $null
+        if ($job.taskBundle.PSObject.Properties.Name -contains "fetch_preflight_raw") { $preUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_preflight_raw) }
+        elseif ($job.taskBundle.PSObject.Properties.Name -contains "fetch_preflight") {
+          $preUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_preflight)
+          if ($preUrl -and ($preUrl -notmatch "format=raw")) { $preUrl = $preUrl + "?format=raw" }
+        }
+        $taskUrl = $null
+        if ($job.taskBundle.PSObject.Properties.Name -contains "fetch_task_raw") { $taskUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_task_raw) }
+        elseif ($job.taskBundle.PSObject.Properties.Name -contains "fetch_task") {
+          $taskUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_task)
+          if ($taskUrl -and ($taskUrl -notmatch "format=raw")) { $taskUrl = $taskUrl + "?format=raw" }
+        }
+        $replayUrl = $null
+        if ($job.taskBundle.PSObject.Properties.Name -contains "fetch_replay_bundle_raw") { $replayUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_replay_bundle_raw) }
+        elseif ($job.taskBundle.PSObject.Properties.Name -contains "fetch_replay_bundle") {
+          $replayUrl = Resolve-Url $Base ([string]$job.taskBundle.fetch_replay_bundle)
+          if ($replayUrl -and ($replayUrl -notmatch "format=raw")) { $replayUrl = $replayUrl + "?format=raw" }
+        }
+
+        $taskBundleFilesSha256 = @{}
+        $taskBundleFilesAttestSha256 = @{}
+        if ($manifestUrl) {
+          $tmp = Fetch-ToTemp $manifestUrl
+          try {
+            $taskBundleManifestSha256 = Sha256-File $tmp
+            $taskBundleFilesSha256["manifest.json"] = $taskBundleManifestSha256
+            $taskBundleFilesAttestSha256["manifest.json"] = (Attest-Sha256 $attestationNonce $tmp)
+          } finally { try { if ($tmp) { Remove-Item -Force -ErrorAction SilentlyContinue -LiteralPath $tmp } } catch {} }
+        }
+        if ($pinsUrl) {
+          $tmp = Fetch-ToTemp $pinsUrl
+          try {
+            $taskBundleFilesSha256["pins.json"] = (Sha256-File $tmp)
+            $taskBundleFilesAttestSha256["pins.json"] = (Attest-Sha256 $attestationNonce $tmp)
+          } finally { try { if ($tmp) { Remove-Item -Force -ErrorAction SilentlyContinue -LiteralPath $tmp } } catch {} }
+        }
+        if ($preUrl) {
+          $tmp = Fetch-ToTemp $preUrl
+          try {
+            $taskBundleFilesSha256["preflight.json"] = (Sha256-File $tmp)
+            $taskBundleFilesAttestSha256["preflight.json"] = (Attest-Sha256 $attestationNonce $tmp)
+          } finally { try { if ($tmp) { Remove-Item -Force -ErrorAction SilentlyContinue -LiteralPath $tmp } } catch {} }
+        }
+        if ($taskUrl) {
+          $tmp = Fetch-ToTemp $taskUrl
+          try {
+            $taskBundleFilesSha256["task.json"] = (Sha256-File $tmp)
+            $taskBundleFilesAttestSha256["task.json"] = (Attest-Sha256 $attestationNonce $tmp)
+          } finally { try { if ($tmp) { Remove-Item -Force -ErrorAction SilentlyContinue -LiteralPath $tmp } } catch {} }
+        }
+        if ($replayUrl) {
+          $tmp = Fetch-ToTemp $replayUrl
+          try {
+            $h = Sha256-File $tmp
+            if ($h) { $taskBundleFilesSha256["replay_bundle.json"] = $h }
+            $ha = Attest-Sha256 $attestationNonce $tmp
+            if ($ha) { $taskBundleFilesAttestSha256["replay_bundle.json"] = $ha }
+          } finally { try { if ($tmp) { Remove-Item -Force -ErrorAction SilentlyContinue -LiteralPath $tmp } } catch {} }
+        }
+      }
+    } catch {}
+    try {
+      if ($job.PSObject.Properties.Name -contains "contextPackV1" -and $job.contextPackV1) {
+        $u = $null
+        if ($job.contextPackV1.PSObject.Properties.Name -contains "fetch_json_raw") {
+          $u = Resolve-Url $Base ([string]$job.contextPackV1.fetch_json_raw)
+        } elseif ($job.contextPackV1.PSObject.Properties.Name -contains "fetch_json") {
+          $u = Resolve-Url $Base ([string]$job.contextPackV1.fetch_json)
+          if ($u -and ($u -notmatch "format=raw")) { $u = $u + "?format=raw" }
+        }
+        if ($u) {
+          $tmp = Fetch-ToTemp $u
+          try {
+            $contextPackV1JsonSha256 = Sha256-File $tmp
+            $contextPackV1JsonAttestSha256 = Attest-Sha256 $attestationNonce $tmp
+          } finally {
+            try { Remove-Item -Force -ErrorAction SilentlyContinue -LiteralPath $tmp } catch {}
+          }
+        }
+      }
+    } catch {}
     $timeoutMs = 0
     if ($job.timeoutMs -ne $null) {
       try { $timeoutMs = [int]$job.timeoutMs } catch { $timeoutMs = 0 }
+    }
+
+    if ($RequireContextPackV1 -and (-not $contextPackV1Id -or -not $contextPackV1Id.Trim())) {
+      try {
+        Post-Json "$Base/executor/jobs/$jobId/complete" @{
+          workerId = $workerId
+          exit_code = 1
+          stdout = ""
+          stderr = "[worker] missing contextPackV1Id in claim response (enterprise fail-closed)"
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
+        } | Out-Null
+      } catch {}
+      continue
+    }
+
+    if ($RequireContextPackV1 -and (-not $attestationNonce -or -not $attestationNonce.Trim())) {
+      try {
+        Post-Json "$Base/executor/jobs/$jobId/complete" @{
+          workerId = $workerId
+          exit_code = 1
+          stdout = ""
+          stderr = "[worker] missing attestation nonce in claim response (enterprise fail-closed)"
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
+        } | Out-Null
+      } catch {}
+      continue
+    }
+
+    if ($RequireContextPackV1 -and (-not $taskBundleManifestSha256 -or -not $taskBundleManifestSha256.Trim())) {
+      try {
+        Post-Json "$Base/executor/jobs/$jobId/complete" @{
+          workerId = $workerId
+          exit_code = 1
+          stdout = ""
+          stderr = "[worker] missing taskBundle manifest sha256 (fetch_manifest absent or unreadable; enterprise fail-closed)"
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
+        } | Out-Null
+      } catch {}
+      continue
+    }
+
+    if ($RequireContextPackV1 -and (-not $contextPackV1JsonSha256 -or -not $contextPackV1JsonSha256.Trim())) {
+      try {
+        Post-Json "$Base/executor/jobs/$jobId/complete" @{
+          workerId = $workerId
+          exit_code = 1
+          stdout = ""
+          stderr = "[worker] missing contextPackV1 pack_json sha256 (fetch_json absent or unreadable; enterprise fail-closed)"
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
+        } | Out-Null
+      } catch {}
+      continue
+    }
+
+    if ($RequireContextPackV1 -and (-not $taskBundleFilesSha256 -or -not $taskBundleFilesSha256["pins.json"] -or -not $taskBundleFilesSha256["preflight.json"] -or -not $taskBundleFilesSha256["task.json"] -or -not $taskBundleFilesSha256["manifest.json"])) {
+      try {
+        Post-Json "$Base/executor/jobs/$jobId/complete" @{
+          workerId = $workerId
+          exit_code = 1
+          stdout = ""
+          stderr = "[worker] missing taskBundle files sha256 map (pins/preflight/task/manifest required; enterprise fail-closed)"
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
+        } | Out-Null
+      } catch {}
+      continue
+    }
+
+    if ($RequireContextPackV1 -and (-not $contextPackV1JsonAttestSha256 -or -not $contextPackV1JsonAttestSha256.Trim())) {
+      try {
+        Post-Json "$Base/executor/jobs/$jobId/complete" @{
+          workerId = $workerId
+          exit_code = 1
+          stdout = ""
+          stderr = "[worker] missing contextPackV1 pack_json attestation sha256 (nonce-bound; enterprise fail-closed)"
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
+        } | Out-Null
+      } catch {}
+      continue
+    }
+    if ($RequireContextPackV1 -and (-not $taskBundleFilesAttestSha256 -or -not $taskBundleFilesAttestSha256["pins.json"] -or -not $taskBundleFilesAttestSha256["preflight.json"] -or -not $taskBundleFilesAttestSha256["task.json"] -or -not $taskBundleFilesAttestSha256["manifest.json"])) {
+      try {
+        Post-Json "$Base/executor/jobs/$jobId/complete" @{
+          workerId = $workerId
+          exit_code = 1
+          stdout = ""
+          stderr = "[worker] missing taskBundle files attestation sha256 map (nonce-bound; enterprise fail-closed)"
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
+        } | Out-Null
+      } catch {}
+      continue
     }
 
     try { Post-Json "$Base/executor/workers/$workerId/heartbeat" @{ runningJobId = $jobId } | Out-Null } catch {}
@@ -119,6 +416,13 @@ while ($true) {
       # Windows PowerShell 5.1 (.NET Framework) lacks ProcessStartInfo.ArgumentList; use a single Arguments string.
       $psi.Arguments = @(
         "run",
+        # `opencode run` requires a message or a command. We keep the real task in the attached file
+        # to avoid Windows command line length/quoting issues.
+        '"Follow the attached file."',
+        # Ensure errors (rate limit, auth, etc) surface in stderr so the worker can report them
+        # instead of killing the process as "stalled".
+        "--print-logs",
+        "--log-level", "INFO",
         "--format", "json",
         "--model", "`"$model`"",
         "--variant", "`"$Variant`"",
@@ -129,9 +433,14 @@ while ($true) {
       $psi.UseShellExecute = $false
       $psi.CreateNoWindow = $true
       $psi.WorkingDirectory = $ExecRoot
+      # Ensure we correctly decode UTF-8 logs / JSON events when running with redirected streams.
+      $psi.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+      $psi.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
 
       $psi.Environment["OPENCODE_DISABLE_PROJECT_CONFIG"] = "true"
-      $psi.Environment["OPENCODE_CONFIG_CONTENT"] = '{"$schema":"https://opencode.ai/config.json","plugin":[]}'
+      # Avoid OpenCode defaulting max_tokens to 32000, which repeatedly triggers provider throttling
+      # and causes the worker to appear "stalled". Model limits here constrain requested output size.
+      $psi.Environment["OPENCODE_CONFIG_CONTENT"] = '{"$schema":"https://opencode.ai/config.json","plugin":[],"provider":{"opencode":{"models":{"glm-4.7-free":{"limit":{"output":2048}},"kimi-k2.5-free":{"limit":{"output":2048}},"gpt-5-nano":{"limit":{"output":1024}},"minimax-m2.1-free":{"limit":{"output":2048}},"trinity-large-preview-free":{"limit":{"output":2048}},"big-pickle":{"limit":{"output":2048}}}}}}}'
 
       $p = New-Object System.Diagnostics.Process
       $p.StartInfo = $psi
@@ -196,6 +505,9 @@ while ($true) {
         continue
       }
       $code = if ($p.HasExited) { $p.ExitCode } else { 124 }
+      # BeginOutputReadLine only surfaces newline-terminated lines; capture any trailing output too.
+      try { [void]$stdoutSb.Append($p.StandardOutput.ReadToEnd()) } catch {}
+      try { [void]$stderrSb.Append($p.StandardError.ReadToEnd()) } catch {}
       $stdout = $stdoutSb.ToString()
       $stderr = $stderrSb.ToString()
       if ($timedOut) {
@@ -222,6 +534,13 @@ while ($true) {
         exit_code = $code
         stdout = $stdout
         stderr = $stderr
+        attestation_nonce = $attestationNonce
+        contextPackV1Id = $contextPackV1Id
+        task_bundle_manifest_sha256 = $taskBundleManifestSha256
+        context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+        task_bundle_files_sha256 = $taskBundleFilesSha256
+        context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+        task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
       } | Out-Null
 
       try { Remove-Item -Force -ErrorAction SilentlyContinue $attachedFile } catch {}
@@ -233,6 +552,13 @@ while ($true) {
           exit_code = 1
           stdout = ""
           stderr = ("[worker] exception while running opencode-cli:`n" + $err).Trim()
+          attestation_nonce = $attestationNonce
+          contextPackV1Id = $contextPackV1Id
+          task_bundle_manifest_sha256 = $taskBundleManifestSha256
+          context_pack_v1_json_sha256 = $contextPackV1JsonSha256
+          task_bundle_files_sha256 = $taskBundleFilesSha256
+          context_pack_v1_json_attest_sha256 = $contextPackV1JsonAttestSha256
+          task_bundle_files_attest_sha256 = $taskBundleFilesAttestSha256
         } | Out-Null
       } catch {}
       try { if ($attachedFile) { Remove-Item -Force -ErrorAction SilentlyContinue $attachedFile } } catch {}

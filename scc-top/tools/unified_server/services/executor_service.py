@@ -11,6 +11,8 @@ import tempfile
 import json
 import time
 import fnmatch
+from uuid import uuid4
+import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -138,7 +140,7 @@ class ExecutorService(Service):
         logger.info("Starting executor service initialization")
         try:
             logger.info("Importing FastAPI modules")
-            from fastapi import FastAPI, HTTPException, BackgroundTasks
+            from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Response
             from fastapi.responses import JSONResponse
             
             logger.info("Creating FastAPI application for executor service")
@@ -146,6 +148,552 @@ class ExecutorService(Service):
             
             logger.info("Registering endpoints for executor service")
             
+            # SCC worker + job protocol (served directly by unified server 18788)
+            #
+            # Implements the oc-scc-local worker endpoints under /executor/* so
+            # worker scripts can talk to unified server without any legacy gateway.
+            # -----------------------------------------------------------------
+            state_dir = (self.repo_root / "artifacts" / "executor_state_v1").resolve()
+            jobs_path = (state_dir / "jobs.json").resolve()
+            workers_path = (state_dir / "workers.json").resolve()
+            ctx_dir = (state_dir / "contextpacks").resolve()
+            state_dir.mkdir(parents=True, exist_ok=True)
+            ctx_dir.mkdir(parents=True, exist_ok=True)
+
+            _lock = threading.Lock()
+            _jobs: Dict[str, Dict[str, Any]] = {}
+            _workers: Dict[str, Dict[str, Any]] = {}
+
+            def _now_ms() -> int:
+                return int(time.time() * 1000)
+
+            def _read_json_file(path: Path, default: Any) -> Any:
+                try:
+                    if not path.exists():
+                        return default
+                    obj = json.loads(path.read_text(encoding="utf-8", errors="replace") or "null")
+                    return obj if obj is not None else default
+                except Exception:
+                    return default
+
+            def _write_json_file_atomic(path: Path, obj: Any) -> None:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                tmp = path.with_suffix(path.suffix + ".tmp")
+                tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", errors="replace")
+                try:
+                    tmp.replace(path)
+                except Exception:
+                    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", errors="replace")
+                    try:
+                        tmp.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+
+            def _load_state() -> None:
+                nonlocal _jobs, _workers
+                jobs_obj = _read_json_file(jobs_path, {})
+                workers_obj = _read_json_file(workers_path, {})
+                _jobs = jobs_obj if isinstance(jobs_obj, dict) else {}
+                _workers = workers_obj if isinstance(workers_obj, dict) else {}
+
+            def _save_state() -> None:
+                _write_json_file_atomic(jobs_path, _jobs)
+                _write_json_file_atomic(workers_path, _workers)
+
+            def _external_max(executor: str) -> int:
+                ex = str(executor or "").strip().lower()
+                if ex == "codex":
+                    try:
+                        return int(os.environ.get("EXTERNAL_MAX_CODEX") or 4)
+                    except Exception:
+                        return 4
+                if ex == "opencodecli":
+                    try:
+                        # Default to 1 to avoid provider rate limits causing widespread stalls.
+                        # Increase via EXTERNAL_MAX_OPENCODECLI if you have higher quota.
+                        return int(os.environ.get("EXTERNAL_MAX_OPENCODECLI") or 1)
+                    except Exception:
+                        return 1
+                return 1
+
+            def _lease_ms() -> int:
+                try:
+                    v = int(os.environ.get("EXEC_WORKER_LEASE_MS") or 720000)
+                except Exception:
+                    v = 720000
+                return max(30_000, min(v, 24 * 60 * 60 * 1000))
+
+            def _worker_stale_prune_ms() -> int:
+                try:
+                    v = int(os.environ.get("WORKER_STALE_PRUNE_MS") or 600000)
+                except Exception:
+                    v = 600000
+                return max(60_000, min(v, 24 * 60 * 60 * 1000))
+
+            def _prune_workers_locked() -> None:
+                now = _now_ms()
+                stale_ms = _worker_stale_prune_ms()
+                to_del = []
+                for wid, w in list(_workers.items()):
+                    if not isinstance(w, dict):
+                        to_del.append(wid)
+                        continue
+                    last_seen = int(w.get("lastSeen") or 0)
+                    if not last_seen or now - last_seen < stale_ms:
+                        continue
+                    if w.get("runningJobId"):
+                        continue
+                    to_del.append(wid)
+                for wid in to_del[:500]:
+                    _workers.pop(wid, None)
+
+            def _running_counts_external_locked() -> Dict[str, int]:
+                out = {"codex": 0, "opencodecli": 0}
+                for j in _jobs.values():
+                    if not isinstance(j, dict):
+                        continue
+                    if j.get("runner") != "external":
+                        continue
+                    if j.get("status") != "running":
+                        continue
+                    ex = str(j.get("executor") or "")
+                    if ex in out:
+                        out[ex] += 1
+                return out
+
+            def _requeue_expired_leases_locked() -> None:
+                now = _now_ms()
+                grace = 30_000
+                for j in _jobs.values():
+                    if not isinstance(j, dict):
+                        continue
+                    if j.get("runner") != "external" or j.get("status") != "running":
+                        continue
+                    lease_until = int(j.get("leaseUntil") or 0)
+                    if not lease_until:
+                        continue
+                    if now <= lease_until + grace:
+                        continue
+                    wid = str(j.get("workerId") or "").strip()
+                    j["status"] = "queued"
+                    j["workerId"] = None
+                    j["leaseUntil"] = None
+                    j["lastUpdate"] = now
+                    if wid and isinstance(_workers.get(wid), dict):
+                        if _workers[wid].get("runningJobId") == j.get("id"):
+                            _workers[wid]["runningJobId"] = None
+                    j["lease_rescue_count"] = int(j.get("lease_rescue_count") or 0) + 1
+
+            def _extract_submit(stdout: str) -> Optional[Dict[str, Any]]:
+                s = str(stdout or "")
+                for line in s.splitlines():
+                    if not line.startswith("SUBMIT:"):
+                        continue
+                    payload = line[len("SUBMIT:") :].strip()
+                    try:
+                        obj = json.loads(payload)
+                        return obj if isinstance(obj, dict) else None
+                    except Exception:
+                        return None
+                for line in s.splitlines():
+                    line2 = line.strip()
+                    if not (line2.startswith("{") and line2.endswith("}")):
+                        continue
+                    try:
+                        obj = json.loads(line2)
+                    except Exception:
+                        continue
+                    def _walk(x: Any) -> Optional[str]:
+                        if isinstance(x, str):
+                            return x
+                        if isinstance(x, dict):
+                            for v in x.values():
+                                t = _walk(v)
+                                if t:
+                                    return t
+                        if isinstance(x, list):
+                            for v in x:
+                                t = _walk(v)
+                                if t:
+                                    return t
+                        return None
+                    txt = _walk(obj)
+                    if txt and "SUBMIT:" in txt:
+                        for l in str(txt).splitlines():
+                            if l.startswith("SUBMIT:"):
+                                payload = l[len("SUBMIT:") :].strip()
+                                try:
+                                    obj2 = json.loads(payload)
+                                    return obj2 if isinstance(obj2, dict) else None
+                                except Exception:
+                                    return None
+                return None
+
+            def _make_context_pack_from_files(files: list[str], max_bytes: int) -> Dict[str, Any]:
+                used = 0
+                chunks: list[str] = []
+                used_files: list[str] = []
+                max_bytes = max(10_000, min(int(max_bytes or 200_000), 600_000))
+                for raw in files[:32]:
+                    rel = str(raw or "").replace("\\", "/").lstrip("/").strip()
+                    if not rel or ".." in rel.split("/"):
+                        continue
+                    p = (self.repo_root / rel).resolve()
+                    if not str(p).startswith(str(self.repo_root.resolve())):
+                        continue
+                    if not p.is_file():
+                        continue
+                    try:
+                        data = p.read_text(encoding="utf-8", errors="replace")
+                    except Exception:
+                        continue
+                    header = f"\n\n# FILE: {rel}\n"
+                    piece = header + data
+                    b = piece.encode("utf-8", errors="replace")
+                    if used + len(b) > max_bytes:
+                        remaining = max_bytes - used
+                        if remaining > 2000:
+                            piece2 = b[:remaining].decode("utf-8", errors="replace")
+                            chunks.append(piece2)
+                            used += len(piece2.encode("utf-8", errors="replace"))
+                            used_files.append(rel)
+                        break
+                    chunks.append(piece)
+                    used += len(b)
+                    used_files.append(rel)
+                content = "".join(chunks).lstrip("\n")
+                cid = uuid4().hex[:16]
+                out_path = (ctx_dir / f"{cid}.txt").resolve()
+                out_path.write_text(content, encoding="utf-8", errors="replace")
+                return {"ok": True, "id": cid, "file": str(out_path), "bytes": used, "files": used_files}
+
+            ATOMIC_DEFAULT_RULES = "\n".join(
+                [
+                    "You are SCC Executor.",
+                    "Output contract (strict): end your final message with one line:",
+                    "SUBMIT: {\\\"status\\\":\\\"OK\\\",\\\"touched_files\\\":[],\\\"tests_run\\\":[],\\\"notes\\\":\\\"...\\\"}",
+                    "Do not include anything after the SUBMIT line.",
+                ]
+            )
+
+            def _build_injected_prompt(job: Dict[str, Any]) -> str:
+                prompt = str(job.get("prompt") or "")
+                ctx_id = str(job.get("contextPackId") or "").strip()
+                if ctx_id:
+                    p = (ctx_dir / f"{ctx_id}.txt").resolve()
+                    if p.is_file():
+                        try:
+                            ctx_text = p.read_text(encoding="utf-8", errors="replace")
+                        except Exception:
+                            ctx_text = ""
+                        if ctx_text:
+                            return ATOMIC_DEFAULT_RULES + "\n\nContext:\n" + ctx_text + "\n\n" + prompt
+                return ATOMIC_DEFAULT_RULES + "\n\n" + prompt
+
+            _load_state()
+
+            @app.get("/workers")
+            async def api_workers_list():
+                with _lock:
+                    _prune_workers_locked()
+                    _requeue_expired_leases_locked()
+                    _save_state()
+                    return list(_workers.values())
+
+            @app.post("/workers/register")
+            async def api_workers_register(request: Request):
+                body = await request.json()
+                if not isinstance(body, dict):
+                    raise HTTPException(status_code=400, detail="invalid_body")
+                name = str(body.get("name") or "worker").strip() or "worker"
+                executors = body.get("executors") if isinstance(body.get("executors"), list) else []
+                allowed = [str(x) for x in executors if str(x) in {"codex", "opencodecli"}]
+                if not allowed:
+                    raise HTTPException(status_code=400, detail="missing_executors")
+                models = body.get("models") if isinstance(body.get("models"), list) else []
+                models2 = [str(x) for x in models if str(x).strip()][:32]
+                now = _now_ms()
+                key = name + "::" + ",".join(sorted(allowed))
+                with _lock:
+                    existing = None
+                    for w in _workers.values():
+                        if not isinstance(w, dict):
+                            continue
+                        k2 = str(w.get("name") or "") + "::" + ",".join(sorted(list(w.get("executors") or [])))
+                        if k2 == key:
+                            existing = w
+                            break
+                    if existing is not None:
+                        existing["executors"] = allowed
+                        existing["models"] = models2
+                        existing["lastSeen"] = now
+                        if not existing.get("startedAt"):
+                            existing["startedAt"] = now
+                        _save_state()
+                        return existing
+                    wid = str(uuid4())
+                    w = {"id": wid, "name": name, "executors": allowed, "models": models2, "startedAt": now, "lastSeen": now, "runningJobId": None}
+                    _workers[wid] = w
+                    _save_state()
+                    return JSONResponse(status_code=201, content=w)
+
+            @app.post("/workers/{worker_id}/heartbeat")
+            async def api_workers_heartbeat(worker_id: str, request: Request):
+                wid = str(worker_id or "").strip()
+                if not wid:
+                    raise HTTPException(status_code=400, detail="missing_worker_id")
+                try:
+                    body = await request.json()
+                except Exception:
+                    body = {}
+                if not isinstance(body, dict):
+                    body = {}
+                now = _now_ms()
+                with _lock:
+                    w = _workers.get(wid)
+                    if not isinstance(w, dict):
+                        raise HTTPException(status_code=404, detail="not_found")
+                    w["lastSeen"] = now
+                    if "runningJobId" in body:
+                        raw = body.get("runningJobId")
+                        w["runningJobId"] = str(raw).strip() if raw is not None and str(raw).strip() else None
+                    rid = w.get("runningJobId")
+                    if rid:
+                        j = _jobs.get(str(rid))
+                        if isinstance(j, dict) and j.get("runner") == "external" and j.get("workerId") == wid and j.get("status") == "running":
+                            j["leaseUntil"] = now + _lease_ms()
+                            j["lastUpdate"] = now
+                    _save_state()
+                return {"ok": True, "id": wid}
+
+            @app.get("/workers/{worker_id}/claim")
+            async def api_workers_claim(worker_id: str, executor: str = "", waitMs: int = 25000):
+                wid = str(worker_id or "").strip()
+                ex = str(executor or "").strip()
+                if not wid:
+                    raise HTTPException(status_code=400, detail="missing_worker_id")
+                if not ex:
+                    raise HTTPException(status_code=400, detail="missing_executor")
+                deadline = _now_ms() + max(0, min(int(waitMs or 25000), 60000))
+                while _now_ms() < deadline:
+                    with _lock:
+                        _prune_workers_locked()
+                        _requeue_expired_leases_locked()
+                        w = _workers.get(wid)
+                        if not isinstance(w, dict):
+                            raise HTTPException(status_code=404, detail="not_found")
+                        if ex not in list(w.get("executors") or []):
+                            raise HTTPException(status_code=400, detail="executor_not_allowed")
+                        if w.get("runningJobId"):
+                            return JSONResponse(status_code=409, content={"error": "worker_busy", "runningJobId": w.get("runningJobId")})
+                        counts = _running_counts_external_locked()
+                        if counts.get(ex, 0) < _external_max(ex):
+                            supported = w.get("models") if isinstance(w.get("models"), list) else None
+                            def can_run(m: str) -> bool:
+                                if not supported:
+                                    return True
+                                return str(m) in [str(x) for x in supported]
+                            queued = [j for j in _jobs.values() if isinstance(j, dict) and j.get("runner") == "external" and j.get("status") == "queued" and str(j.get("executor") or "") == ex and can_run(str(j.get("model") or ""))]
+                            queued.sort(key=lambda x: int(x.get("createdAt") or 0))
+                            pick = queued[0] if queued else None
+                            if pick is not None:
+                                now = _now_ms()
+                                jid = str(pick.get("id"))
+                                pick["status"] = "running"
+                                pick["workerId"] = wid
+                                pick["leaseUntil"] = now + _lease_ms()
+                                pick["startedAt"] = now
+                                pick["lastUpdate"] = now
+                                pick["attempts"] = int(pick.get("attempts") or 0) + 1
+                                _jobs[jid] = pick
+                                w["lastSeen"] = now
+                                w["runningJobId"] = jid
+                                _save_state()
+                                return {"id": jid, "executor": pick.get("executor"), "model": pick.get("model"), "taskType": pick.get("taskType"), "timeoutMs": pick.get("timeoutMs"), "prompt": _build_injected_prompt(pick)}
+                        _save_state()
+                    await asyncio.sleep(0.5)
+                # 204 must not include a response body, otherwise some middleware
+                # (e.g. gzip) may raise "Response content longer than Content-Length".
+                return Response(status_code=204)
+
+            @app.get("/jobs")
+            async def api_jobs_list():
+                with _lock:
+                    _requeue_expired_leases_locked()
+                    _save_state()
+                    return list(_jobs.values())
+
+            @app.post("/jobs")
+            async def api_jobs_submit(request: Request):
+                body = await request.json()
+                if not isinstance(body, dict):
+                    raise HTTPException(status_code=400, detail="invalid_body")
+                prompt = str(body.get("prompt") or "").strip()
+                if not prompt:
+                    raise HTTPException(status_code=400, detail="missing_prompt")
+                ex = str(body.get("executor") or "codex").strip() or "codex"
+                if ex not in {"codex", "opencodecli"}:
+                    raise HTTPException(status_code=400, detail="invalid_executor")
+                model = str(body.get("model") or "").strip() or "gpt-5.2"
+                task_type = str(body.get("taskType") or "atomic").strip() or "atomic"
+                runner = str(body.get("runner") or "external").strip() or "external"
+                if runner != "external":
+                    raise HTTPException(status_code=400, detail="internal_runner_not_supported")
+                timeout_ms = body.get("timeoutMs")
+                try:
+                    timeout_ms2 = int(timeout_ms) if timeout_ms is not None else None
+                except Exception:
+                    timeout_ms2 = None
+                ctx_id = str(body.get("contextPackId") or "").strip() or None
+                now = _now_ms()
+                jid = str(uuid4())
+                job = {"id": jid, "executor": ex, "model": model, "taskType": task_type, "timeoutMs": timeout_ms2, "prompt": prompt, "runner": "external", "status": "queued", "createdAt": now, "startedAt": None, "finishedAt": None, "workerId": None, "leaseUntil": None, "lastUpdate": now, "attempts": 0, "contextPackId": ctx_id}
+                with _lock:
+                    _jobs[jid] = job
+                    _save_state()
+                return JSONResponse(status_code=202, content=job)
+
+            @app.post("/jobs/atomic")
+            async def api_jobs_atomic(request: Request):
+                body = await request.json()
+                if not isinstance(body, dict):
+                    raise HTTPException(status_code=400, detail="invalid_body")
+                goal = str(body.get("goal") or "").strip()
+                if not goal:
+                    raise HTTPException(status_code=400, detail="missing_goal")
+                if len(goal) < 10:
+                    raise HTTPException(status_code=400, detail="goal_too_small")
+                if len(goal) > 4000:
+                    raise HTTPException(status_code=400, detail="goal_too_large")
+                ex = str(body.get("executor") or "codex").strip() or "codex"
+                if ex not in {"codex", "opencodecli"}:
+                    raise HTTPException(status_code=400, detail="invalid_executor")
+                model = str(body.get("model") or "").strip() or "gpt-5.2"
+                files = body.get("files") if isinstance(body.get("files"), list) else []
+                files2 = [str(x) for x in files if str(x).strip()][:16]
+                max_bytes = int(body.get("maxBytes") or 220000)
+                runner = str(body.get("runner") or "external").strip() or "external"
+                if runner != "external":
+                    raise HTTPException(status_code=400, detail="internal_runner_not_supported")
+                task_type = str(body.get("taskType") or "atomic").strip() or "atomic"
+                timeout_ms_raw = body.get("timeoutMs")
+                try:
+                    timeout_ms2 = int(timeout_ms_raw) if timeout_ms_raw is not None else None
+                except Exception:
+                    timeout_ms2 = None
+                ctx = _make_context_pack_from_files(files2, max_bytes)
+                ctx_id = ctx.get("id") if isinstance(ctx, dict) else None
+                prompt = "\n".join(["Goal:", goal, "", "Deliverable:", "- Return the SUBMIT line as specified."])
+                now = _now_ms()
+                jid = str(uuid4())
+                job = {"id": jid, "executor": ex, "model": model, "taskType": task_type, "timeoutMs": timeout_ms2, "prompt": prompt, "runner": "external", "status": "queued", "createdAt": now, "startedAt": None, "finishedAt": None, "workerId": None, "leaseUntil": None, "lastUpdate": now, "attempts": 0, "contextPackId": ctx_id}
+                with _lock:
+                    _jobs[jid] = job
+                    _save_state()
+                return JSONResponse(status_code=202, content={**job, "contextPackBytes": int(ctx.get("bytes") or 0) if isinstance(ctx, dict) else 0})
+
+            @app.post("/jobs/{job_id}/complete")
+            async def api_jobs_complete(job_id: str, request: Request):
+                jid = str(job_id or "").strip()
+                if not jid:
+                    raise HTTPException(status_code=400, detail="missing_job_id")
+                body = await request.json()
+                if not isinstance(body, dict):
+                    raise HTTPException(status_code=400, detail="invalid_body")
+                worker_id = str(body.get("workerId") or "").strip()
+                try:
+                    exit_code2 = int(body.get("exit_code"))
+                except Exception:
+                    exit_code2 = 0
+                stdout = str(body.get("stdout") or "")
+                stderr = str(body.get("stderr") or "")
+                submit = body.get("submit") if isinstance(body.get("submit"), dict) else None
+                now = _now_ms()
+                with _lock:
+                    j = _jobs.get(jid)
+                    if not isinstance(j, dict):
+                        raise HTTPException(status_code=404, detail="not_found")
+                    if j.get("runner") != "external":
+                        raise HTTPException(status_code=400, detail="not_external_job")
+                    matches = worker_id and worker_id == str(j.get("workerId") or "")
+                    lease_until = int(j.get("leaseUntil") or 0)
+                    stale_lease = bool(lease_until and now > lease_until + 30000)
+                    orphaned = bool(j.get("workerId") and not _workers.get(str(j.get("workerId"))))
+                    rescue_allowed = (not matches) and str(j.get("status")) == "running" and (stale_lease or orphaned)
+                    if not matches and not rescue_allowed:
+                        raise HTTPException(status_code=403, detail="worker_mismatch")
+                    if submit is None:
+                        submit = _extract_submit(stdout)
+                    occli_require_submit = (os.environ.get("OCCLI_REQUIRE_SUBMIT") or "").strip().lower() == "true"
+                    status = "done" if exit_code2 == 0 else "failed"
+                    reason = None
+                    if status == "done" and str(j.get("executor")) == "opencodecli" and occli_require_submit and not submit:
+                        status = "failed"
+                        reason = "missing_submit_contract"
+                    j.update({"exit_code": exit_code2, "stdout": stdout, "stderr": stderr, "submit": submit, "status": status, "reason": reason, "finishedAt": now, "lastUpdate": now})
+                    if status != "running":
+                        wid0 = str(j.get("workerId") or "").strip()
+                        if wid0 and isinstance(_workers.get(wid0), dict) and _workers[wid0].get("runningJobId") == jid:
+                            _workers[wid0]["runningJobId"] = None
+                        j["workerId"] = None
+                        j["leaseUntil"] = None
+                    _jobs[jid] = j
+                    _save_state()
+                    return j
+
+            @app.post("/jobs/{job_id}/cancel")
+            async def api_jobs_cancel(job_id: str, request: Request):
+                jid = str(job_id or "").strip()
+                now = _now_ms()
+                with _lock:
+                    j = _jobs.get(jid)
+                    if not isinstance(j, dict):
+                        raise HTTPException(status_code=404, detail="not_found")
+                    j["status"] = "failed"
+                    j["reason"] = "canceled"
+                    j["finishedAt"] = now
+                    j["lastUpdate"] = now
+                    _jobs[jid] = j
+                    _save_state()
+                return {"ok": True, "id": jid}
+
+            @app.post("/jobs/{job_id}/requeue")
+            async def api_jobs_requeue(job_id: str, request: Request):
+                jid = str(job_id or "").strip()
+                now = _now_ms()
+                with _lock:
+                    j = _jobs.get(jid)
+                    if not isinstance(j, dict):
+                        raise HTTPException(status_code=404, detail="not_found")
+                    j["status"] = "queued"
+                    j["workerId"] = None
+                    j["leaseUntil"] = None
+                    j["startedAt"] = None
+                    j["finishedAt"] = None
+                    j["lastUpdate"] = now
+                    _jobs[jid] = j
+                    _save_state()
+                return {"ok": True, "id": jid}
+
+            @app.post("/contextpacks")
+            async def api_contextpacks_create(request: Request):
+                body = await request.json()
+                if not isinstance(body, dict):
+                    raise HTTPException(status_code=400, detail="invalid_body")
+                files = body.get("files") if isinstance(body.get("files"), list) else []
+                files2 = [str(x) for x in files if str(x).strip()][:16]
+                max_bytes = int(body.get("maxBytes") or 200000)
+                out = _make_context_pack_from_files(files2, max_bytes)
+                return JSONResponse(status_code=201, content={"id": out.get("id"), "file": out.get("file"), "bytes": out.get("bytes")})
+
+            @app.get("/contextpacks/{ctx_id}")
+            async def api_contextpacks_get(ctx_id: str):
+                cid = str(ctx_id or "").strip()
+                p = (ctx_dir / f"{cid}.txt").resolve()
+                if not p.is_file():
+                    raise HTTPException(status_code=404, detail="not_found")
+                content = p.read_text(encoding="utf-8", errors="replace")
+                return {"id": cid, "file": str(p), "content": content}
             from pydantic import BaseModel
 
             class CodexRequest(BaseModel):

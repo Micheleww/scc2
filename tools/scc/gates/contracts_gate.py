@@ -114,4 +114,10 @@ def run(repo: pathlib.Path, submit: dict, submit_path: pathlib.Path):
         else:
             errors += validate_retry_plan_v1(rp)
 
+    # 8) enterprise execution entrypoint: slot-based Context Pack v1 reference must exist when required
+    if str(os.environ.get("CONTEXT_PACK_V1_REQUIRED") or "true").lower() != "false":
+        ref_path = art_dir / "context_pack_v1.json"
+        if not ref_path.exists():
+            errors.append("missing artifacts/<task_id>/context_pack_v1.json")
+
     return {"errors": errors, "warnings": warnings}

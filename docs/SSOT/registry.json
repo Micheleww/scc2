@@ -55,7 +55,10 @@
       "contracts/submit/submit.schema.json",
       "contracts/task_graph/task_graph.schema.json",
       "contracts/trace/trace.schema.json",
-      "contracts/verdict/verdict.schema.json"
+      "contracts/verdict/verdict.schema.json",
+      "contracts/context_pack/context_pack.schema.json",
+      "contracts/context_pack/context_pack_ref.schema.json",
+      "contracts/context_pack/context_pack_proof.schema.json"
     ]
   },
   "notes": "Minimal SSOT facts registry: stable roots + core gateway entry points + all contracts/*/*.schema.json. Used by ssot_map_gate (Map-driven drift detection).",
