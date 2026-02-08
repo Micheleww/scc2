@@ -156,6 +156,14 @@ function Start-EnsureWorkers {
   Import-EnvFile $envExample $false
   Import-EnvFile $envFile $true
 
+  # Ensure ensure-workers targets the active gateway port.
+  if (-not $env:GATEWAY_BASE) {
+    $p = 18788
+    try { if ($env:GATEWAY_PORT) { $p = [int]$env:GATEWAY_PORT } } catch {}
+    if ($p -le 0) { $p = 18788 }
+    $env:GATEWAY_BASE = ("http://127.0.0.1:{0}" -f $p)
+  }
+
   $lockFile = Join-Path $LogDir "ensure_workers.lock.json"
   try {
     if (Test-Path $lockFile) {
