@@ -222,7 +222,8 @@ def main() -> int:
     extra_env = {f"SCC_SECRET_{k}": v for k, v in secrets.items()}
 
     # PRECHECK: ensure Map exists (pins builder needs map hash).
-    code, _, _ = _run(["cmd.exe", "/c", "npm --prefix oc-scc-local run -s map:build"], cwd=REPO_ROOT, timeout_s=240, capture=False)
+    # Cross-platform: do not invoke cmd.exe; run npm directly.
+    code, _, _ = _run(["npm", "--prefix", "oc-scc-local", "run", "-s", "map:build"], cwd=REPO_ROOT, timeout_s=240, capture=False)
     if code != 0:
         _write_text(art_dir / "report.md", "# PRECHECK failed\nmap:build failed.\n")
         _write_text(art_dir / "selftest.log", "precheck failed\nEXIT_CODE=1\n")

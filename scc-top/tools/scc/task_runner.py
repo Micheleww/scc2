@@ -149,8 +149,7 @@ def _maybe_generate_codex_plan(
         appdata = (os.environ.get("APPDATA") or "").strip()
         if appdata:
             candidates.append(str(Path(appdata) / "npm" / "codex.cmd"))
-        # Back-compat: previously hardcoded in executor_service.py; keep as last resort.
-        candidates.append(r"C:\Users\Nwe-1\AppData\Roaming\npm\codex.cmd")
+        # Back-compat: older deployments used a user-specific path; avoid hardcoding it here.
         for c in candidates:
             if c and Path(c).exists():
                 exe = c

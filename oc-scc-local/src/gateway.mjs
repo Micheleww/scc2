@@ -13,6 +13,7 @@ import { readJsonlTail, countJsonlLines } from "./lib/jsonl_tail.mjs"
 import { getConfig } from "./lib/config.mjs"
 import { readJson, writeJsonAtomic, updateJsonLocked } from "./lib/state_store.mjs"
 import { loadJobsState, saveJobsState } from "./lib/jobs_store.mjs"
+import { hasShellMetacharacters, parseCmdline } from "./lib/cmdline.mjs"
 import {
   BOARD_LANES,
   BOARD_STATUS,
@@ -7559,9 +7560,17 @@ function runCiGateCommand(cmd) {
   return new Promise((resolve) => {
     const start = Date.now()
     const cwd = resolveCiGateCwd()
+    if (hasShellMetacharacters(cmd)) {
+      return resolve({ ok: false, exitCode: 2, durationMs: 0, stdoutText: "", stderrText: "refusing unsafe command (shell metacharacters)" })
+    }
+    const argv = parseCmdline(cmd)
+    if (!argv.length) {
+      return resolve({ ok: false, exitCode: 2, durationMs: 0, stdoutText: "", stderrText: "empty command" })
+    }
+
     execFile(
-      "cmd.exe",
-      ["/c", cmd],
+      argv[0],
+      argv.slice(1),
       { cwd, timeout: Number.isFinite(ciGateTimeoutMs) ? ciGateTimeoutMs : 1_200_000, windowsHide: true, maxBuffer: 10 * 1024 * 1024 },
       (err, stdout, stderr) => {
         const finishedAt = Date.now()
@@ -7615,9 +7624,17 @@ function runAllowedTestCommand(cmd) {
   return new Promise((resolve) => {
     const start = Date.now()
     const cwd = SCC_REPO_ROOT && fs.existsSync(SCC_REPO_ROOT) ? SCC_REPO_ROOT : process.cwd()
+    if (hasShellMetacharacters(cmd)) {
+      return resolve({ ok: false, exitCode: 2, durationMs: 0, stdoutText: "", stderrText: "refusing unsafe command (shell metacharacters)" })
+    }
+    const argv = parseCmdline(cmd)
+    if (!argv.length) {
+      return resolve({ ok: false, exitCode: 2, durationMs: 0, stdoutText: "", stderrText: "empty command" })
+    }
+
     execFile(
-      "cmd.exe",
-      ["/c", cmd],
+      argv[0],
+      argv.slice(1),
       { cwd, timeout: 1_200_000, windowsHide: true, maxBuffer: 10 * 1024 * 1024 },
       (err, stdout, stderr) => {
         const finishedAt = Date.now()

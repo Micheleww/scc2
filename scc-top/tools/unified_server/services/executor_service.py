@@ -46,7 +46,8 @@ class ExecutorService(Service):
         # Codex CLI（OpenAI Codex）配置：用于执行分解过后的子任务
         self.codex_config = {
             "exe": os.environ.get("CODEX_CLI_EXE", "codex"),
-            "cmd_fallback": r"C:\Users\Nwe-1\AppData\Roaming\npm\codex.cmd",
+            # Use APPDATA for npm global bin fallback; avoid hardcoding developer-specific paths.
+            "cmd_fallback": str(Path(os.environ.get("APPDATA") or "") / "npm" / "codex.cmd") if os.environ.get("APPDATA") else "",
             "model": str(os.environ.get("A2A_CODEX_MODEL") or rt.codex_model or "gpt-5.2"),
             "timeout": int(os.environ.get("A2A_CODEX_TIMEOUT_SEC") or rt.codex_timeout_s or 900),
             "max_outstanding_limit": int(os.environ.get("A2A_CODEX_MAX_OUTSTANDING_LIMIT") or rt.codex_max_outstanding_limit or 4),
