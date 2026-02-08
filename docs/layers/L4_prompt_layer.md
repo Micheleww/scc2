@@ -712,26 +712,6 @@ L4 提示词层
     └─ 提供门禁规则给 → L13 安全层
 ```
 
-### 4.2.5 技能规范（SkillSpec - 来自SSOT）
-
-**Guard规则**: 任何声称DONE的任务必须可由适当的guard验证
-
-**最小技能集（v0.1.0）**:
-
-| 技能 | 描述 |
-|------|------|
-| `SHELL_READONLY` | 检查仓库（rg/cat/ls）；无写入 |
-| `SHELL_WRITE` | 在允许的工作空间根目录内写入 |
-| `PATCH_APPLY` | 应用代码/文档补丁 |
-| `SELFTEST` | 运行验收命令/测试 |
-| `DOCFLOW_AUDIT` | 运行文档流审计并在产物下写入报告 |
-| `REVIEW_JOB` | 生成进度 + 反馈 + 指标 |
-
-**证据规则**: 规范文档不得嵌入大型证据；必须链接到 `artifacts/...` 和 `docs/INPUTS/...`
-
----
-
-
 ---
 
 **导航**: [← L3](./L3_documentation_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L5](./L5_model_layer.md)

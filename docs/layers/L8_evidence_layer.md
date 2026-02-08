@@ -88,15 +88,11 @@ verdict:
 | EVIDENCE_MISSING | Evidence incomplete | Required artifacts absent | Recreate missing evidence; ensure paths are correct |
 | NEEDS_CLARIFICATION | Task ambiguity | Goal unclear or contradictory requirements | Ask targeted questions; proceed after clarification |
 
-### 8.2.3 证据收集规范
+### 8.2.3 IO模式（Schemas）
 
-### 8.2.4 证据规范
+> **来源**: `docs/prompt_os/io/schemas.md`
 
-### 8.2.5 IO模式（Schemas）
-
-# PromptOS IO Layer — Schemas
-
-This document defines the standard **input/output data formats** used by SCC PromptOS agents and the executor.
+本节定义SCC PromptOS agents和executor使用的标准**输入/输出数据格式**。
 
 The IO layer exists to make tasks:
 
@@ -277,14 +273,14 @@ After the gateway validates artifacts and policies, it may produce a *verdict ob
 
 
 
-# PromptOS IO Layer — Evidence Specification
+### 8.2.4 证据规范（Evidence Specification）
 
-This document defines the **evidence artifacts** required to support reproducible, auditable task execution.
+> **来源**: `docs/prompt_os/io/evidence_spec.md`
 
-Evidence serves two purposes:
+证据产物用于支持可复现、可审计的任务执行：
 
-1. **Reproducibility**: another system (or human) can understand what changed and how it was validated.
-2. **Adjudication**: the gateway can decide PASS/FAIL with minimal ambiguity.
+1. **可复现性**: 其他系统（或人类）能理解发生了什么变更、如何验证的
+2. **裁决依据**: 网关能以最小歧义判定 PASS/FAIL
 
 ---
 

@@ -218,25 +218,6 @@ L10 工作空间层
     └─ 提供环境给 → L7 工具层
 ```
 
-### 10.2.5 WorkspaceSpec（来自SSOT）
-
-**目标**: 定义SCC使用的最小工作空间不变量
-
-**最小不变量**:
-- `workspace_id`: `scc-top`
-- 仓库根包含 `docs/START_HERE.md` (唯一入口)
-- SSOT主干在 `docs/ssot/` 下
-- 输入在 `docs/INPUTS/` 下
-- 派生（可再生）输出在 `docs/DERIVED/` 下
-- 证据/输出在 `artifacts/` 和 `evidence/` 下（首选append-only）
-
-**多项目工作空间**:
-- 每个合同必须声明 `project_id`
-- 分发必须从项目目录派生 `allowed_globs[]`，然后进一步按 `contract.scope_allow` 缩小
-
----
-
-
 ---
 
 **导航**: [← L9](./L9_state_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L11](./L11_routing_layer.md)

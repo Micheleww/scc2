@@ -278,7 +278,9 @@ L16 观测与可观测性层
 | L16 | 观测与可观测性层 | 07_reports_evidence/, 05_runbooks/ | SCC_OBSERVABILITY_SPEC__v0.1.0.md |
 | L17 | 知识与本体层 | 01_conventions/ | OID_SPEC__v0.1.0.md, UNIT_REGISTRY__v0.1.0.md |
 
-### 16.2.4 SCC Observability Spec（来自SSOT）
+### 16.2.4 SCC Observability Spec
+
+> **来源**: `ssot/05_runbooks/SCC_OBSERVABILITY_SPEC__v0.1.0.md`
 
 **目标**: 把SCC的关键指标"口径统一 + 采集点明确 + 阈值可告警"固化成单页SSOT
 
@@ -303,11 +305,6 @@ L16 观测与可观测性层
 **指标落点**:
 - 原始事件/证据: `artifacts/` 与 `evidence/`（append-only）
 - 共享阅读入口: `docs/START_HERE.md` → `docs/arch/00_index.md`
-
----
-
-**文档完成 - 所有17层详细版**
-
 
 ---
 

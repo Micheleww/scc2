@@ -61,25 +61,16 @@ L13是SCC架构的**安全控制层**，为全系统提供：
 
 ### 13.2.2 技能守卫（Skill Call Guard）
 
-#### 门禁规则
+> **完整技能定义**: 详见 [L4 提示词层 - 技能规范](./L4_prompt_layer.md#422-技能规范skillspec)
+> **工具层执行机制**: 详见 [L7 工具层 - 技能守卫](./L7_tool_layer.md#722-技能守卫skill-call-guard)
 
-```
+L13关注安全维度：确保技能调用通过门禁检查并留下审计痕迹。
+
+#### 安全门禁规则
+
 - 任何声称DONE的任务必须能通过适当的guard(s)验证
-- 对于基于TaskCode的CI流，guard是: tools/ci/skill_call_guard.py
-- 任何任务达到SUBMIT必须通过适用的guard(s)
-- 技能/工具使用必须通过工件和/或结构化日志可审计
-```
-
-#### 最小技能集（v0.1.0）
-
-| 技能 | 说明 | 使用角色 | 门禁 |
-|------|------|----------|------|
-| `SHELL_READONLY` | 检查仓库 | router, auditor | 无写入 |
-| `SHELL_WRITE` | 写入文件 | executor | 范围检查 |
-| `PATCH_APPLY` | 应用补丁 | executor | 范围检查 |
-| `SELFTEST` | 运行测试 | verifier | 结果验证 |
-| `DOCFLOW_AUDIT` | 文档审计 | auditor | 报告生成 |
-| `REVIEW_JOB` | 审查作业 | auditor | 报告生成 |
+- 技能/工具使用必须通过工件和/或结构化日志**可审计**
+- 违反技能守卫的任务标记为 `POLICY_VIOLATION`
 
 ---
 

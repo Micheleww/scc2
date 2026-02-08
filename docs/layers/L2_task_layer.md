@@ -435,36 +435,6 @@ L2 任务层
     └─ 提供acceptance给 → L14质量层
 ```
 
-### 2.2.9 Task Model与Codes（来自SSOT）
-
-**层级结构（强制）**:
-- **EPIC**: 长期主题
-- **CAPABILITY**: 可交付能力包
-- **COMPONENT/JOB**: 系统模块或可重复作业
-- **TASK**: 原子可执行工作项
-
-**task_id规则（强制）**:
-- 同一意图在重试间必须稳定
-- 必须从稳定密钥（source + stable_key）幂等生成
-- 跨来源绑定：Web chat用`(conversation_id, message_id)`，codexcli用`(run_id, workspace_root, contract_ref)`
-
-**必需标识符**:
-- `task_id`: 唯一
-- `contract_ref`: 合同链接/路径/oid
-- `touched_oids`: 修改/创建的对象oid列表
-- `evidence_oids`: 产生/使用的证据oid列表
-
-**状态机**:
-```
-queued → started → produced → verified(pass|fail) → done | dlq
-```
-
-**最小事件类型**:
-- TASK_QUEUED, TASK_STARTED, TASK_PRODUCED, TASK_VERIFIED, TASK_DONE, TASK_DLQ
-
----
-
-
 ---
 
 **导航**: [← L1](./L1_code_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L3](./L3_documentation_layer.md)

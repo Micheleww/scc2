@@ -506,46 +506,6 @@ L3 文档层
     └─ 提供SSOT规则给 → 所有其他层
 ```
 
-### 3.2.8 Docflow SSOT规范（来自SSOT）
-
-**目标**: 把文档流确立为SCC的主干（外部记忆与协议载体）
-
-**唯一入口**:
-- 总入口: `docs/START_HERE.md`
-- 架构/运维入口: `docs/arch/00_index.md`
-- 项目导航入口: `docs/arch/project_navigation__v0.1.0__...`
-- 外部输入入口: `docs/INPUTS/README.md`
-
-**目录分层**:
-- `docs/arch/`: 规范/设计/协议（变更频率低，SSOT）
-- `docs/spec/`: 机器可读合约（JSON Schema、接口规范）
-- `docs/INPUTS/`: 外部输入/需求原文（必须有来源与时间戳）
-- `artifacts/`与`evidence/`: 事实源/证据（系统真实发生了什么）
-
-**命名规则**:
-- 规范型: `NAME__v0.1.0.md`（强制版本化）
-- 报告型: `REPORT__TOPIC__v0.1__YYYYMMDD.md`
-- 外部输入: 放在`docs/INPUTS/...`，必须含`source`/`captured_at`/`page_url`
-
-### 3.2.9 Canonical Truth Set（来自SSOT）
-
-**权威文档集**:
-- GOALS: `docs/CANONICAL/GOALS.md`
-- ROADMAP: `docs/CANONICAL/ROADMAP.md`
-- CURRENT_STATE: `docs/CANONICAL/CURRENT_STATE.md`
-- ADR (Decisions): `docs/CANONICAL/ADR/index.md`
-- PROGRESS: `docs/CANONICAL/PROGRESS.md`
-
-**冲突优先级**:
-1. Human Goal Input (web chat directives)
-2. Contract backlog (approved contracts)
-3. Self-driven improvements (only within contracts)
-
-**证据规则**: 规范声明必须引用证据路径（raw/artifacts），不得嵌入大型原始日志
-
----
-
-
 ---
 
 **导航**: [← L2](./L2_task_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L4](./L4_prompt_layer.md)

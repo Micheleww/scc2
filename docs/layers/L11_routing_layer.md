@@ -301,34 +301,6 @@ L11 路由与调度层
     └─ 提供调度给 → L12 成本层
 ```
 
-### 11.2.7 Dispatch Runbook（来自SSOT）
-
-**目标**: 教会agents使用agents（并行分发），同时保持在SSOT + gate规则内
-
-**Leader链（组长/经理）**:
-1. **路由任务到角色**: `python tools/scc/role_router.py --goal "<task goal>"`
-2. **创建父批次配置**: 描述每个父任务的JSON
-   - `allowed_globs[]`: worker可触摸的路径/globs白名单
-   - `isolate_worktree: true`: 在隔离的git worktree中运行，仅通过补丁应用回
-   - `embed_allowlisted_files: true`: 嵌入确定性片段包（HEAD/TAIL + rg命中）
-3. **通过SCC自动化运行器分发**:
-   - 推荐: `powershell -File tools/scc/ops/dispatch_with_watchdog.ps1 -Config <config.json> -Model gpt-5.2 -TimeoutS 1800 -MaxOutstanding 3`
-   - 直接运行器: `python tools/scc/automation/run_batches.py --config <config.json> --model gpt-5.2 --timeout-s 1800 --max-outstanding 3`
-4. **审计结果**: `python tools/scc/ops/delegation_audit.py --automation-run-id <run_id>`
-5. **监督并停止卡住worker**: `python tools/scc/ops/dispatch_watchdog.py --base http://127.0.0.1:18788 --poll-s 60 --stuck-after-s 60`
-
-**Member链（执行器）**:
-- 遵守父提示中包含的范围和停止条件
-- 保持更改最小和确定性
-- 按WorkspaceSpec写入输出到canonical/derived/evidence位置
-
-**Guard链（审计员）**:
-- TaskCode/report流: `python tools/ci/skill_call_guard.py --taskcode <TaskCode> --area <area>`
-- SCC运行流: 确保`artifacts/scc_runs/<run_id>/evidence/verdict.json`存在；缺失verdict即FAIL（fail-closed）
-
----
-
-
 ---
 
 **导航**: [← L10](./L10_workspace_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L12](./L12_cost_layer.md)

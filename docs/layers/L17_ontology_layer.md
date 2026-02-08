@@ -545,30 +545,6 @@ L17 知识与本体层（基础层）
     └─ 提供实体关系给 → L8 证据层, L14 质量层
 ```
 
-### 17.2.8 OID/ULID规范（来自SSOT）
-
-**OID是ULID**: 26字符Crockford Base32，仅大写
-
-**权威注册表**: PostgreSQL `object_index`表
-- `oid`: 主键
-- `path`: 仓库根相对路径
-- `kind`: md/json/ts/py/log/patch/...
-- `layer`: RAW|DERIVED|CANON|DIST|CODE|CONF|TOOL|REPORT
-- `primary_unit`: 必须在Unit Registry中
-- `tags`: 可选多选单元token
-- `status`: active|moved|deprecated|tombstoned
-
-**OID生成器**: 唯一发行源，Agent不得直接生成ULID
-- 接口: `POST /scc/oid/new`
-- 必需: path, kind, layer, primary_unit
-
-**迁移规则**: 移动/重命名/分类变更必须经过migrate流程
-- 更新path，oid保持不变
-- 追加oid_events记录
-
----
-
-
 ---
 
 **导航**: [← L16](./L16_observability_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L1](./L1_code_layer.md)
