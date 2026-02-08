@@ -29,7 +29,8 @@ console.log(`[selfcheck:eval_sample_failed_v1] repoRoot=${repoRoot}`)
 console.log(`[selfcheck:eval_sample_failed_v1] taskId=${taskId}`)
 
 // Ensure Map is fresh
-execFileSync("cmd.exe", ["/c", "npm --prefix oc-scc-local run -s map:build"], {
+const mapBuildCmd = "npm --prefix oc-scc-local run -s map:build"
+execFileSync(process.platform === "win32" ? "cmd.exe" : "sh", process.platform === "win32" ? ["/c", mapBuildCmd] : ["-lc", mapBuildCmd], {
   cwd: repoRoot,
   stdio: "inherit",
   windowsHide: true,

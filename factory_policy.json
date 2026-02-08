@@ -2,16 +2,16 @@
   "schema_version": "scc.factory_policy.v1",
   "updated_at": "2026-02-05",
   "wip_limits": {
-    "WIP_TOTAL_MAX": 12,
+    "WIP_TOTAL_MAX": 16,
     "WIP_EXEC_MAX": 4,
-    "WIP_BATCH_MAX": 1,
+    "WIP_BATCH_MAX": 4,
 
     "WIP_TOTAL_EXTERNAL_MAX": 12,
-    "WIP_TOTAL_INTERNAL_MAX": 6,
+    "WIP_TOTAL_INTERNAL_MAX": 12,
     "WIP_EXEC_EXTERNAL_MAX": 4,
-    "WIP_EXEC_INTERNAL_MAX": 2,
+    "WIP_EXEC_INTERNAL_MAX": 3,
     "WIP_BATCH_EXTERNAL_MAX": 1,
-    "WIP_BATCH_INTERNAL_MAX": 1
+    "WIP_BATCH_INTERNAL_MAX": 4
   },
   "lanes": {
     "fastlane": { "priority": 100, "entity_roles_max": 2 },

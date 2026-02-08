@@ -106,10 +106,87 @@ def _validate(repo: pathlib.Path, data: Any, schema: dict, ctx: str, root_schema
                     errors += _validate(repo, v, additional, f"{ctx}.{k}", root_schema)
 
     if schema.get("type") == "array" and isinstance(data, list):
+        # Check minItems and maxItems constraints
+        min_items = schema.get("minItems")
+        max_items = schema.get("maxItems")
+        if min_items is not None and len(data) < min_items:
+            errors.append(f"{ctx}: array too short (minItems {min_items}, got {len(data)})")
+        if max_items is not None and len(data) > max_items:
+            errors.append(f"{ctx}: array too long (maxItems {max_items}, got {len(data)})")
+        # Validate items
         items = schema.get("items")
         if isinstance(items, dict):
             for i, v in enumerate(data):
                 errors += _validate(repo, v, items, f"{ctx}[{i}]", root_schema)
+
+    # Check string constraints (minLength, maxLength)
+    if schema.get("type") == "string" and isinstance(data, str):
+        min_len = schema.get("minLength")
+        max_len = schema.get("maxLength")
+        if min_len is not None and len(data) < min_len:
+            errors.append(f"{ctx}: string too short (minLength {min_len}, got {len(data)})")
+        if max_len is not None and len(data) > max_len:
+            errors.append(f"{ctx}: string too long (maxLength {max_len}, got {len(data)})")
+
+    return errors
+
+
+def _cross_field_validate(data: Any, schema_id: str, ctx: str) -> list[str]:
+    """
+    Cross-field validation rules that are hard to express in JSON Schema.
+
+    G6 Schema Tightening Notes:
+    - These validations check relationships between fields that JSON Schema
+      cannot easily express (e.g., conditional dependencies, mutual exclusivity).
+    - If a rule can be expressed in JSON Schema (using if/then/else, dependencies,
+      or oneOf), it should be added there instead of here.
+
+    Current cross-field validations:
+    1. child_task: If runner="external", allowedExecutors should be non-empty.
+    2. child_task: If task_class_candidate is set, task_class_id should be set too.
+    3. submit: If status="FAILED", reason_code should be provided.
+    4. submit: changed_files + new_files should not contain duplicates.
+    5. factory_policy: WIP limits should be consistent (WIP_TOTAL_MAX >= WIP_EXEC_MAX + WIP_BATCH_MAX).
+    """
+    errors: list[str] = []
+
+    if not isinstance(data, dict):
+        return errors
+
+    # Validation 1 & 2: child_task cross-field rules
+    if schema_id == "child_task":
+        runner = data.get("runner")
+        allowed_executors = data.get("allowedExecutors", [])
+        if runner == "external" and not allowed_executors:
+            errors.append(f"{ctx}: runner='external' requires non-empty allowedExecutors")
+
+        task_class_candidate = data.get("task_class_candidate")
+        task_class_id = data.get("task_class_id")
+        if task_class_candidate and not task_class_id:
+            errors.append(f"{ctx}: task_class_candidate requires task_class_id to be set")
+
+    # Validation 3 & 4: submit cross-field rules
+    elif schema_id == "submit":
+        status = data.get("status")
+        reason_code = data.get("reason_code")
+        if status == "FAILED" and not reason_code:
+            errors.append(f"{ctx}: status='FAILED' requires reason_code to be provided")
+
+        changed_files = data.get("changed_files", [])
+        new_files = data.get("new_files", [])
+        all_files = changed_files + new_files
+        if len(all_files) != len(set(all_files)):
+            errors.append(f"{ctx}: changed_files and new_files contain duplicate entries")
+
+    # Validation 5: factory_policy WIP consistency
+    elif schema_id == "factory_policy":
+        wip_limits = data.get("wip_limits", {})
+        wip_total = wip_limits.get("WIP_TOTAL_MAX")
+        wip_exec = wip_limits.get("WIP_EXEC_MAX")
+        wip_batch = wip_limits.get("WIP_BATCH_MAX")
+        if wip_total is not None and wip_exec is not None and wip_batch is not None:
+            if wip_total < wip_exec + wip_batch:
+                errors.append(f"{ctx}: WIP_TOTAL_MAX ({wip_total}) must be >= WIP_EXEC_MAX ({wip_exec}) + WIP_BATCH_MAX ({wip_batch})")
 
     return errors
 
@@ -127,6 +204,9 @@ def main() -> int:
         ("contracts/factory_policy/factory_policy.schema.json", "factory_policy.json"),
         ("contracts/eval/eval_manifest.schema.json", "eval/eval_manifest.json"),
         ("contracts/release/release_record.schema.json", "contracts/examples/release_record.example.json"),
+        # G6 Schema tightening: child_task and submit with maxItems/maxLength constraints
+        ("contracts/child_task/child_task.schema.json", "contracts/examples/child_task.example.json"),
+        ("contracts/submit/submit.schema.json", "contracts/examples/submit.example.json"),
     ]
 
     all_errors: list[str] = []
@@ -135,6 +215,11 @@ def main() -> int:
         inst = _load_json(repo / instance_rel)
         errs = _validate(repo, inst, schema, instance_rel)
         all_errors += [f"{schema_rel} -> {e}" for e in errs]
+
+        # G6: Run cross-field validation for supported schemas
+        schema_id = schema.get("$id", "").split("/")[-1].replace(".schema.json", "")
+        cross_errs = _cross_field_validate(inst, schema_id, instance_rel)
+        all_errors += [f"{schema_rel} -> {e}" for e in cross_errs]
 
     # Validate all curated eval sample sets (if any) against the schema.
     sample_schema_rel = "contracts/eval/eval_sample_set.schema.json"

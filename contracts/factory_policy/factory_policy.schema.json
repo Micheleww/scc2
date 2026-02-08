@@ -7,7 +7,7 @@
   "required": ["schema_version", "updated_at", "wip_limits", "lanes", "budgets", "event_routing", "circuit_breakers", "degradation_matrix", "verification_tiers"],
   "properties": {
     "schema_version": { "const": "scc.factory_policy.v1" },
-    "updated_at": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "minLength": 1, "maxLength": 50 },
     "wip_limits": {
       "type": "object",
       "additionalProperties": false,
@@ -61,14 +61,15 @@
         }
       }
     },
-    "circuit_breakers": {
+"circuit_breakers": {
       "type": "array",
+      "maxItems": 20,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["name", "match", "trip", "action"],
         "properties": {
-          "name": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
           "match": { "type": "object", "additionalProperties": true },
           "trip": {
             "type": "object",
@@ -82,8 +83,9 @@
         }
       }
     },
-    "degradation_matrix": {
+"degradation_matrix": {
       "type": "array",
+      "maxItems": 20,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -120,8 +122,8 @@
       "required": ["lane", "virtual_roles", "entity_roles"],
       "properties": {
         "lane": { "enum": ["fastlane", "mainlane", "batchlane", "quarantine", "dlq"] },
-        "virtual_roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "entity_roles": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+"virtual_roles": { "type": "array", "maxItems": 50, "items": { "type": "string", "minLength": 1, "maxLength": 100 } },
+        "entity_roles": { "type": "array", "maxItems": 50, "items": { "type": "string", "minLength": 1, "maxLength": 100 } }
       }
     }
   }

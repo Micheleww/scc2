@@ -129,6 +129,11 @@ function Start-Gateway {
     if (-not $env:EXTERNAL_MAX_CODEX) { $env:EXTERNAL_MAX_CODEX = "0" }
     if (-not $env:EXTERNAL_MAX_OPENCODECLI) { $env:EXTERNAL_MAX_OPENCODECLI = "10" }
 
+    # Allow a small amount of parallelism for "batchlane" tasks (default env is too strict for refactor work).
+    if (-not $env:WIP_BATCH_MAX) { $env:WIP_BATCH_MAX = "4" }
+    if (-not $env:WIP_BATCH_INTERNAL_MAX) { $env:WIP_BATCH_INTERNAL_MAX = $env:WIP_BATCH_MAX }
+    if (-not $env:WIP_BATCH_EXTERNAL_MAX) { $env:WIP_BATCH_EXTERNAL_MAX = "2" }
+
     $p = Start-Process -WindowStyle Hidden -PassThru -FilePath node -ArgumentList @("src\\gateway.mjs") `
       -WorkingDirectory $Repo -RedirectStandardOutput $GatewayOut -RedirectStandardError $GatewayErr
     Write-Pid $GatewayPid $p.Id

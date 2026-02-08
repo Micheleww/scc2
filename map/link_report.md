@@ -1,11 +1,11 @@
 # Map Link Report (v1)
 
-- generated_at: 2026-02-07T06:03:18.416Z
-- map_hash: sha256:8a710bc9ae957087b19a27ca8ed42e8ed36bd903824794082e2b1d49ac6c5899
+- generated_at: 2026-02-08T12:12:13.225Z
+- map_hash: sha256:edf3211492a9c37d3c3afbfa6a42a594f883819a7083bcbaf6ab1f7486ffc376
 
 ## Missing doc_refs counts
-- modules_missing: 43
-- entry_points_missing: 36
+- modules_missing: 45
+- entry_points_missing: 38
 - key_symbols_missing: 2000
 
 ## Samples (capped)
@@ -16,6 +16,7 @@
 - `roles`
 - `scc-top`
 - `scc-top/_docker_ctx_scc/tools/a2a_hub`
+- `scc-top/_docker_ctx_scc/tools/chatgpt_chat_archive_mvp`
 - `scc-top/_docker_ctx_scc/tools/exchange_server`
 - `scc-top/_docker_ctx_scc/tools/mcp_bus`
 - `scc-top/_docker_ctx_scc/tools/scc_ui`
@@ -42,14 +43,13 @@
 - `scc-top/tools/local_agent`
 - `scc-top/tools/mcp_bus`
 - `scc-top/tools/oc-scc-local`
+- `scc-top/tools/scc_dev_electron`
 - `scc-top/tools/scc_ui`
 - `scc-top/tools/scc/apps/browser/scc-chatgpt-browser`
 - `scc-top/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master`
 - `scc-top/tools/trae_native_wrapper`
 - `scc-top/tools/unified_server`
 - `scc-top/tools/vscode-scc`
-- `scc-top/tools/web_console`
-- `scc-top/tools/yme_backend`
 
 ### entry_points
 - `pkg:oc-scc-local/package.json:dev`
@@ -61,6 +61,7 @@
 - `pkg:oc-scc-local/package.json:preflight:check`
 - `pkg:oc-scc-local/package.json:smoke`
 - `pkg:oc-scc-local/package.json:start`
+- `pkg:oc-scc-local/package.json:test`
 - `pkg:scc-top/_docker_ctx_scc/tools/scc_ui/package.json:build`
 - `pkg:scc-top/_docker_ctx_scc/tools/scc_ui/package.json:dev`
 - `pkg:scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser/package.json:start`
@@ -78,6 +79,7 @@
 - `pkg:scc-top/tools/oc-scc-local/package.json:dev`
 - `pkg:scc-top/tools/oc-scc-local/package.json:smoke`
 - `pkg:scc-top/tools/oc-scc-local/package.json:start`
+- `pkg:scc-top/tools/scc_dev_electron/package.json:start`
 - `pkg:scc-top/tools/scc_ui/package.json:build`
 - `pkg:scc-top/tools/scc_ui/package.json:dev`
 - `pkg:scc-top/tools/scc/apps/browser/scc-chatgpt-browser/package.json:start`

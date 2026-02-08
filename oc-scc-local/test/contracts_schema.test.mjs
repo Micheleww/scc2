@@ -76,6 +76,81 @@ test("contracts schemas enforce minimal strictness", () => {
   }
   assert.equal(vVerdict(okVerdict), true, "verdict minimal valid should pass")
   assert.equal(vVerdict({ ...okVerdict, actions: [{ type: "retry", extra: 1 }] }), false, "verdict action additionalProperties should be rejected")
+
+  // G6 Schema tightening: submit schema should enforce maxItems and maxLength
+  const longString = "x".repeat(2000)
+  const longPath = "x".repeat(501)
+  assert.equal(vSubmit({ ...okSubmit, task_id: longString }), false, "submit task_id maxLength should be enforced (max 100)")
+  assert.equal(vSubmit({ ...okSubmit, changed_files: Array(1001).fill("file.md") }), false, "submit changed_files maxItems should be enforced (max 1000)")
+  assert.equal(vSubmit({ ...okSubmit, tests: { ...okSubmit.tests, summary: longString } }), false, "submit tests.summary maxLength should be enforced (max 1000)")
+
+  // G6: Test artifact path maxLength (max 500)
+  assert.equal(vSubmit({ ...okSubmit, artifacts: { ...okSubmit.artifacts, report_md: longPath } }), false, "submit artifacts.report_md maxLength should be enforced (max 500)")
+  assert.equal(vSubmit({ ...okSubmit, artifacts: { ...okSubmit.artifacts, selftest_log: longPath } }), false, "submit artifacts.selftest_log maxLength should be enforced (max 500)")
+  assert.equal(vSubmit({ ...okSubmit, artifacts: { ...okSubmit.artifacts, evidence_dir: longPath } }), false, "submit artifacts.evidence_dir maxLength should be enforced (max 500)")
+  assert.equal(vSubmit({ ...okSubmit, artifacts: { ...okSubmit.artifacts, patch_diff: longPath } }), false, "submit artifacts.patch_diff maxLength should be enforced (max 500)")
+  assert.equal(vSubmit({ ...okSubmit, artifacts: { ...okSubmit.artifacts, submit_json: longPath } }), false, "submit artifacts.submit_json maxLength should be enforced (max 500)")
+})
+
+test("G6 schema tightening constraints are enforced", () => {
+  const root = repoRootFromHere()
+  const childTaskPath = path.join(root, "contracts", "child_task", "child_task.schema.json")
+  const factoryPolicyPath = path.join(root, "contracts", "factory_policy", "factory_policy.schema.json")
+
+  const childTask = loadJson(childTaskPath)
+  const factoryPolicy = loadJson(factoryPolicyPath)
+
+  const ajv = new Ajv({ allErrors: true, strict: false })
+  addFormats(ajv)
+
+  const vChildTask = ajv.compile(childTask)
+  const vFactoryPolicy = ajv.compile(factoryPolicy)
+
+  // Test child_task maxItems constraints
+  const validChildTask = {
+    title: "Test Task",
+    goal: "Test goal",
+    role: "executor",
+    files: ["file1.js"],
+    allowedTests: ["npm test"],
+    pins: { allowed_paths: ["src/"] }
+  }
+  assert.equal(vChildTask(validChildTask), true, "child_task valid should pass")
+
+  // Test maxItems: files (max 100), allowedTests (max 20), required_symbols (max 200)
+  assert.equal(vChildTask({ ...validChildTask, files: Array(101).fill("file.js") }), false, "child_task files maxItems should be enforced (max 100)")
+  assert.equal(vChildTask({ ...validChildTask, allowedTests: Array(21).fill("test") }), false, "child_task allowedTests maxItems should be enforced (max 20)")
+  assert.equal(vChildTask({ ...validChildTask, required_symbols: Array(201).fill("symbol") }), false, "child_task required_symbols maxItems should be enforced (max 200)")
+
+  // Test maxLength: goal (max 5000), role (max 100), task_class_id (max 100), task_class_candidate (max 100)
+  assert.equal(vChildTask({ ...validChildTask, goal: "x".repeat(5001) }), false, "child_task goal maxLength should be enforced (max 5000)")
+  assert.equal(vChildTask({ ...validChildTask, role: "x".repeat(101) }), false, "child_task role maxLength should be enforced (max 100)")
+  assert.equal(vChildTask({ ...validChildTask, task_class_id: "x".repeat(101) }), false, "child_task task_class_id maxLength should be enforced (max 100)")
+  assert.equal(vChildTask({ ...validChildTask, task_class_candidate: "x".repeat(101) }), false, "child_task task_class_candidate maxLength should be enforced (max 100)")
+
+  // Test factory_policy maxItems and maxLength constraints
+  const validFactoryPolicy = {
+    schema_version: "scc.factory_policy.v1",
+    updated_at: "2024-01-01T00:00:00Z",
+    wip_limits: { WIP_TOTAL_MAX: 10, WIP_EXEC_MAX: 5, WIP_BATCH_MAX: 3 },
+    lanes: {
+      fastlane: { priority: 1, entity_roles_max: 5 },
+      mainlane: { priority: 2, entity_roles_max: 10 },
+      batchlane: { priority: 3, entity_roles_max: 15 }
+    },
+    budgets: { max_children: 5, max_depth: 3, max_total_attempts: 3, max_total_tokens_budget: 1000, max_total_verify_minutes: 60 },
+    event_routing: { default: { lane: "mainlane", virtual_roles: [], entity_roles: [] }, by_event_type: {} },
+    circuit_breakers: [],
+    degradation_matrix: [],
+    verification_tiers: { default: "smoke", by_task_class: {} }
+  }
+  assert.equal(vFactoryPolicy(validFactoryPolicy), true, "factory_policy valid should pass")
+  
+  // Test circuit_breakers maxItems (max 20)
+  assert.equal(vFactoryPolicy({ ...validFactoryPolicy, circuit_breakers: Array(21).fill({ name: "cb", match: {}, trip: { consecutive_failures: 3 }, action: {} }) }), false, "factory_policy circuit_breakers maxItems should be enforced (max 20)")
+  
+  // Test degradation_matrix maxItems (max 20)
+  assert.equal(vFactoryPolicy({ ...validFactoryPolicy, degradation_matrix: Array(21).fill({ when: {}, do: {} }) }), false, "factory_policy degradation_matrix maxItems should be enforced (max 20)")
 })
 
 test("all contract schemas are AJV-valid and compile", () => {

@@ -54,7 +54,8 @@ const repoRoot = path.resolve(process.env.SCC_REPO_ROOT ?? path.join(process.cwd
 console.log(`[selfcheck:eval_samples_v1] repoRoot=${repoRoot}`)
 
 // Ensure Map is fresh (pins_builder_v1 requires it).
-execFileSync("cmd.exe", ["/c", "npm --prefix oc-scc-local run -s map:build"], { cwd: repoRoot, stdio: "inherit", windowsHide: true, timeout: 240000 })
+const mapBuildCmd = "npm --prefix oc-scc-local run -s map:build"
+execFileSync(process.platform === "win32" ? "cmd.exe" : "sh", process.platform === "win32" ? ["/c", mapBuildCmd] : ["-lc", mapBuildCmd], { cwd: repoRoot, stdio: "inherit", windowsHide: true, timeout: 240000 })
 const mapVersionPath = path.join(repoRoot, "map", "version.json")
 if (!fs.existsSync(mapVersionPath)) {
   console.error("[selfcheck:eval_samples_v1] FAIL: missing map/version.json")

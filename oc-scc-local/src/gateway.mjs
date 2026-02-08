@@ -1,4 +1,4 @@
-﻿import http from "node:http"
+import http from "node:http"
 import { URL } from "node:url"
 import process from "node:process"
 import httpProxy from "http-proxy"
@@ -43,6 +43,9 @@ import { createRouter } from "./router.mjs"
 import { registerCoreRoutes } from "./router_core.mjs"
 import { registerNavRoutes } from "./router_nav.mjs"
 import { registerSccDevRoutes } from "./router_sccdev.mjs"
+import { registerConfigRoutes } from "./router_config.mjs"
+import { registerModelsRoutes } from "./router_models.mjs"
+import { registerPromptsRoutes } from "./router_prompts.mjs"
 
 const gatewayPort = Number(process.env.GATEWAY_PORT ?? "18788")
 const sccUpstream = new URL(process.env.SCC_UPSTREAM ?? "http://127.0.0.1:18789")
@@ -148,6 +151,9 @@ const coreRouter = createRouter()
 registerCoreRoutes({ router: coreRouter })
 registerNavRoutes({ router: coreRouter })
 registerSccDevRoutes({ router: coreRouter })
+registerConfigRoutes({ router: coreRouter })
+registerModelsRoutes({ router: coreRouter })
+registerPromptsRoutes({ router: coreRouter })
 
 function estimateParamsB(model) {
   const s = String(model ?? "").toLowerCase()
@@ -976,8 +982,8 @@ function pickAllowedTestsForTask(task) {
         const cmds = Array.isArray(tierObj?.commands) ? tierObj.commands : []
         list = cmds.map((x) => String(x)).filter(Boolean).slice(0, 10)
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      noteBestEffort("pickAllowedTestsForTask.eval_manifest", e)
     }
   }
 
@@ -1057,13 +1063,13 @@ function appendJsonlChained(file, value) {
             prevHash = obj.chain_hash
             break
           }
-        } catch {
-          // ignore parse errors
+        } catch (e) {
+          noteBestEffort("appendJsonlChained.parse_chain_hash", e)
         }
       }
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("appendJsonlChained.read_file", e, { file: String(file ?? "") })
   }
 
   const record = { ...value, chain_prev_hash: prevHash ?? null }
@@ -1072,8 +1078,8 @@ function appendJsonlChained(file, value) {
     const hash = crypto.createHash("sha256").update(payload).digest("hex")
     record.chain_hash = hash
     fs.appendFileSync(file, JSON.stringify(record) + "\n", "utf8")
-  } catch {
-    // best effort
+  } catch (e) {
+    noteBestEffort("appendJsonlChained.write_record", e, { file: String(file ?? "") })
   }
 }
 
@@ -1094,8 +1100,9 @@ function loadFiveWhysHookState() {
 function saveFiveWhysHookState(next) {
   try {
     fs.writeFileSync(fiveWhysHookStateFile, JSON.stringify(next, null, 2), "utf8")
-  } catch {
-    // best effort
+  } catch (e) {
+    noteBestEffort("saveFiveWhysHookState", e, { file: fiveWhysHookStateFile })
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -1116,8 +1123,9 @@ function loadRadiusAuditHookState() {
 function saveRadiusAuditHookState(next) {
   try {
     fs.writeFileSync(radiusAuditHookStateFile, JSON.stringify(next, null, 2), "utf8")
-  } catch {
-    // best effort
+  } catch (e) {
+    noteBestEffort("saveRadiusAuditHookState", e, { file: radiusAuditHookStateFile })
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -1130,7 +1138,8 @@ async function runRadiusAuditReport(taskId) {
     try {
       fs.mkdirSync(outDir, { recursive: true })
     } catch {
-      // ignore
+      // best-effort
+      noteBestEffort("radius_audit_mkdir", new Error("mkdir_failed"), { outDir, task_id: safeTask || null, run_id: runId })
     }
     const script = "scc-top/tools/scc/ops/radius_audit.py"
     const args = [
@@ -1230,8 +1239,8 @@ async function runSccPythonOp({ scriptRel, args = [], timeoutMs = 300000, maxBuf
 function ensureDir(dir) {
   try {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("ensureDir", e, { dir: String(dir ?? "") })
   }
 }
 
@@ -1610,8 +1619,9 @@ function loadInstinctState() {
 function saveInstinctState(state) {
   try {
     fs.writeFileSync(instinctStateFile, JSON.stringify(state, null, 2), "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("saveInstinctState", e, { file: instinctStateFile })
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -1623,29 +1633,33 @@ function updateInstinctArtifacts() {
   try {
     const top = Array.isArray(snap?.patterns) && snap.patterns.length ? snap.patterns[0] : null
     if (top?.id) state.seen[String(top.id)] = Number(top.count ?? 0)
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("updateInstinctArtifacts.extract_top", e)
   }
   saveInstinctState(state)
   try {
     fs.writeFileSync(instinctPatternsFile, JSON.stringify(snap, null, 2), "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("updateInstinctArtifacts.patterns", e, { file: instinctPatternsFile })
+    if (cfg.strictWrites) throw e
   }
   try {
     fs.writeFileSync(instinctSchemasFile, renderInstinctSchemasYaml() + "\n", "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("updateInstinctArtifacts.schemas", e, { file: instinctSchemasFile })
+    if (cfg.strictWrites) throw e
   }
   try {
     fs.writeFileSync(instinctPlaybooksFile, renderInstinctPlaybooksYaml(snap) + "\n", "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("updateInstinctArtifacts.playbooks", e, { file: instinctPlaybooksFile })
+    if (cfg.strictWrites) throw e
   }
   try {
     fs.writeFileSync(instinctSkillsDraftFile, renderInstinctSkillsDraftYaml(snap) + "\n", "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("updateInstinctArtifacts.skills", e, { file: instinctSkillsDraftFile })
+    if (cfg.strictWrites) throw e
   }
   return snap
 }
@@ -1751,8 +1765,9 @@ function updateLearnedPatternsSummary() {
   }
   try {
     fs.writeFileSync(learnedPatternsSummaryFile, JSON.stringify(summary, null, 2), "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("updateLearnedPatternsSummary", e, { file: learnedPatternsSummaryFile })
+    if (cfg.strictWrites) throw e
   }
   return summary
 }
@@ -1798,8 +1813,8 @@ function leader(event) {
         })
       }
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("leader.occli_flake_detection", e)
   }
   maybeTriggerFactoryManagerFromEvent(enriched)
 }
@@ -1944,7 +1959,8 @@ async function occliRunSingle(prompt, model = occliModelDefault, { timeoutMs } =
         ].join("\n")
         fs.writeFileSync(attachedFile, wrapped, "utf8")
         message = ""
-      } catch {
+      } catch (e) {
+        noteBestEffort("occliRunSingle.write_attached_file", e, { file: attachedFile })
         attachedFile = null
         message = rawPrompt
       }
@@ -2577,12 +2593,13 @@ function loadPlaybooksCache({ maxAgeMs = 120000 } = {}) {
         try {
           const obj = JSON.parse(fs.readFileSync(abs, "utf8"))
           out.push(obj)
-        } catch {
-          // ignore
+        } catch (e) {
+          noteBestEffort("loadPlaybooksCache.parse_file", e, { file: abs })
         }
       }
       return out
-    } catch {
+    } catch (e) {
+      noteBestEffort("loadPlaybooksCache.read_dir", e, { dir: String(dir ?? "") })
       return []
     }
   }
@@ -2608,8 +2625,8 @@ function loadPlaybooksCache({ maxAgeMs = 120000 } = {}) {
         })
       }
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("loadPlaybooksCache.overrides", e, { overridesPath })
   }
   playbooksCache = { loadedAt: now, patterns, playbooks }
   return playbooksCache
@@ -2735,8 +2752,8 @@ function maybeApplyPlaybooks({ eventType, boardTask, job }) {
         model: String(job?.model ?? ""),
         playbooks: chosen.map((pb) => ({ playbook_id: pb.playbook_id ?? null, pattern_id: pb.pattern_id ?? null, version: pb.version ?? null })),
       })
-    } catch {
-      // ignore
+    } catch (e) {
+      noteBestEffort("maybeApplyPlaybooks.append", e, { file: playbooksAppliedFile, task_id: tid })
     }
     return { ok: true, applied: chosen.map((pb) => pb.playbook_id ?? null) }
   } catch (e) {
@@ -3675,8 +3692,9 @@ function loadLearnedPatternsHookState() {
 function saveLearnedPatternsHookState(next) {
   try {
     fs.writeFileSync(learnedPatternsHookStateFile, JSON.stringify(next, null, 2), "utf8")
-  } catch {
-    // best effort
+  } catch (e) {
+    noteBestEffort("saveLearnedPatternsHookState", e, { file: learnedPatternsHookStateFile })
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -3816,8 +3834,9 @@ function loadTokenCfoHookState() {
 function saveTokenCfoHookState(next) {
   try {
     fs.writeFileSync(tokenCfoHookStateFile, JSON.stringify(next, null, 2), "utf8")
-  } catch {
-    // best effort
+  } catch (e) {
+    noteBestEffort("saveTokenCfoHookState", e, { file: tokenCfoHookStateFile })
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -3835,8 +3854,9 @@ function loadStabilityHookState() {
 function saveStabilityHookState(next) {
   try {
     fs.writeFileSync(stabilityHookStateFile, JSON.stringify(next, null, 2), "utf8")
-  } catch {
-    // best effort
+  } catch (e) {
+    noteBestEffort("saveStabilityHookState", e, { file: stabilityHookStateFile })
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -5264,8 +5284,8 @@ function dispatchBoardTaskToExecutor(id) {
             pinsSpec: built.pins,
             detail: built.detail,
           })
-        } catch {
-          // best effort
+        } catch (e) {
+          noteBestEffort("writePinsV1Outputs", e, { task_id: t.id })
         }
         t.pins = built.pins
         t.pins_pending = false
@@ -5441,8 +5461,9 @@ function dispatchBoardTaskToExecutor(id) {
                     pre.preflight = pre2.preflight
                   }
                 }
-              } catch {
+              } catch (e) {
                 // fall through
+                noteBestEffort("preflight_autofix_failed", e, { task_id: t?.id ?? null })
               }
             }
           }
@@ -6082,8 +6103,8 @@ function writeSplitArtifacts({ taskId, jobId, stdout, arr, check }) {
   const base = path.join(execRoot, "artifacts", id, "split")
   try {
     fs.mkdirSync(base, { recursive: true })
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("writeSplitArtifacts.mkdir", e, { base })
   }
   try {
     const meta = {
@@ -6097,21 +6118,22 @@ function writeSplitArtifacts({ taskId, jobId, stdout, arr, check }) {
       rejected: check?.rejected ?? null,
     }
     fs.writeFileSync(path.join(base, "split_check.json"), JSON.stringify(meta, null, 2), "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("writeSplitArtifacts.meta", e, { task_id: id })
   }
   try {
     if (typeof stdout === "string" && stdout.trim()) {
       fs.writeFileSync(path.join(base, "split_stdout.txt"), stdout, "utf8")
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("writeSplitArtifacts.stdout", e, { task_id: id })
   }
   try {
     if (Array.isArray(arr)) {
       fs.writeFileSync(path.join(base, "split.json"), JSON.stringify(arr, null, 2), "utf8")
     }
-  } catch {
+  } catch (e) {
+    noteBestEffort("writeSplitArtifacts.json", e, { task_id: id })
     // ignore
   }
   return {
@@ -6614,8 +6636,9 @@ function diffSnapshot(pre, { maxFiles = 80, maxBytes = 1024 * 1024 } = {}) {
       const buf = fs.readFileSync(abs)
       const sha256 = crypto.createHash("sha256").update(buf).digest("hex")
       if (String(f?.sha256 ?? "") && String(f.sha256) !== sha256) touched.push(rel)
-    } catch {
-      // ignore
+    } catch (e) {
+      // ignore; snapshot diff is best-effort
+      noteBestEffort("snapshot_diff_file_hash", e, { rel })
     }
     if (touched.length >= maxFiles) break
   }
@@ -6687,8 +6710,9 @@ function applyAutoRollbackOnCiFailed({ boardTask, job, snapshotDiff, patchStats,
         try {
           if (fs.existsSync(abs)) fs.unlinkSync(abs)
           applied.push({ file: f, action: "delete" })
-        } catch {
-          // ignore
+        } catch (e) {
+          // best-effort
+          noteBestEffort("snapshot_restore_delete_failed", e, { abs })
         }
         continue
       }
@@ -6697,8 +6721,9 @@ function applyAutoRollbackOnCiFailed({ boardTask, job, snapshotDiff, patchStats,
         ensureDir(path.dirname(abs))
         fs.writeFileSync(abs, buf)
         applied.push({ file: f, action: "restore", bytes: buf.length })
-      } catch {
-        // ignore
+      } catch (e) {
+        // best-effort
+        noteBestEffort("snapshot_restore_write_failed", e, { abs })
       }
     }
 
@@ -7103,8 +7128,9 @@ function getThread(id) {
 function putThread(t) {
   try {
     fs.writeFileSync(threadPath(t.id), JSON.stringify(t, null, 2), "utf8")
-  } catch {
-    // ignore
+  } catch (e) {
+    noteBestEffort("putThread", e, { thread_id: t.id })
+    if (cfg.strictWrites) throw e
   }
 }
 
@@ -7597,13 +7623,15 @@ async function runGatewayAllowedTests({ boardTask, job }) {
       fs.mkdirSync(evDir, { recursive: true })
       fs.writeFileSync(path.join(evDir, "allowed_tests.json"), JSON.stringify({ schema_version: "scc.allowed_tests_run.v1", task_id: taskId, ok, results }, null, 2) + "\n", "utf8")
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    // best-effort
+    noteBestEffort("allowed_tests_write_evidence_failed", e, { task_id: boardTask?.id ?? null, job_id: job?.id ?? null })
   }
   try {
     leader({ level: ok ? "info" : "warn", type: "allowed_tests_ran", taskId: boardTask.id ?? null, jobId: job.id ?? null, ok, commands: picked })
-  } catch {
-    // ignore
+  } catch (e) {
+    // best-effort
+    noteBestEffort("allowed_tests_leader_log_failed", e, { task_id: boardTask?.id ?? null, job_id: job?.id ?? null })
   }
   return { ran: true, ok, summary, results, commands: picked }
 }
@@ -8820,6 +8848,7 @@ function saveModelRr() {
     fs.writeFileSync(modelRrFile, JSON.stringify({ index: modelRrIndex }, null, 2), "utf8")
   } catch {
     // best effort
+    noteBestEffort("saveModelRr_failed", new Error("write_failed"), { file: modelRrFile })
   }
 }
 function occliModelPoolForTask(t) {
@@ -10856,6 +10885,39 @@ const server = http.createServer(async (req, res) => {
     renderHomeHtml,
     log,
     errSink,
+    // Config routes dependencies
+    readRuntimeEnv,
+    configRegistry,
+    codexMax,
+    occliMax,
+    externalMaxCodex,
+    externalMaxOccli,
+    desiredRatioCodex,
+    desiredRatioOccli,
+    timeoutCodexMs,
+    timeoutOccliMs,
+    modelsFree,
+    modelsVision,
+    preferFreeModels,
+    autoCreateSplitOnTimeout,
+    autoDispatchSplitTasks,
+    occliModelDefault,
+    autoAssignOccliModels,
+    failureReportTickMs,
+    failureReportTail,
+    autoCancelStaleExternal,
+    autoCancelExternalTickMs,
+    cfg,
+    writeRuntimeEnv,
+    leader,
+    runtimeEnvFile,
+    readRequestBody,
+    // Models routes dependencies
+    updateModelPools,
+    updateCodexModelPolicy,
+    modelsPaid,
+    // Prompts routes dependencies
+    promptRegistry,
   })
   if (core.handled) return
 
@@ -11129,8 +11191,9 @@ const server = http.createServer(async (req, res) => {
     }
     try {
       fs.writeFileSync(path.join(execLogDir, "learn_tick_latest.json"), JSON.stringify({ schema_version: "scc.learn_tick_report.v1", t: new Date().toISOString(), ...out }, null, 2) + "\n", "utf8")
-    } catch {
-      // ignore
+    } catch (e) {
+      // best-effort
+      noteBestEffort("learn_tick_latest_write_failed", e, { file: path.join(execLogDir, "learn_tick_latest.json") })
     }
     return sendJson(res, out.ok ? 200 : 500, out)
   }
@@ -11225,157 +11288,6 @@ const server = http.createServer(async (req, res) => {
     if (!et) return sendJson(res, 400, { error: "missing_event_type" })
     const lane = routeLaneForEventType(et)
     return sendJson(res, 200, { event_type: et, lane, factory_policy: "factory_policy.json" })
-  }
-
-  if (pathname === "/config/schema" && method === "GET") {
-    return sendJson(res, 200, {
-      runtimeEnvFile,
-      registry: configRegistry,
-      note: "POST /config/set writes config/runtime.env (requires daemon restart to take effect).",
-    })
-  }
-
-  if (pathname === "/config" && method === "GET") {
-    const runtime = readRuntimeEnv()
-    const live = {
-      GATEWAY_PORT: gatewayPort,
-      SCC_UPSTREAM: sccUpstream.toString(),
-      OPENCODE_UPSTREAM: opencodeUpstream.toString(),
-      EXEC_CONCURRENCY_CODEX: codexMax,
-      EXEC_CONCURRENCY_OPENCODE: occliMax,
-      EXTERNAL_MAX_CODEX: externalMaxCodex,
-      EXTERNAL_MAX_OPENCODECLI: externalMaxOccli,
-      DESIRED_RATIO_CODEX: desiredRatioCodex,
-      DESIRED_RATIO_OPENCODECLI: desiredRatioOccli,
-      EXEC_TIMEOUT_CODEX_MS: timeoutCodexMs,
-      EXEC_TIMEOUT_OPENCODE_MS: timeoutOccliMs,
-      MODEL_POOL_FREE: modelsFree.join(","),
-      MODEL_POOL_VISION: modelsVision.join(","),
-      PREFER_FREE_MODELS: preferFreeModels,
-      CODEX_MODEL_PREFERRED: codexPreferredOrder.join(","),
-      AUTO_CREATE_SPLIT_ON_TIMEOUT: autoCreateSplitOnTimeout,
-      AUTO_DISPATCH_SPLIT_TASKS: autoDispatchSplitTasks,
-      OPENCODE_MODEL: occliModelDefault,
-      AUTO_ASSIGN_OPENCODE_MODELS: autoAssignOccliModels,
-      FAILURE_REPORT_TICK_MS: failureReportTickMs,
-      FAILURE_REPORT_TAIL: failureReportTail,
-      AUTO_CANCEL_STALE_EXTERNAL: autoCancelStaleExternal,
-      AUTO_CANCEL_STALE_EXTERNAL_TICK_MS: autoCancelExternalTickMs,
-    }
-
-    return sendJson(res, 200, {
-      runtime,
-      live,
-      restartHint: {
-        daemonStart: path.join(cfg.repoRoot, "oc-scc-local", "scripts", "daemon-start.ps1").replaceAll("\\\\", "/"),
-        daemonStop: path.join(cfg.repoRoot, "oc-scc-local", "scripts", "daemon-stop.ps1").replaceAll("\\\\", "/"),
-        note: "Changes in runtime.env apply on next daemon restart.",
-      },
-    })
-  }
-
-  if (pathname === "/models" && method === "GET") {
-    return sendJson(res, 200, {
-      free: modelsFree,
-      vision: modelsVision,
-      opencodeDefault: occliModelDefault,
-      codexDefault: codexModelDefault,
-      codexPreferred: codexPreferredOrder,
-      codexPaidPool: modelsPaid,
-      strictDesignerModel: STRICT_DESIGNER_MODEL,
-      note: "POST /models/set to update in-memory + runtime.env (opencode + codex). Back-compat fields: free/vision/opencodeDefault.",
-    })
-  }
-
-  if (pathname === "/prompts/registry" && method === "GET") {
-    const info = promptRegistry.info()
-    const code = info.ok ? 200 : 500
-    return sendJson(res, code, info)
-  }
-
-  if (pathname === "/prompts/render" && method === "POST") {
-    let body = ""
-    req.on("data", (d) => (body += d))
-    req.on("end", () => {
-      let payload = null
-      try {
-        payload = JSON.parse(body || "{}")
-      } catch (e) {
-        return sendJson(res, 400, { ok: false, error: "bad_json", message: String(e) })
-      }
-      const role_id = payload?.role_id ?? payload?.roleId ?? null
-      const preset_id = payload?.preset_id ?? payload?.presetId ?? null
-      const params = payload?.params && typeof payload.params === "object" ? payload.params : {}
-      const out = promptRegistry.render({ role_id, preset_id, params })
-      const code = out.ok ? 200 : 400
-      return sendJson(res, code, out)
-    })
-    return
-  }
-
-    if (pathname === "/models/set" && method === "POST") {
-    let body = ""
-    req.on("data", (d) => (body += d))
-    req.on("end", () => {
-      let payload = null
-      try {
-        payload = JSON.parse(body || "{}")
-      } catch (e) {
-        return sendJson(res, 400, { error: "bad_json", message: String(e) })
-      }
-
-      const free = Array.isArray(payload?.free) ? payload.free.map((x) => String(x).trim()).filter(Boolean) : null
-      const vision = Array.isArray(payload?.vision) ? payload.vision.map((x) => String(x).trim()).filter(Boolean) : null
-      const opDefault = payload?.opencodeDefault ? String(payload.opencodeDefault).trim() : null
-      const codexDefault = payload?.codexDefault != null ? String(payload.codexDefault).trim() : null
-      const codexPreferred = Array.isArray(payload?.codexPreferred) ? payload.codexPreferred : null
-      const codexPaidPool = Array.isArray(payload?.codexPaidPool) ? payload.codexPaidPool : null
-      const strictDesignerModel = payload?.strictDesignerModel != null ? String(payload.strictDesignerModel).trim() : null
-
-      if (free && !free.length) return sendJson(res, 400, { error: "free_empty" })
-      if (vision && !vision.length) return sendJson(res, 400, { error: "vision_empty" })
-
-      updateModelPools({ free, vision, occliDefault: opDefault })
-      const codexOut = updateCodexModelPolicy({ codexDefault, codexPreferred, paidPool: codexPaidPool, strictDesignerModel })
-      if (!codexOut.ok) return sendJson(res, 400, { error: codexOut.error ?? "codex_policy_invalid" })
-
-      // persist to runtime.env for next restart
-      const current = readRuntimeEnv()
-      const next = { ...(current.values ?? {}) }
-      next.MODEL_POOL_FREE = modelsFree.join(",")
-      next.MODEL_POOL_VISION = modelsVision.join(",")
-      next.OPENCODE_MODEL = occliModelDefault
-      next.CODEX_MODEL = codexModelDefault
-      next.CODEX_MODEL_PREFERRED = codexPreferredOrder.join(",")
-      next.MODEL_POOL_PAID = modelsPaid.join(",")
-      next.STRICT_DESIGNER_MODEL = STRICT_DESIGNER_MODEL
-      writeRuntimeEnv(next)
-
-      leader({
-        level: "info",
-        type: "models_updated",
-        free: modelsFree,
-        vision: modelsVision,
-        opencodeDefault: occliModelDefault,
-        codexDefault: codexModelDefault,
-        codexPreferred: codexPreferredOrder,
-        strictDesignerModel: STRICT_DESIGNER_MODEL,
-      })
-
-      return sendJson(res, 200, {
-        ok: true,
-        free: modelsFree,
-        vision: modelsVision,
-        opencodeDefault: occliModelDefault,
-        codexDefault: codexModelDefault,
-        codexPreferred: codexPreferredOrder,
-        codexPaidPool: modelsPaid,
-        strictDesignerModel: STRICT_DESIGNER_MODEL,
-        persisted: runtimeEnvFile,
-        restartRequired: false,
-      })
-    })
-    return
   }
 
   if (pathname === "/designer/state" && method === "GET") {
@@ -11700,8 +11612,9 @@ const server = http.createServer(async (req, res) => {
         const raw = fs.readFileSync(learnedPatternsSummaryFile, "utf8")
         return sendJson(res, 200, { file: learnedPatternsSummaryFile, summary: JSON.parse(raw) })
       }
-    } catch {
+    } catch (e) {
       // fall through
+      noteBestEffort("learned_patterns_summary_read_failed", e, { file: learnedPatternsSummaryFile })
     }
     const summary = updateLearnedPatternsSummary()
     return sendJson(res, 200, { file: learnedPatternsSummaryFile, summary })
@@ -11713,8 +11626,9 @@ const server = http.createServer(async (req, res) => {
         const raw = fs.readFileSync(instinctPatternsFile, "utf8")
         return sendJson(res, 200, { file: instinctPatternsFile, patterns: JSON.parse(raw) })
       }
-    } catch {
+    } catch (e) {
       // fall through
+      noteBestEffort("instinct_patterns_read_failed", e, { file: instinctPatternsFile })
     }
     const snap = updateInstinctArtifacts()
     return sendJson(res, 200, { file: instinctPatternsFile, patterns: snap })
@@ -11725,15 +11639,17 @@ const server = http.createServer(async (req, res) => {
       if (fs.existsSync(instinctSchemasFile)) {
         return sendText(res, 200, fs.readFileSync(instinctSchemasFile, "utf8"))
       }
-    } catch {
+    } catch (e) {
       // fall through
+      noteBestEffort("instinct_schemas_read_failed", e, { file: instinctSchemasFile })
     }
     const text = renderInstinctSchemasYaml() + "\n"
     try {
       ensureDir(instinctDir)
       fs.writeFileSync(instinctSchemasFile, text, "utf8")
-    } catch {
-      // ignore
+    } catch (e) {
+      // best-effort
+      noteBestEffort("instinct_schemas_write_failed", e, { file: instinctSchemasFile })
     }
     return sendText(res, 200, text)
   }
@@ -11743,15 +11659,17 @@ const server = http.createServer(async (req, res) => {
       if (fs.existsSync(instinctPlaybooksFile)) {
         return sendText(res, 200, fs.readFileSync(instinctPlaybooksFile, "utf8"))
       }
-    } catch {
+    } catch (e) {
       // fall through
+      noteBestEffort("instinct_playbooks_read_failed", e, { file: instinctPlaybooksFile })
     }
     const snap = updateInstinctArtifacts()
     const text = renderInstinctPlaybooksYaml(snap) + "\n"
     try {
       fs.writeFileSync(instinctPlaybooksFile, text, "utf8")
-    } catch {
-      // ignore
+    } catch (e) {
+      // best-effort
+      noteBestEffort("instinct_playbooks_write_failed", e, { file: instinctPlaybooksFile })
     }
     return sendText(res, 200, text)
   }
@@ -11761,15 +11679,17 @@ const server = http.createServer(async (req, res) => {
       if (fs.existsSync(instinctSkillsDraftFile)) {
         return sendText(res, 200, fs.readFileSync(instinctSkillsDraftFile, "utf8"))
       }
-    } catch {
+    } catch (e) {
       // fall through
+      noteBestEffort("instinct_skills_draft_read_failed", e, { file: instinctSkillsDraftFile })
     }
     const snap = updateInstinctArtifacts()
     const text = renderInstinctSkillsDraftYaml(snap) + "\n"
     try {
       fs.writeFileSync(instinctSkillsDraftFile, text, "utf8")
-    } catch {
-      // ignore
+    } catch (e) {
+      // best-effort
+      noteBestEffort("instinct_skills_draft_write_failed", e, { file: instinctSkillsDraftFile })
     }
     return sendText(res, 200, text)
   }
@@ -12071,7 +11991,10 @@ const server = http.createServer(async (req, res) => {
             if (!t?.id) continue
             boardTasks.set(t.id, t)
           }
-        } catch {}
+        } catch (e) {
+          // best-effort; maintenance should never crash the gateway
+          noteBestEffort("board_reload_failed", e, null)
+        }
       }
       return sendJson(res, out.ok ? 200 : 500, out)
     })
@@ -13076,8 +12999,9 @@ const server = http.createServer(async (req, res) => {
         JSON.stringify({ schema_version: "scc.replay_smoke.v1", task_id: taskId, ok: out.ok, t: new Date().toISOString(), gate: out }, null, 2) + "\n",
         "utf8",
       )
-    } catch {
-      // ignore
+    } catch (e) {
+      // best-effort
+      noteBestEffort("replay_smoke_write_failed", e, { task_id: taskId })
     }
     return sendJson(res, out.ok ? 200 : 500, out)
   }
