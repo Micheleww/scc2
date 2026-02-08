@@ -5,6 +5,7 @@
 - `docs/AI_CONTEXT.md`（pins-first JSON 载体）
 - `docs/EXECUTOR.md`（atomic 执行约束）
 - `docs/PROMPT_REGISTRY.md`（提示词资产库 / 渲染 / 审计）
+- `docs/SCC_USAGE_GUIDE.md`（SCC 系统完整使用指南 — 所有 AI agent 必读：架构 / 任务生命周期 / API / 角色 / Pins / 提交合同 / 错误码 / Token 优化）
 - `docs/SSOT.md`（Designer-only L0）
 - `docs/SSOT/registry.json`（Map 驱动的 SSOT facts 登记表：modules/entry_points/contracts）
 
