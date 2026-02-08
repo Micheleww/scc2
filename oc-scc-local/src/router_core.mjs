@@ -55,6 +55,19 @@ function registerCoreRoutes({ router }) {
 
   router.get("/health", async () => ({ type: "json", status: 200, body: { ok: true } }))
 
+  router.get("/status", async (ctx) => {
+    const snap = await ctx.statusSnapshot()
+    return { type: "json", status: 200, body: snap }
+  })
+
+  router.get("/", async (ctx) => {
+    const snap = await ctx.statusSnapshot()
+    const html = ctx.renderHomeHtml(snap)
+    return { type: "text", status: 200, contentType: "text/html; charset=utf-8", body: String(html ?? "") }
+  })
+
+  router.get("/favicon.ico", async () => ({ type: "text", status: 204, contentType: "text/plain; charset=utf-8", body: "" }))
+
   router.get("/healthz", async (ctx) => {
     const { http, fs, path, URL, execLogDir, boardDir, docsRoot, sccUpstream, opencodeUpstream } = ctx
     const checks = []
@@ -149,4 +162,3 @@ function registerCoreRoutes({ router }) {
 }
 
 export { registerCoreRoutes }
-
