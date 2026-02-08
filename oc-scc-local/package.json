@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "node ./src/gateway.mjs",
     "start": "node ./src/gateway.mjs",
+    "test": "node --test",
     "smoke": "node ./src/smoke.mjs",
     "selfcheck:role-system": "node ./scripts/selfcheck_role_system.mjs",
     "selfcheck:map-v1": "node ./scripts/selfcheck_map_v1.mjs",
