@@ -1,9 +1,14 @@
 import path from "node:path"
 import os from "node:os"
+import { fileURLToPath } from "node:url"
 
 function defaultRepoRoot() {
   // Cross-platform default: repo root is parent of oc-scc-local/
-  return path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..")
+  // NOTE: On Windows, URL.pathname yields "/C:/..." which breaks path.resolve into "C:\\C:\\...".
+  // fileURLToPath handles platform specifics correctly.
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  // config.mjs lives under oc-scc-local/src/lib/ so go up 3 levels to repo root.
+  return path.resolve(here, "..", "..", "..")
 }
 
 function envBool(name, def = false) {
@@ -44,4 +49,3 @@ function getConfig() {
 }
 
 export { getConfig }
-

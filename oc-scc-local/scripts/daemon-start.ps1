@@ -100,9 +100,15 @@ function Start-Gateway {
     }
   } catch {}
 
-  $listening = Get-ListeningPidByPort 18788
+  $port = 18788
+  try {
+    if ($env:GATEWAY_PORT) { $port = [int]$env:GATEWAY_PORT }
+  } catch {}
+  if ($port -le 0) { $port = 18788 }
+
+  $listening = Get-ListeningPidByPort $port
   if ($listening) {
-    Write-Host "gateway already listening on 18788 pid=$listening"
+    Write-Host "gateway already listening on $port pid=$listening"
     Write-Pid $GatewayPid $listening
     return
   }
@@ -186,5 +192,10 @@ Start-Gateway
 Start-EnsureWorkers
 
 Write-Host "OK. Health:"
-Write-Host "  http://127.0.0.1:18788/pools"
-Write-Host "  http://127.0.0.1:18788/board"
+$p2 = 18788
+try {
+  if ($env:GATEWAY_PORT) { $p2 = [int]$env:GATEWAY_PORT }
+} catch {}
+if ($p2 -le 0) { $p2 = 18788 }
+Write-Host ("  http://127.0.0.1:{0}/pools" -f $p2)
+Write-Host ("  http://127.0.0.1:{0}/board" -f $p2)
