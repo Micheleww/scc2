@@ -1,0 +1,205 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGCVFRYFXMY648VD1KN01D0J",
+  "layer": "CANON",
+  "primary_unit": "X.DISPATCH",
+  "tags": [
+    "A.ROUTER",
+    "A.PLANNER",
+    "A.EXECUTOR",
+    "A.VERIFIER",
+    "A.AUDITOR",
+    "A.SECRETARY"
+  ],
+  "status": "active",
+  "roles": [
+    {
+      "role_id": "router",
+      "title": "Router",
+      "can_edit": false,
+      "can_execute": false,
+      "allowed_skills": [],
+      "memory_paths": ["docs/INPUTS/role_memory/router.md"],
+      "primary_outputs": [
+        "routing_decision.json"
+      ],
+      "match": {
+        "keywords_any": [
+          "route",
+          "assign",
+          "dispatch",
+          "triage",
+          "router"
+        ]
+      }
+    },
+    {
+      "role_id": "planner",
+      "title": "Planner",
+      "can_edit": false,
+      "can_execute": false,
+      "allowed_skills": [
+        "SHELL_READONLY"
+      ],
+      "memory_paths": ["docs/INPUTS/role_memory/chief_designer.md"],
+      "primary_outputs": [
+        "contract_draft.json",
+        "plan.md"
+      ],
+      "match": {
+        "keywords_any": [
+          "plan",
+          "design",
+          "spec",
+          "contract",
+          "schema"
+        ]
+      }
+    },
+    {
+      "role_id": "executor",
+      "title": "Executor",
+      "can_edit": true,
+      "can_execute": true,
+      "allowed_skills": [
+        "SHELL_READONLY",
+        "PATCH_APPLY",
+        "SHELL_WRITE",
+        "SELFTEST"
+      ],
+      "memory_paths": ["docs/INPUTS/role_memory/executor.md"],
+      "primary_outputs": [
+        "diff",
+        "logs",
+        "evidence_paths"
+      ],
+      "match": {
+        "keywords_any": [
+          "implement",
+          "fix",
+          "refactor",
+          "update",
+          "add",
+          "remove",
+          "create"
+        ]
+      }
+    },
+    {
+      "role_id": "verifier",
+      "title": "Verifier",
+      "can_edit": false,
+      "can_execute": true,
+      "allowed_skills": [
+        "SHELL_READONLY",
+        "SELFTEST"
+      ],
+      "memory_paths": ["docs/INPUTS/role_memory/verifier.md"],
+      "primary_outputs": [
+        "evidence/verdict.json"
+      ],
+      "match": {
+        "keywords_any": [
+          "test",
+          "verify",
+          "selftest",
+          "verdict",
+          "validate"
+        ]
+      }
+    },
+    {
+      "role_id": "auditor",
+      "title": "Auditor",
+      "can_edit": false,
+      "can_execute": true,
+      "allowed_skills": [
+        "SHELL_READONLY",
+        "DOCFLOW_AUDIT"
+      ],
+      "memory_paths": ["docs/INPUTS/role_memory/auditor.md"],
+      "primary_outputs": [
+        "audit_report.md"
+      ],
+      "match": {
+        "keywords_any": [
+          "audit",
+          "check",
+          "compliance",
+          "gate",
+          "guard"
+        ]
+      }
+    },
+    {
+      "role_id": "secretary",
+      "title": "Secretary",
+      "can_edit": true,
+      "can_execute": false,
+      "allowed_skills": [
+        "SHELL_READONLY"
+      ],
+      "memory_paths": ["docs/INPUTS/role_memory/secretary.md"],
+      "primary_outputs": [
+        "derived_summary.md"
+      ],
+      "match": {
+        "keywords_any": [
+          "summarize",
+          "minutes",
+          "meeting",
+          "summary",
+          "digest"
+        ]
+      }
+    },
+    {
+      "role_id": "factory_manager",
+      "title": "Factory Manager",
+      "can_edit": true,
+      "can_execute": false,
+      "allowed_skills": [
+        "SHELL_READONLY"
+      ],
+      "memory_paths": ["docs/INPUTS/role_memory/factory_manager.md"],
+      "primary_outputs": [
+        "prioritized_queue.json",
+        "dispatch_config.json"
+      ],
+      "match": {
+        "keywords_any": [
+          "priority",
+          "approve",
+          "backlog",
+          "milestone",
+          "roadmap"
+        ]
+      }
+    },
+    {
+      "role_id": "chief_designer",
+      "title": "Chief Designer",
+      "can_edit": true,
+      "can_execute": false,
+      "allowed_skills": ["SHELL_READONLY"],
+      "memory_paths": ["docs/INPUTS/role_memory/chief_designer.md"],
+      "primary_outputs": ["blueprint.md", "adr_draft.md"],
+      "match": {
+        "keywords_any": ["architecture", "blueprint", "design", "adr", "north star", "top", "scc_top"]
+      }
+    },
+    {
+      "role_id": "team_lead",
+      "title": "Team Lead",
+      "can_edit": true,
+      "can_execute": true,
+      "allowed_skills": ["SHELL_READONLY", "PATCH_APPLY", "SELFTEST"],
+      "memory_paths": ["docs/INPUTS/role_memory/team_lead.md"],
+      "primary_outputs": ["contracts/*.json", "dispatch_config.json", "leader_board.md"],
+      "match": {
+        "keywords_any": ["dispatch", "delegate", "contractize", "task tree", "batch", "queue", "team lead"]
+      }
+    }
+  ],
+  "fallback_role_id": "router"
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "log_review",
+  "version": "1.0.0",
+  "owner_role": "auditor",
+  "summary": "Review logs and failure clusters to extract actionable findings.",
+  "applies_to": { "task_class": ["control_plane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/event/event.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_events": 2000 },
+  "quality_gates": { "must_link_evidence": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

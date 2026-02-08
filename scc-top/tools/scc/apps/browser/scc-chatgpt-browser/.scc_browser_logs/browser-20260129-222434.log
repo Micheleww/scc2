@@ -1,0 +1,21 @@
+
+> scc-chatgpt-browser@0.1.0 start
+> electron .
+
+D:\quantsys\tools\scc\apps\browser\scc-chatgpt-browser\main.js:183
+ipcMain.handle("scc:getSettings", async () => {
+        ^
+
+TypeError: Cannot read properties of undefined (reading 'handle')
+    at Object.<anonymous> (D:\quantsys\tools\scc\apps\browser\scc-chatgpt-browser\main.js:183:9)
+    at Module._compile (node:internal/modules/cjs/loader:1769:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1902:10)
+    at Module.load (node:internal/modules/cjs/loader:1488:32)
+    at Module._load (node:internal/modules/cjs/loader:1307:12)
+    at c._load (node:electron/js2c/node_init:2:17999)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:252:24)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:169:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v24.11.1

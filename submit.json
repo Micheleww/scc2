@@ -1,0 +1,79 @@
+{
+  "schema_version": "scc.submit.v1",
+  "task_id": "ea5d59dc-7b66-4c36-8169-9df01223b4b1",
+  "status": "NEED_INPUT",
+  "changed_files": [],
+  "new_files": [],
+  "allow_paths": {
+    "read": [
+      "18788/docs/AI_CONTEXT.md",
+      "18788/docs/NAVIGATION.md",
+      "18788/docs/PROMPTING.md",
+      "18788/docs/EXECUTOR.md",
+      "tools/scc/gates/run_ci_gates.py",
+      "artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/submit.json",
+      "submit.json"
+    ],
+    "write": [
+      "18788/docs/AI_CONTEXT.md",
+      "18788/docs/NAVIGATION.md",
+      "18788/docs/PROMPTING.md",
+      "18788/docs/EXECUTOR.md",
+      "tools/scc/gates/run_ci_gates.py",
+      "artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/submit.json",
+      "submit.json"
+    ]
+  },
+  "ssot_pointers": [
+    "http://127.0.0.1:18788/docs/AI_CONTEXT.md",
+    "http://127.0.0.1:18788/docs/NAVIGATION.md",
+    "http://127.0.0.1:18788/docs/PROMPTING.md",
+    "http://127.0.0.1:18788/docs/EXECUTOR.md"
+  ],
+  "summary": "Retry budget exhausted (3/3) due to timeout; needs human input to complete Five Whys prevention plan.",
+  "needs_input": [
+    "What system/component is impacted (service name, repo, environment)?",
+    "What was timing out (command, stage, or job) and what was the timeout threshold?",
+    "Latest failing logs/error snippet from the timed-out run.",
+    "Owner/contact and expected remediation timeline."
+  ],
+  "artifacts": {
+    "report_md": "artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/report.md",
+    "selftest_log": "artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/selftest.log",
+    "evidence_dir": "artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/evidence/",
+    "patch_diff": "artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/patch.diff",
+    "submit_json": "artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/submit.json"
+  },
+  "payload": {
+    "retry_plan": {
+      "schema_version": "scc.retry_plan.v1",
+      "source_task_id": "844f6122-88b4-40f5-9ba6-1aeac13a0c37",
+      "attempts_used": 3,
+      "attempts_budget": 3,
+      "last_reason": "timeout",
+      "next_actions": [
+        "Capture the exact stage/command that timed out and its timeout limit.",
+        "Collect the last 200-500 lines of logs from the timed-out attempt.",
+        "Confirm whether the timeout is expected (slow dependency) or indicates a hang/deadlock.",
+        "If expected slow: raise timeout or add caching/parallelism; if hang: add watchdog/health probes and identify blocking call.",
+        "Add a post-timeout artifact upload step so future retries preserve partial logs."
+      ]
+    },
+    "dlq_summary": {
+      "missing_inputs": [
+        "incident context",
+        "failing command/job metadata",
+        "logs/error snippet"
+      ],
+      "notes": "Without the failed run's logs and job context, a concrete Five Whys prevention plan cannot be drafted safely."
+    }
+  },
+  "tests": {
+    "commands": [
+      "python tools/scc/gates/run_ci_gates.py --submit artifacts/ea5d59dc-7b66-4c36-8169-9df01223b4b1/submit.json"
+    ],
+    "passed": true,
+    "summary": "PASS"
+  },
+  "exit_code": 0
+}

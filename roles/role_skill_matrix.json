@@ -1,0 +1,33 @@
+{
+  "schema_version": "scc.role_skill_matrix.v1",
+  "updated_at": "2026-02-05",
+  "roles": {
+    "planner": ["taskgraph.compile", "risk.assess"],
+    "split": ["taskgraph.atomicize", "preflight.requirements_infer"],
+    "pins": ["pins.build_minimal", "map.query"],
+    "pinser": ["pins_only", "scope_minimization", "pins.build_minimal"],
+    "executor": ["patch.apply_minimal", "tests.run_allowed", "policy.check_scope", "evidence.verify_triplet"],
+    "engineer": ["implementation", "patch_only", "patch.apply_minimal", "tests.run_allowed", "policy.check_scope", "evidence.verify_triplet"],
+    "integrator": ["glue_code", "min_diff", "patch.apply_minimal", "tests.run_allowed", "policy.check_scope"],
+    "ci_fixup": ["ci.reproduce", "ci.fix_build", "patch.apply_minimal", "tests.run_allowed"],
+    "audit": ["policy.check_scope", "evidence.verify_triplet"],
+    "auditor": ["log_review", "evidence_check", "failure_triad", "policy.check_scope", "evidence.verify_triplet", "events.backfill"],
+    "status_review": ["status_review", "evidence_check", "gap_analysis", "status.summarize_events"],
+    "factory_manager": ["dispatch_planning", "queue_orchestration", "bottleneck_analysis", "queue.partition", "routing.fallback"],
+    "designer": ["task_decomposition", "interface_spec", "acceptance_criteria"],
+    "architect": ["interface_spec", "acceptance_criteria"],
+    "qa": ["smoke_tests", "triage", "tests.run_allowed"],
+    "doc": ["navigation", "runbooks"],
+    "doc_adr_scribe": ["adr.write_6line", "navigation"],
+    "map_curator": ["map.build", "map.sqlite.build", "map.query"],
+    "release_integrator": ["pr.bundle_create", "policy.check_scope"],
+    "preflight_gate": ["preflight.run", "policy.check_scope"],
+    "verifier_judge": ["evidence.verify_triplet", "tests.run_allowed", "policy.check_scope"],
+    "ssot_curator": ["ssot.update_index", "ssot.sync_apply", "navigation"],
+    "retry_orchestrator": ["retry.plan", "queue.partition", "routing.fallback"],
+    "stability_controller": ["stability.control", "queue.partition", "bottleneck_analysis", "routing.fallback"],
+    "playbook_publisher": ["playbook.publish", "status.summarize_events", "gap_analysis"],
+    "eval_curator": ["eval.curate_manifest", "replay.run_smoke", "smoke_tests", "tests.run_allowed"],
+    "lessons_miner": ["lessons.mine", "status.summarize_events", "log_review"]
+  }
+}

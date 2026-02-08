@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0.2",
+  "task_code": "ATA-CONTEXT-SCHEMA-STRICT-v0.2__20260116",
+  "date": "20260116",
+  "owner_role": "Gatekeeper Engineer",
+  "goal": "Test v0.2 ATA context schema validation",
+  "scope_files": [
+    "tools/gatekeeper/schemas/ata_context.schema.json",
+    "tools/gatekeeper/commands/validate_ata.py"
+  ],
+  "how_to_repro": "Run validate_ata.py on this file",
+  "expected": "Validation should pass",
+  "actual": "Validation passed successfully",
+  "next_actions": [
+    "Complete ATA schema upgrade",
+    "Run full test suite"
+  ],
+  "evidence_paths": [
+    "tools/gatekeeper/tests/ata_test_cases/valid_v0.2.json",
+    "tools/gatekeeper/schemas/ata_context.schema.json"
+  ],
+  "rollback": "Revert schema file and validation script changes"
+}

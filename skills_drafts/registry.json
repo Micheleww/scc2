@@ -1,0 +1,30 @@
+{
+  "schema_version": "scc.skills_drafts_registry.v1",
+  "updated_at": "2026-02-06T20:09:12.407341+00:00",
+  "skills": [
+    {
+      "skill_id": "auto.fix.auto.ci_failed.opencodecli.35a74495e1",
+      "path": "skills_drafts/auto.fix.auto.ci_failed.opencodecli.35a74495e1.json"
+    },
+    {
+      "skill_id": "auto.fix.auto.executor_error.codex.04627ea31a",
+      "path": "skills_drafts/auto.fix.auto.executor_error.codex.04627ea31a.json"
+    },
+    {
+      "skill_id": "auto.fix.auto.executor_error.opencodecli.9119c28ac2",
+      "path": "skills_drafts/auto.fix.auto.executor_error.opencodecli.9119c28ac2.json"
+    },
+    {
+      "skill_id": "auto.fix.auto.pins_insufficient.codex.45729700ee",
+      "path": "skills_drafts/auto.fix.auto.pins_insufficient.codex.45729700ee.json"
+    },
+    {
+      "skill_id": "auto.fix.auto.pins_insufficient.unknown.64b751c4de",
+      "path": "skills_drafts/auto.fix.auto.pins_insufficient.unknown.64b751c4de.json"
+    },
+    {
+      "skill_id": "auto.fix.auto.preflight_failed.unknown.8fbfce8f88",
+      "path": "skills_drafts/auto.fix.auto.preflight_failed.unknown.8fbfce8f88.json"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "playbook.publish",
+  "version": "1.0.0",
+  "owner_role": "playbook_publisher",
+  "summary": "Promote playbook/policy drafts with enablement rollout and rollback thresholds.",
+  "applies_to": { "task_class": ["batchlane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/playbook/playbook.schema.json",
+    "output_schema": "contracts/enablement/enablement.schema.json"
+  },
+  "budgets": { "max_rollout_percent": 100 },
+  "quality_gates": { "must_define_rollback_conditions": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

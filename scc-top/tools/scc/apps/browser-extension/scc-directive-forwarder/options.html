@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SCC Forwarder Options</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        padding: 18px;
+        font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+      .wrap {
+        max-width: 720px;
+      }
+      h1 {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+      }
+      label {
+        display: block;
+        margin: 14px 0 6px;
+        font-weight: 600;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(127, 127, 127, 0.35);
+        background: rgba(127, 127, 127, 0.08);
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 14px;
+      }
+      button {
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(127, 127, 127, 0.35);
+        background: rgba(127, 127, 127, 0.12);
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .muted {
+        margin-top: 6px;
+        color: rgba(127, 127, 127, 0.9);
+        font-size: 12px;
+      }
+      .status {
+        margin-left: 6px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>SCC Directive Forwarder Options</h1>
+      <div class="muted">Settings are stored in <code>chrome.storage.sync</code>.</div>
+
+      <label for="endpoint">SCC Intake endpoint</label>
+      <input id="endpoint" type="text" placeholder="http://localhost:8787/intake/directive" />
+      <div class="muted">
+        Default: <code>http://localhost:8787/intake/directive</code>. Host permissions are limited to
+        <code>https://chatgpt.com/*</code> and local loopback (<code>localhost</code>/<code>127.0.0.1</code>).
+      </div>
+
+      <label for="token">Auth token (optional)</label>
+      <input id="token" type="password" placeholder="Bearer token without the 'Bearer ' prefix" />
+
+      <div class="row">
+        <label style="margin: 0; font-weight: 600; display: flex; gap: 8px; align-items: center">
+          <input id="autosend" type="checkbox" /> Enable auto-send
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="saveBtn">Save</button>
+        <span id="status" class="status"></span>
+      </div>
+    </div>
+    <script src="options.js"></script>
+  </body>
+</html>
+

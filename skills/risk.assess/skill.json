@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "risk.assess",
+  "version": "1.0.0",
+  "owner_role": "planner",
+  "summary": "Assess risk (scope/tests/unknowns) and propose mitigation subtasks.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_findings": 20 },
+  "quality_gates": { "must_list_unknowns": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

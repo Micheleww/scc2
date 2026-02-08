@@ -1,0 +1,11 @@
+# Runtime state/logs (keep repo clean)
+logs/
+state/
+*.log
+*.tmp
+*.lock
+
+# Legacy state files (moved under state/)
+.allocated_ports.json
+.file_protection_lock.json
+

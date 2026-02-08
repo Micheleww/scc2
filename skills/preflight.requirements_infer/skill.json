@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "preflight.requirements_infer",
+  "version": "1.0.0",
+  "owner_role": "split",
+  "summary": "Infer missing pins/tests/write_scope requirements and fail closed with missing list.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/preflight/preflight.schema.json"
+  },
+  "budgets": { "max_missing_items": 60 },
+  "quality_gates": { "must_output_missing_lists": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

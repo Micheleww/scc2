@@ -1,0 +1,12 @@
+{
+  "schema": "scc-unified-docker-build-stamp/v1",
+  "image": "scc-unified:local",
+  "lastBuiltCommit": null,
+  "lastBuiltAt": null,
+  "policy": {
+    "rebuildIfCommitsAheadGte": 20,
+    "rebuildIfFilesChangedGte": 120,
+    "rebuildIfLinesChangedGte": 8000
+  }
+}
+

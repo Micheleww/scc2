@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/submit/submit.schema.json",
+  "title": "SCC Submit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "status", "changed_files", "tests", "artifacts", "exit_code", "needs_input"],
+  "properties": {
+    "schema_version": { "const": "scc.submit.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["DONE", "NEED_INPUT", "FAILED"] },
+    "reason_code": { "type": "string" },
+    "changed_files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "new_files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "touched_files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "allow_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "read": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "write": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commands", "passed", "summary"],
+      "properties": {
+        "commands": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "passed": { "type": "boolean" },
+        "summary": { "type": "string" }
+      }
+    },
+    "ssot_pointers": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "summary": { "type": "string" },
+    "payload": { "type": "object", "additionalProperties": true },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report_md", "selftest_log", "evidence_dir", "patch_diff", "submit_json"],
+      "properties": {
+        "report_md": { "type": "string", "minLength": 1 },
+        "selftest_log": { "type": "string", "minLength": 1 },
+        "evidence_dir": { "type": "string", "minLength": 1 },
+        "patch_diff": { "type": "string", "minLength": 1 },
+        "submit_json": { "type": "string", "minLength": 1 }
+      }
+    },
+    "exit_code": { "type": "integer" },
+    "needs_input": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/pins/pins_request.schema.json",
+  "title": "SCC Pins Request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "child_task", "map_ref"],
+  "properties": {
+    "schema_version": { "const": "scc.pins_request.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "child_task": { "$ref": "../child_task/child_task.schema.json" },
+    "signals": { "type": "object", "additionalProperties": true },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_files": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "max_loc": { "type": "integer", "minimum": 1, "maximum": 2000 },
+        "default_line_window": { "type": "integer", "minimum": 20, "maximum": 800 },
+        "max_pins_tokens": { "type": "integer", "minimum": 100, "maximum": 200000 }
+      }
+    },
+    "map_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "hash"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "hash": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

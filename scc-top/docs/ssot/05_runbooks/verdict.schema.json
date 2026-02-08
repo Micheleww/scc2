@@ -1,0 +1,49 @@
+{
+  "oid": "01KGCWX998TEEXM69JCGWXV57M",
+  "layer": "CANON",
+  "primary_unit": "V.VERDICT",
+  "tags": [
+    "V.TESTS",
+    "V.GUARD"
+  ],
+  "status": "active",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scc://verdict/verdict.schema.json",
+  "title": "SCC Verifier Verdict (v0.1.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict",
+    "exit_code",
+    "generated_utc",
+    "evidence_paths"
+  ],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "fail_class": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "exit_code": {
+      "type": "integer"
+    },
+    "generated_utc": {
+      "type": "string",
+      "minLength": 10
+    },
+    "evidence_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

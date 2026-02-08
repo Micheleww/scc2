@@ -1,0 +1,130 @@
+services:
+  scc-server:
+    image: scc-unified:local
+    build:
+      # NOTE: This compose file sits in `c:\\scc\\` and is only a convenience shim.
+      # The repository root is `c:\\scc\\scc-top\\` which contains the canonical
+      # `docker-compose.scc.yml`.
+      context: ./scc-top/_docker_ctx_scc
+      dockerfile: tools/unified_server/docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      # Default is 18788. If you want to match legacy navigation that used :8000,
+      # run with `SCC_HOST_PORT=8000`.
+      - "${SCC_HOST_PORT:-18788}:18788"
+    environment:
+      UNIFIED_SERVER_MODE: "1"
+      UNIFIED_SERVER_HOST: "0.0.0.0"
+      UNIFIED_SERVER_PORT: "18788"
+      UNIFIED_SERVER_WORKERS: "1"
+      LOG_LEVEL: "info"
+      RELOAD: "false"
+      WATCHDOG_AUTO_RUN_AUTOMATION: "false"
+      REPO_ROOT: "/app"
+
+      # Enable integrated services (mounted under unified server prefixes).
+      MCP_BUS_ENABLED: "true"
+      A2A_HUB_ENABLED: "true"
+      EXCHANGE_SERVER_ENABLED: "true"
+      LANGGRAPH_ENABLED: "true"
+
+      # External integrations (typically running on the Windows host).
+      # Use `host.docker.internal` so containers can reach host processes.
+      OPENCODE_ENABLED: "true"
+      OPENCODE_UPSTREAM: "http://host.docker.internal:18790"
+      # OpenClaw/OpenClaw gateway (proxy mounted at /clawdbot).
+      CLAWDBOT_UPSTREAM: "http://host.docker.internal:19001"
+      # Required for non-loopback gateway binds. Must match the token used to start OpenClaw Gateway on the host.
+      CLAWDBOT_GATEWAY_TOKEN: "scc-local"
+
+      # SCC automation defaults (daemon container reads the same inbox).
+      SCC_PARENT_INBOX: "/app/artifacts/scc_state/parent_inbox.jsonl"
+      SCC_AUTOMATION_MAX_OUTSTANDING: "3"
+    volumes:
+      - scc_artifacts:/app/artifacts
+      - scc_data:/app/data
+      - scc_logs:/app/logs
+      - unified_server_state:/app/tools/unified_server/state
+      - unified_server_logs:/app/tools/unified_server/logs
+      - mcp_bus_state:/app/tools/mcp_bus/_state
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  scc-daemon:
+    image: scc-unified:local
+    depends_on:
+      scc-server:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      SCC_BASE_URL: "http://scc-server:18788"
+      UNIFIED_SERVER_MODE: "1"
+      SCC_PARENT_INBOX: "/app/artifacts/scc_state/parent_inbox.jsonl"
+      SCC_PARENT_INBOX_POLL_S: "2.0"
+      SCC_AUTOMATION_MAX_OUTSTANDING: "3"
+    volumes:
+      - scc_artifacts:/app/artifacts
+      - scc_data:/app/data
+      - scc_logs:/app/logs
+      - mcp_bus_state:/app/tools/mcp_bus/_state
+    command: ["python", "tools/scc/automation/daemon_inbox.py"]
+    healthcheck:
+      # Image-level healthchecks typically probe localhost, but this daemon runs in a
+      # separate container and must reach the server over the Compose network.
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import os,urllib.request; base=os.environ.get('SCC_BASE_URL','http://scc-server:18788').rstrip('/'); urllib.request.urlopen(base + '/health/ready', timeout=3).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  scc-backup:
+    image: scc-unified:local
+    profiles: ["ops"]
+    environment:
+      REPO_ROOT: "/app"
+      SCC_BACKUP_DIR: "/backups"
+    volumes:
+      - scc_artifacts:/app/artifacts:ro
+      - scc_data:/app/data:ro
+      - scc_logs:/app/logs:ro
+      - unified_server_state:/app/tools/unified_server/state:ro
+      - unified_server_logs:/app/tools/unified_server/logs:ro
+      - mcp_bus_state:/app/tools/mcp_bus/_state:ro
+      - ./scc-top/_backups:/backups
+    command: ["python", "tools/scc/ops/docker_backup_bundle.py"]
+
+  scc-restore:
+    image: scc-unified:local
+    profiles: ["ops"]
+    environment:
+      REPO_ROOT: "/app"
+      SCC_BACKUP_DIR: "/backups"
+      SCC_RESTORE_FILE: ""
+    volumes:
+      - scc_artifacts:/app/artifacts
+      - scc_data:/app/data
+      - scc_logs:/app/logs
+      - unified_server_state:/app/tools/unified_server/state
+      - unified_server_logs:/app/tools/unified_server/logs
+      - mcp_bus_state:/app/tools/mcp_bus/_state
+      - ./scc-top/_backups:/backups
+    command: ["python", "tools/scc/ops/docker_restore_bundle.py"]
+
+volumes:
+  scc_artifacts:
+  scc_data:
+  scc_logs:
+  unified_server_state:
+  unified_server_logs:
+  mcp_bus_state:

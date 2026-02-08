@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "gap_analysis",
+  "version": "1.0.0",
+  "owner_role": "status_review",
+  "summary": "Identify gaps between submit/evidence/tests and expected gates; propose remediation.",
+  "applies_to": { "task_class": ["control_plane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_gaps": 30 },
+  "quality_gates": { "must_list_next_steps": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

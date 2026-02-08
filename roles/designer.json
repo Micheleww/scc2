@@ -1,0 +1,21 @@
+{
+  "schema_version": "scc.role_policy.v1",
+  "role": "designer",
+  "context_mode": "external_context",
+  "allowed_context_refs": ["map", "docs", "events"],
+  "capabilities": {
+    "can_plan": true,
+    "can_modify_contracts": false,
+    "can_write_code": false,
+    "can_run_tests": false,
+    "can_emit_events": true
+  },
+  "permissions": {
+    "read": { "pins_required": false, "allow_paths": ["docs/**", "map/**", "artifacts/**", "oc-scc-local/src/**"], "deny_paths": ["**/secrets/**"] },
+    "write": { "allow_paths": [], "deny_paths": ["**"] },
+    "tools": { "allow": ["node"], "deny": ["git", "network"] }
+  },
+  "required_outputs": { "artifacts": ["artifacts/task_graph.json"], "submit_schema": "contracts/task_graph/task_graph.schema.json" },
+  "gates": { "preflight_required": true, "hygiene_required": false, "max_attempts": 2, "stop_conditions": ["PINS_INSUFFICIENT", "PREFLIGHT_FAILED"] },
+  "events": { "must_emit_on_fail": ["PINS_INSUFFICIENT", "PREFLIGHT_FAILED", "POLICY_VIOLATION"], "must_emit_on_success": ["SUCCESS"] }
+}

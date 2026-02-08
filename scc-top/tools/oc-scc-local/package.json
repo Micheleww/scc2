@@ -1,0 +1,20 @@
+{
+  "name": "oc-scc-local",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-only gateway that merges OpenCode + SCC behind a single port (18788) without modifying OpenCode source.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node ./src/gateway.mjs",
+    "start": "node ./src/gateway.mjs",
+    "smoke": "node ./src/smoke.mjs"
+  },
+  "dependencies": {
+    "http-proxy": "^1.18.1"
+  }
+}
+

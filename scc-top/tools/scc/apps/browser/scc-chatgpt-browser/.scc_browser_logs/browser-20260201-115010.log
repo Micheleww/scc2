@@ -1,0 +1,19 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill:   
+[scc-chatgpt-browser] electron ipc keys: ipcMain
+[scc-chatgpt-browser] electron ipcMain typeof: object
+[scc-chatgpt-browser] {"event":"browser_command","id":"20260201_034630_open_url","cmd":"open_url","args":{"url":"https://chatgpt.com/c/697ecb81-4184-83a4-b4d9-fefa21d835e2"}}
+(node:6064) UnhandledPromiseRejectionWarning: Error: ERR_ABORTED (-3) loading 'https://chatgpt.com/c/697ecb81-4184-83a4-b4d9-fefa21d835e2'
+    at rejectAndCleanup (node:electron/js2c/browser_init:2:83298)
+    at WebContents.navigationListener (node:electron/js2c/browser_init:2:83578)
+    at WebContents.emit (node:events:520:35)
+    at b.loadURL (node:electron/js2c/browser_init:2:88508)
+    at handleBrowserCommand (D:\quantsys\tools\scc\apps\browser\scc-chatgpt-browser\main.js:319:34)
+    at pumpCommandQueue (D:\quantsys\tools\scc\apps\browser\scc-chatgpt-browser\main.js:395:17)
+(Use `electron --trace-warnings ...` to show where the warning was created)
+(node:6064) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/auth/login?next=%2Fc%2F697ecb81-4184-83a4-b4d9-fefa21d835e2"}
+[scc-chatgpt-browser] {"event":"browser_command","id":"20260201_034632_webgpt_sync","cmd":"webgpt_sync","args":{}}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/auth/login?next=%2Fc%2F697ecb81-4184-83a4-b4d9-fefa21d835e2"},"url":"https://chatgpt.com/auth/login?next=%2Fc%2F697ecb81-4184-83a4-b4d9-fefa21d835e2"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/auth/login?next=%2Fc%2F697ecb81-4184-83a4-b4d9-fefa21d835e2"}

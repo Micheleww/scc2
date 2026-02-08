@@ -1,0 +1,16 @@
+As DESIGNER: decompose the following FAILED atomic task into <=10 minute atomic subtasks.
+
+FAILED TASK ID: {{task_id}}
+FAILED TITLE: {{task_title}}
+FAILED ROLE: {{task_role}}
+FAILED GOAL:
+{{task_goal}}
+
+FAILED REASON: {{failed_reason}}
+
+Constraints:
+- Output MUST be a JSON array (no prose outside JSON).
+- Each subtask MUST include: title, goal, role, skills, pointers, files, allowedExecutors, allowedModels, runner, status.
+- Keep each subtask runnable without scanning repo: use pointers/docs + small file lists.
+- Prefer splitting by file/module and by independent acceptance tests.
+

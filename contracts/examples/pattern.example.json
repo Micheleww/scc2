@@ -1,0 +1,10 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "pat_ci_failed_pytest_collection",
+  "created_at": "2026-02-05T00:00:00Z",
+  "match": { "event_type": "CI_FAILED", "failing_test": null, "stacktrace_hash": "abc123", "tool": "pytest", "code": null },
+  "stats": { "count": 12, "last_seen": "2026-02-05T00:00:00Z", "first_seen": "2026-02-04T00:00:00Z" },
+  "severity": "P1",
+  "notes": "Often fixed by adding missing dependency pins."
+}
+

@@ -1,0 +1,22 @@
+
+[scc-chatgpt-browser] main.js boot
+[5856:0201/020229.967:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[5856:0201/020229.967:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[5856:0201/020229.967:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[5856:0201/020229.971:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[5856:0201/020229.971:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[5856:0201/020229.971:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[5856:0201/020229.971:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[5856:0201/020229.973:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[5856:0201/020229.973:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[5856:0201/020230.187:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[5856:0201/020230.187:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[5856:0201/020230.187:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[5856:0201/020230.196:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[5856:0201/020230.196:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[5856:0201/020230.196:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[5856:0201/020230.196:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[5856:0201/020230.196:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[5856:0201/020230.196:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[scc-chatgpt-browser] {"event":"backfill_start_main_execjs","run_id":"1769882564405_89cc4ac138779","opts":{"limit":10,"scroll_steps":3,"scroll_delay_ms":220,"per_conv_wait_ms":15000}}
+[scc-chatgpt-browser] {"event":"backfill_error","error":"no_conversations_found (sidebar selector mismatch?)"}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "adr.write_6line",
+  "version": "1.0.0",
+  "owner_role": "doc_adr_scribe",
+  "summary": "Write an ADR using the 6-line template and link it from SSOT (docs/INDEX.md).",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/submit/submit.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_adr_lines": 80 },
+  "quality_gates": { "must_include_migration": true, "must_include_owner": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

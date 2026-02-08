@@ -1,0 +1,46 @@
+{
+  "oid": "01KGFC6NHJBQVVS5AZ9BB37ZBC",
+  "layer": "CANON",
+  "primary_unit": "K.CONTRACT_DOC",
+  "tags": [
+    "K.ACCEPTANCE",
+    "V.VERDICT"
+  ],
+  "status": "active",
+  "schema_version": "v0.1.0",
+  "task_id": "BLACK_FRIDAY13_OMEN_RULES_WORLD_TD_V010",
+  "contract_id": "BLACK_FRIDAY13_OMEN_RULES_WORLD_TD_01",
+  "goal": "Q5: Construct a scientific omen rule to predict whether a day is unlucky, using only the day’s formal attributes (dow/dom/month/period boundaries/leap day/F13), and evaluate it on a time-based holdout for both 5% and 1% bad-day thresholds.",
+  "scope_allow": "tools/scc/black_friday13/**, docs/ssot/04_contracts/black_friday13/**, docs/REPORT/control_plane/**",
+  "constraints": "Use only date-derived features (no external holiday/moon datasets in this baseline); targets must come from U_t built from EM-DAT+OWID; avoid random CV splits (time-series split only).",
+  "acceptance": {
+    "checks": [
+      {
+        "name": "top_validator",
+        "command": "python tools/scc/ops/top_validator.py --registry docs/ssot/registry.json --out-dir docs/REPORT/control_plane/artifacts/%TASK_CODE%"
+      },
+      {
+        "name": "analyze_omen_rules",
+        "command": "python tools/scc/black_friday13/analyze_omen_rules.py --luck-daily artifacts/black_friday13/luck_index_world_td/luck_index_daily.parquet --out-dir artifacts/black_friday13/omen_rules_world_td --targets is_bad_5p,is_bad_1p"
+      },
+      {
+        "name": "verify_omen_rules",
+        "command": "python tools/scc/black_friday13/verify_omen_rules.py --out-dir artifacts/black_friday13/omen_rules_world_td"
+      }
+    ]
+  },
+  "stop_condition": "If luck index is missing or targets are absent, stop and report; do not add new data sources.",
+  "commands_hint": "Run tools/scc/black_friday13/run_omen_rules_task.py after the luck index task.",
+  "inputs_ref": {
+    "paths": [
+      "artifacts/black_friday13/luck_index_world_td/luck_index_daily.parquet"
+    ]
+  },
+  "outputs_expected": {
+    "verdict_required": true,
+    "evidence_paths": [
+      "docs/REPORT/control_plane/artifacts/%TASK_CODE%/*",
+      "artifacts/black_friday13/omen_rules_world_td/*"
+    ]
+  }
+}

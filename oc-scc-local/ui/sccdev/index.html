@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SCC Dev Monitor</title>
+    <link rel="stylesheet" href="/sccdev/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="dot"></div>
+        <div class="title">SCC Dev</div>
+        <div class="subtitle">Monitor</div>
+      </div>
+      <div class="right">
+        <div id="lastUpdated" class="muted">Last updated: -</div>
+        <button id="btnRefresh" class="btn">Refresh</button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="grid">
+        <div class="card">
+          <div class="cardTitle">Factory</div>
+          <div class="kv">
+            <div class="k">Repo</div>
+            <div id="repoRoot" class="v mono">-</div>
+            <div class="k">Degradation</div>
+            <div id="degradation" class="v">-</div>
+            <div class="k">Stop Bleeding</div>
+            <div id="stopBleeding" class="v">-</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">WIP</div>
+          <div class="kv">
+            <div class="k">Limits</div>
+            <div id="wipLimits" class="v mono">-</div>
+            <div class="k">Effective</div>
+            <div id="wipEffective" class="v mono">-</div>
+            <div class="k">Running</div>
+            <div id="wipRunning" class="v mono">-</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">Queue</div>
+          <div class="kv">
+            <div class="k">Board</div>
+            <div id="boardCounts" class="v mono">-</div>
+            <div class="k">Jobs</div>
+            <div id="jobCounts" class="v mono">-</div>
+            <div class="k">Workers</div>
+            <div id="workerCounts" class="v mono">-</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">Routing</div>
+          <div class="kv">
+            <div class="k">Codex Default</div>
+            <div id="codexDefault" class="v mono">-</div>
+            <div class="k">Preferred</div>
+            <div id="codexPreferred" class="v mono">-</div>
+            <div class="k">Stats</div>
+            <div id="routerStats" class="v">-</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="tabs">
+          <button class="tab active" data-tab="tasks">Tasks</button>
+          <button class="tab" data-tab="workers">Workers</button>
+          <button class="tab" data-tab="events">Events</button>
+        </div>
+
+        <div class="tabBody active" id="tab_tasks">
+          <div class="toolbar">
+            <div class="muted">Recent board tasks (sorted by updated time)</div>
+          </div>
+          <div class="tableWrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Kind</th>
+                  <th>Status</th>
+                  <th>Lane</th>
+                  <th>Role</th>
+                  <th>Task Class</th>
+                  <th>Title</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody id="tasksBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tabBody" id="tab_workers">
+          <div class="toolbar">
+            <div class="muted">External workers + running jobs</div>
+          </div>
+          <div class="tableWrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Worker</th>
+                  <th>Executors</th>
+                  <th>Models</th>
+                  <th>Last Seen</th>
+                  <th>Running Job</th>
+                  <th>Lease</th>
+                </tr>
+              </thead>
+              <tbody id="workersBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tabBody" id="tab_events">
+          <div class="toolbar">
+            <div class="muted">Recent state events</div>
+          </div>
+          <div class="tableWrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>t</th>
+                  <th>type</th>
+                  <th>task</th>
+                  <th>class</th>
+                  <th>executor</th>
+                  <th>model</th>
+                  <th>exit</th>
+                  <th>notes</th>
+                </tr>
+              </thead>
+              <tbody id="eventsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/sccdev/app.js"></script>
+  </body>
+</html>
+

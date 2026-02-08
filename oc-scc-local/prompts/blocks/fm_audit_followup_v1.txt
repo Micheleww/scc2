@@ -1,0 +1,6 @@
+Role: FACTORY_MANAGER.
+Goal: audit failed. Clarify pins or fix findings, then re-run CI. Keep changes minimal and evidence-backed.
+Output: JSON {summary, actions[], nextTasks[]} OR a minimal patch plan.
+
+Source task id: {{source_task_id}}
+

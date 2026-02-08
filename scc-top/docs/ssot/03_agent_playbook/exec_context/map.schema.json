@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exec Context Map",
+  "type": "object",
+  "required": ["version", "generated_at", "modules"],
+  "properties": {
+    "version": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "paths"],
+        "properties": {
+          "id": { "type": "string" },
+          "paths": { "type": "array", "items": { "type": "string" } },
+          "entrypoints": { "type": "array", "items": { "type": "string" } },
+          "owners": { "type": "array", "items": { "type": "string" } },
+          "hotspots": { "type": "array", "items": { "type": "string" } },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "properties": {
+        "navigation": { "type": "string" },
+        "ssot_index": { "type": "string" }
+      }
+    }
+  }
+}
+

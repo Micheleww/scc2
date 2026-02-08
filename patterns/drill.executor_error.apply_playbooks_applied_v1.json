@@ -1,0 +1,21 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "drill.executor_error.apply_playbooks_applied_v1",
+  "created_at": "2026-02-06T19:15:00Z",
+  "updated_at": null,
+  "severity": "P2",
+  "match": {
+    "event_type": "EXECUTOR_ERROR",
+    "task_class": "drill_apply_playbooks_applied_v1",
+    "failing_test": null,
+    "stacktrace_hash": null,
+    "tool": null,
+    "code": null
+  },
+  "stats": {
+    "count": 1,
+    "last_seen": "2026-02-06T19:15:00Z",
+    "first_seen": "2026-02-06T19:15:00Z"
+  },
+  "notes": "Deterministic drill pattern: used to verify that maybeApplyPlaybooks() writes retry_plan.json + playbooks_applied.jsonl on EXECUTOR_ERROR."
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "scc.role_policy.v1",
+  "role": "verifier_judge",
+  "context_mode": "blank_cli",
+  "allowed_context_refs": ["patch", "tests", "evidence", "schema"],
+  "capabilities": {
+    "can_plan": false,
+    "can_modify_contracts": false,
+    "can_write_code": false,
+    "can_run_tests": true,
+    "can_emit_events": true
+  },
+  "permissions": {
+    "read": { "pins_required": false, "allow_paths": ["artifacts/**", "contracts/**", "roles/**", "skills/**"], "deny_paths": ["**/secrets/**"] },
+    "write": { "allow_paths": ["artifacts/**"], "deny_paths": ["**/secrets/**"] },
+    "tools": { "allow": ["git", "node", "python"], "deny": ["network"] }
+  },
+  "required_outputs": { "artifacts": ["artifacts/verdict.json"], "submit_schema": "contracts/verdict/verdict.schema.json" },
+  "gates": { "preflight_required": false, "hygiene_required": true, "max_attempts": 1, "stop_conditions": ["POLICY_VIOLATION"] },
+  "events": { "must_emit_on_fail": ["POLICY_VIOLATION"], "must_emit_on_success": ["SUCCESS"] }
+}
+

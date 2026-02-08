@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "pins.build_minimal",
+  "version": "1.0.0",
+  "owner_role": "pins",
+  "summary": "Build minimal pins from map + signals within budget.",
+  "applies_to": { "task_class": ["fix_test", "bugfix_small", "refactor_small", "ci_fixup_v1"] },
+  "contracts": {
+    "input_schema": "contracts/pins/pins_request.schema.json",
+    "output_schema": "contracts/pins/pins_result.schema.json"
+  },
+  "budgets": { "max_pins_tokens": 4000, "max_files": 20 },
+  "quality_gates": { "must_have_reason_per_pin": true, "must_not_exceed_budget": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

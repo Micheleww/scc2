@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "bottleneck_analysis",
+  "version": "1.0.0",
+  "owner_role": "factory_manager",
+  "summary": "Analyze bottlenecks (timeouts, capacity, pins churn) and propose mitigations.",
+  "applies_to": { "task_class": ["control_plane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/event/event.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_findings": 20 },
+  "quality_gates": { "must_include_actions": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

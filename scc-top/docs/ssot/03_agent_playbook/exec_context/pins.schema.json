@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Executor Pins",
+  "type": "object",
+  "required": ["allowed_paths"],
+  "properties": {
+    "intent": { "type": "string" },
+    "allowed_paths": { "type": "array", "items": { "type": "string" } },
+    "forbidden_paths": { "type": "array", "items": { "type": "string" } },
+    "forbidden": { "type": "array", "items": { "type": "string" } },
+    "symbols": { "type": "array", "items": { "type": "string" } },
+    "max_files": { "type": "integer" },
+    "max_loc": { "type": "integer" },
+    "line_windows": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "integer" }
+        }
+      }
+    },
+    "snippets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "start", "end"],
+        "properties": {
+          "path": { "type": "string" },
+          "start": { "type": "integer" },
+          "end": { "type": "integer" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "ssot_hash": { "type": "string" },
+    "ssot_assumptions": { "type": "array", "items": { "type": "string" } }
+  }
+}

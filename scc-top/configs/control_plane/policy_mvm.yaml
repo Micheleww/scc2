@@ -1,0 +1,57 @@
+# MVM Policy Configuration
+task_code: DEFAULT
+
+stages:
+  - name: plan
+    file: plan_result.json
+    required_fields:
+      - ci_generated
+      - timestamp
+      - task_code
+      - stage
+      - navigation_root
+      - law_pointer
+      - skill_call_rules
+      - router_plan
+      - digest
+      - prev_digest
+    validation_rules:
+      - ci_generated_must_be_true
+      - exit_code_must_be_zero
+      - navigation_root_must_match: null
+      - law_pointer_must_match: null
+      - skill_call_rules_must_match: null
+      - router_plan_steps_min: 1
+      - prev_digest_must_match_plan_digest
+
+  - name: test
+    file: test_result.json
+    required_fields:
+      - ci_generated
+      - timestamp
+      - task_code
+      - stage
+      - exit_code
+      - evidence_paths
+      - digest
+      - prev_digest
+    validation_rules:
+      - ci_generated_must_be_true
+      - prev_digest_must_match_test_digest
+      - evidence_paths_must_be_in_artifacts
+      - no_absolute_paths
+
+  - name: publish
+    file: publish_result.json
+    required_fields:
+      - ci_generated
+      - timestamp
+      - task_code
+      - stage
+      - exit_code
+      - digest
+      - prev_digest
+    validation_rules:
+      - ci_generated_must_be_true
+      - exit_code_must_be_zero
+      - prev_digest_must_match_test_digest

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "events.backfill",
+  "version": "1.0.0",
+  "owner_role": "auditor",
+  "summary": "Backfill artifacts/<task_id>/events.jsonl for legacy tasks to satisfy strict event gating.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/submit/submit.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_tasks": 2000, "timeout_ms": 600000 },
+  "quality_gates": { "must_emit_event_row": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

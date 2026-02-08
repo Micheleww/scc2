@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "status_review",
+  "version": "1.0.0",
+  "owner_role": "status_review",
+  "summary": "Audit task completion, evidence, and risk; emit a STATUS_REVIEW report.",
+  "applies_to": { "task_class": ["control_plane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_tasks": 200 },
+  "quality_gates": { "must_include_blockers": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

@@ -1,0 +1,38 @@
+{
+  "enabled": true,
+  "scan_dir": "docs/REPORT/control_plane",
+  "out_dir": "docs/REPORT/control_plane",
+  "match": [
+    "REPORT__GOAL_CHAIN_STATUS__",
+    "Goal Chain Status Report",
+    "xianzhuang_shencha",
+    "STATUS_REVIEW",
+    "REPORT__STATUS_REVIEW__",
+    "REPORT__STATUS_REVIEW_AUDIT__"
+  ],
+  "max_reports": 200,
+  "trigger_parent_tasks": true,
+  "require_scope": "",
+  "board": "docs/TASKS/backlog/parent_task_goal_board.json",
+  "require_coverage": "full",
+  "gap_review_on_incomplete": true,
+  "gap_review_limit": 100,
+  "gap_review_report_dir": "docs/REPORT/control_plane",
+  "gap_review_tasks_enabled": true,
+  "gap_review_tasks_max": 50,
+  "parents": "docs/TASKS/backlog/parent_tasks.json",
+  "board_hook_enabled": true,
+  "board_hook_apply": true,
+  "board_hook_split": true,
+  "board_hook_dispatch": true,
+  "board_hook_max_new": 50,
+  "board_hook_allowed_executors": [
+    "codex"
+  ],
+  "board_hook_allowed_models": [
+    "gpt-5.2"
+  ],
+  "board_hook_area": "control_plane",
+  "board_hook_runner": "external",
+  "board_hook_role": "designer"
+}

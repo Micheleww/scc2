@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "failure_triad",
+  "version": "1.0.0",
+  "owner_role": "auditor",
+  "summary": "Classify failure root cause: pins/tests/scope/tooling and recommend next actions.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/event/event.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_findings": 20 },
+  "quality_gates": { "must_propose_next_task": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

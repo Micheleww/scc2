@@ -1,0 +1,17 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "timeout.codex",
+  "created_at": "2026-02-06T06:09:39.3851544+08:00",
+  "updated_at": null,
+  "severity": "P2",
+  "match": {
+    "event_type": "timeout",
+    "tool": "codex"
+  },
+  "stats": {
+    "count": 12,
+    "first_seen": "2026-02-05T12:47:03.5280000+08:00",
+    "last_seen": "2026-02-05T15:03:57.5120000+08:00"
+  },
+  "notes": "Lower-volume timeout cluster for executor=codex. Playbook focuses on splitting and routing to alternate executor/model on repeated timeouts."
+}

@@ -1,0 +1,117 @@
+{
+  "schema_version": "scc.five_whys.prevention.v1",
+  "task_id": "202873d8-e107-4327-8deb-51ee877c5983",
+  "title": "Five Whys: prevention plan (ci.gate.failed)",
+  "generated_at": "2026-02-07T00:00:00Z",
+  "top_taxonomy": "ci.gate.failed",
+  "taxonomy_count": 12,
+  "root_causes": [
+    {
+      "id": "RC-001",
+      "taxonomy": "ci.gate.failed",
+      "why_chain": [
+        {
+          "level": 1,
+          "description": "直接原因：ci_skipped/ci_failed - CI gate validation failed"
+        },
+        {
+          "level": 2,
+          "description": "机制原因：CI gate 要求 exit_code=0，但任务未提供可运行的 tests_run/或改动未被测试覆盖，导致 gate 判失败"
+        },
+        {
+          "level": 3,
+          "description": "缺失的 preflight：任务创建/派发阶段未强制 allowedTests；未检查 SUBMIT 证据字段完整"
+        },
+        {
+          "level": 4,
+          "description": "缺失的 hook/路由：CI fixup 覆盖不足/未在失败时自动生成补证据子任务并重跑"
+        },
+        {
+          "level": 5,
+          "description": "缺失的回归/lesson：没有把失败用例写入回归集（最小测试/证据），导致相同失败周期性重现"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "ACT-001",
+      "title": "Fail-closed CI Evidence Gate",
+      "description": "Enforce strict CI evidence requirements: missing tests_run/touched_files results in automatic failure",
+      "change_type": "policy",
+      "target_files": [
+        "factory_policy.json",
+        "ci_gate.py"
+      ],
+      "verification": [
+        "Sample 50 new tasks: 100% have SUBMIT.tests_run and CI exit_code=0",
+        "All SUBMIT JSON must include tests_run array with at least one command",
+        "All SUBMIT JSON must include touched_files array matching actual changes"
+      ],
+      "rollback": [
+        "Set CI_GATE_STRICT=false environment variable",
+        "Restart CI service without strict gate",
+        "Revert policy file to previous version"
+      ],
+      "evidence_triplet": {
+        "input": "Task with missing tests_run",
+        "output": "CI gate rejection with clear error message",
+        "expected": "exit_code != 0, SUBMIT validation fails"
+      }
+    },
+    {
+      "id": "ACT-002",
+      "title": "CI Fixup Loop (max 2 iterations)",
+      "description": "Add automated CI fixup loop that patches missing tests/evidence and reruns CI up to 2 times",
+      "change_type": "automation",
+      "target_files": [
+        "ci_fixup.py",
+        "executor_hooks.py"
+      ],
+      "verification": [
+        "CI failures trigger automatic fixup subtask generation",
+        "Fixup patches are applied and CI reruns within 2 iterations",
+        "Success rate of fixup loop >= 80% for ci.gate.failed cases"
+      ],
+      "rollback": [
+        "Set CI_FIXUP_ENABLED=false environment variable",
+        "Remove fixup hooks from executor pipeline"
+      ],
+      "evidence_triplet": {
+        "input": "CI failure with missing evidence",
+        "output": "Generated fixup patch and CI rerun result",
+        "expected": "Auto-generated tests_run or touched_files within 2 retries"
+      }
+    },
+    {
+      "id": "ACT-003",
+      "title": "Preflight CI Evidence Check",
+      "description": "Add preflight validation at task creation/dispatch stage to ensure allowedTests and SUBMIT fields are present",
+      "change_type": "validation",
+      "target_files": [
+        "task_dispatcher.py",
+        "preflight_checks.py"
+      ],
+      "verification": [
+        "100% of dispatched tasks have non-empty allowedTests in task spec",
+        "100% of tasks pass SUBMIT schema validation before execution",
+        "Zero tasks dispatched with missing required CI evidence fields"
+      ],
+      "rollback": [
+        "Set PREFLIGHT_STRICT=false",
+        "Allow tasks without preflight validation"
+      ],
+      "evidence_triplet": {
+        "input": "Task dispatch request with missing tests_run",
+        "output": "Preflight rejection or auto-populated defaults",
+        "expected": "Blocked dispatch or fixed task spec"
+      }
+    }
+  ],
+  "atomic_tasks": [
+    {
+      "id": "AT-001",
+      "action_ref": "ACT-001",
+      "title": "Implement SUBMIT.tests_run validation",
+      "status": "pending",
+      "verification_command": "python -c \"import json; s=json.load(open('test_submit.json')); assert 'tests_run' in s and len(s['tests_run'])>0\"",

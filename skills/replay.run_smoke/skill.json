@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "replay.run_smoke",
+  "version": "1.0.0",
+  "owner_role": "eval_curator",
+  "summary": "Run the smoke tier for an eval/replay bundle and emit machine-readable evidence.",
+  "applies_to": { "task_class": ["batchlane", "eval_replay_v1", "*"] },
+  "contracts": {
+    "input_schema": "contracts/eval/eval_manifest.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_verify_minutes": 10, "max_commands": 10 },
+  "quality_gates": { "must_capture_commands": true, "must_capture_exit_codes": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

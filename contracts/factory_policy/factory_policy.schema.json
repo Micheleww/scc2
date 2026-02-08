@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/factory_policy/factory_policy.schema.json",
+  "title": "SCC Factory Policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "updated_at", "wip_limits", "lanes", "budgets", "event_routing", "circuit_breakers", "degradation_matrix", "verification_tiers"],
+  "properties": {
+    "schema_version": { "const": "scc.factory_policy.v1" },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "wip_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["WIP_TOTAL_MAX", "WIP_EXEC_MAX", "WIP_BATCH_MAX"],
+      "properties": {
+        "WIP_TOTAL_MAX": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "WIP_EXEC_MAX": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "WIP_BATCH_MAX": { "type": "integer", "minimum": 0, "maximum": 100 },
+
+        "WIP_TOTAL_EXTERNAL_MAX": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "WIP_TOTAL_INTERNAL_MAX": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "WIP_EXEC_EXTERNAL_MAX": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "WIP_EXEC_INTERNAL_MAX": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "WIP_BATCH_EXTERNAL_MAX": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "WIP_BATCH_INTERNAL_MAX": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "lanes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fastlane", "mainlane", "batchlane"],
+      "properties": {
+        "fastlane": { "$ref": "#/definitions/lane" },
+        "mainlane": { "$ref": "#/definitions/lane" },
+        "batchlane": { "$ref": "#/definitions/lane" },
+        "dlq": { "$ref": "#/definitions/lane" },
+        "quarantine": { "$ref": "#/definitions/lane" }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_children", "max_depth", "max_total_attempts", "max_total_tokens_budget", "max_total_verify_minutes"],
+      "properties": {
+        "max_children": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "max_depth": { "type": "integer", "minimum": 0, "maximum": 10 },
+        "max_total_attempts": { "type": "integer", "minimum": 1, "maximum": 50 },
+        "max_total_tokens_budget": { "type": "integer", "minimum": 0 },
+        "max_total_verify_minutes": { "type": "integer", "minimum": 0, "maximum": 1440 }
+      }
+    },
+    "event_routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "by_event_type"],
+      "properties": {
+        "default": { "$ref": "#/definitions/route" },
+        "by_event_type": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/route" }
+        }
+      }
+    },
+    "circuit_breakers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "match", "trip", "action"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "match": { "type": "object", "additionalProperties": true },
+          "trip": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["consecutive_failures"],
+            "properties": {
+              "consecutive_failures": { "type": "integer", "minimum": 1, "maximum": 50 }
+            }
+          },
+          "action": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "degradation_matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["when", "do"],
+        "properties": {
+          "when": { "type": "object", "additionalProperties": true },
+          "do": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "verification_tiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "by_task_class"],
+      "properties": {
+        "default": { "enum": ["smoke", "regression"] },
+        "by_task_class": { "type": "object", "additionalProperties": { "enum": ["smoke", "regression"] } }
+      }
+    }
+  },
+  "definitions": {
+    "lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["priority", "entity_roles_max"],
+      "properties": {
+        "priority": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "entity_roles_max": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lane", "virtual_roles", "entity_roles"],
+      "properties": {
+        "lane": { "enum": ["fastlane", "mainlane", "batchlane", "quarantine", "dlq"] },
+        "virtual_roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "entity_roles": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

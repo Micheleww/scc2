@@ -1,0 +1,10 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill: true 500 60
+[scc-chatgpt-browser] electron ipc keys: ipcMain
+[scc-chatgpt-browser] electron ipcMain typeof: object
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/auth/login"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/auth/login"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"开始使用","url_preview":"https://chatgpt.com/auth/login"},"url":"https://chatgpt.com/auth/login"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"开始使用","url_preview":"https://chatgpt.com/auth/login"},"url":"https://chatgpt.com/auth/login"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"开始使用","url_preview":"https://chatgpt.com/auth/login"},"url":"https://chatgpt.com/auth/login"}

@@ -1,0 +1,91 @@
+# Keep repo lean: ignore everything by default, then allowlist SCC control-plane.
+/*
+!.gitignore
+!.github/
+!.github/**
+!requirements.txt
+!configs/
+!configs/**
+
+# Docs: allow only SSOT + Canonical truth + minimal derived pointers.
+!docs/
+docs/*
+!docs/START_HERE.md
+!docs/ssot/
+!docs/ssot/**
+!docs/CANONICAL/
+!docs/CANONICAL/**
+!docs/oc-scc-local/
+!docs/oc-scc-local/**
+!docs/DERIVED/
+docs/DERIVED/*
+!docs/DERIVED/task_tree.json
+!docs/DERIVED/secretary/
+!docs/DERIVED/secretary/GOAL_BRIEF__LATEST.md
+
+# Raw inputs are local-only by default (can be overridden per org policy).
+docs/INPUTS/
+
+# Legacy docs trees are demotion-in-progress; keep tracked placeholders only.
+docs/REPORT/
+docs/LOG/
+
+# Evidence / derived outputs (repo policy: keep as paths + links; do not commit bulk evidence)
+/artifacts/
+/evidence/
+!/docs/REPORT/.gitkeep
+!/docs/LOG/.gitkeep
+/tools/ci/artifacts/
+
+# Derived state is generally regenerable; keep only the minimal SSOT-needed derived files.
+/docs/DERIVED/
+!docs/DERIVED/task_tree.json
+!docs/DERIVED/secretary/
+!docs/DERIVED/secretary/GOAL_BRIEF__LATEST.md
+
+# Local-only delegation configs (generated)
+/configs/scc/
+
+# Common generated configs (local-only)
+/configs/current/**
+/configs/router/**
+/configs/risk_switch_audit.log
+
+# Local editor/tool state
+.vscode/
+.idea/
+.cursor/
+.trae/
+.gnupg/
+
+# Tools: ignore most /tools contents by default, then allowlist SCC control-plane packages.
+!tools/
+tools/*
+!tools/scc/
+!tools/scc/**
+!tools/unified_server/
+!tools/unified_server/**
+!tools/oc-scc-local/
+!tools/oc-scc-local/**
+tools/oc-scc-local/config/runtime.env
+!tools/gatekeeper/
+!tools/gatekeeper/**
+!tools/docs_governance/
+!tools/docs_governance/**
+
+# CI helpers: allowlist only the tracked entrypoints (avoid dragging in local scratch trees).
+tools/ci/
+tools/ci/**
+!tools/ci/log_ci_remote_access.py
+!tools/ci/mvm-verdict.py
+!tools/ci/mvm_stage_emit.py
+!tools/ci/run_phase4_checks.py
+!tools/ci/send_ata_review.py
+!tools/ci/verify_ci_completeness.py
+
+# Local tool caches
+/tools/a2a_hub/.pytest_cache/
+
+# Python bytecode caches
+__pycache__/
+*.pyc

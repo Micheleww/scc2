@@ -1,0 +1,25 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill: true 1 1
+[2852:0201/020706.139:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[2852:0201/020706.141:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[2852:0201/020706.141:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[2852:0201/020706.145:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[2852:0201/020706.145:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[2852:0201/020706.145:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[2852:0201/020706.145:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[2852:0201/020706.147:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[2852:0201/020706.147:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[2852:0201/020706.417:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[2852:0201/020706.417:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[2852:0201/020706.417:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[2852:0201/020706.421:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[2852:0201/020706.421:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[2852:0201/020706.421:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[2852:0201/020706.421:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[2852:0201/020706.421:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[2852:0201/020706.421:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[scc-chatgpt-browser] {"event":"backfill_start_main_execjs","run_id":"1769882838485_954b956940579","opts":{"limit":1,"scroll_steps":1,"scroll_delay_ms":220,"per_conv_wait_ms":15000}}
+[scc-chatgpt-browser] {"event":"backfill_done","ok":0,"fail":1,"total":1}
+(electron) 'webContents.canGoBack' is deprecated and will be removed. Please use 'webContents.navigationHistory.canGoBack' instead.
+(electron) 'webContents.goBack' is deprecated and will be removed. Please use 'webContents.navigationHistory.goBack' instead.

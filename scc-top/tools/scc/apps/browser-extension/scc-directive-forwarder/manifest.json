@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "SCC Directive Forwarder",
+  "version": "0.1.0",
+  "description": "Extract SCC_*_JSON directives from the latest ChatGPT assistant message and forward to SCC Intake.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://chatgpt.com/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "background": {
+    "service_worker": "service_worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "SCC Forwarder",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
+

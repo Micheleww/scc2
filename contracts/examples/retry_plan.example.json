@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.retry_plan.v1",
+  "task_id": "task_123",
+  "attempt": 2,
+  "max_attempts": 3,
+  "strategy": "SHRINK_RADIUS",
+  "route": { "lane": "fastlane", "next_role": "pinser", "notes": "Add missing pins and reduce changed files." },
+  "budgets": { "max_total_attempts": 3, "max_verify_minutes": 15, "max_children": 8, "max_depth": 2 },
+  "pins_adjustments": { "add": ["tests/run_allowed"], "drop": [] },
+  "stop_conditions": ["RETRY_EXHAUSTED", "PINS_INSUFFICIENT"],
+  "dlq_on_fail": true
+}
+

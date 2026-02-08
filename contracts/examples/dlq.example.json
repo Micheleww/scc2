@@ -1,0 +1,14 @@
+{
+  "schema_version": "scc.dlq.v1",
+  "dlq_id": "dlq_20260205_0001",
+  "task_id": "task_123",
+  "created_at": "2026-02-05T00:00:00Z",
+  "status": "OPEN",
+  "reason_code": "RETRY_EXHAUSTED",
+  "summary": "Repeated CI failures; missing reproduction steps and failing test info.",
+  "missing_inputs": ["failing_test_name", "repro_command"],
+  "last_event": { "event_type": "CI_FAILED", "t": "2026-02-05T00:00:00Z", "reason": "pytest collection failed" },
+  "retry_history": [{ "attempt": 1, "event_type": "CI_FAILED", "notes": "No pins for tests" }],
+  "evidence": { "artifacts_root": "artifacts/task_123/", "report_md": "artifacts/task_123/report.md", "selftest_log": "artifacts/task_123/selftest.log" }
+}
+

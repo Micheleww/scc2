@@ -1,0 +1,36 @@
+triggers:
+  - name: contracts_change_requires_docs
+    code_paths:
+      - "contracts/"
+    require_any_docs_paths:
+      - "docs/spec/"
+      - "docs/arch/"
+
+  - name: config_change_requires_docs
+    code_paths:
+      - "configs/current/"
+    require_any_docs_paths:
+      - "docs/spec/"
+      - "docs/arch/"
+
+  - name: trading_path_change_requires_spec
+    code_paths:
+      - "src/quantsys/execution/"
+      - "src/quantsys/risk/"
+      - "src/quantsys/portfolio/"  # broker functionality is in portfolio
+    require_any_docs_paths:
+      - "docs/spec/"
+
+require_report_or_log_on_code_change:
+  code_paths:
+    - "contracts/"
+    - "configs/current/"
+    - "src/quantsys/execution/"
+    - "src/quantsys/risk/"
+    - "src/quantsys/portfolio/"  # broker functionality is in portfolio
+    - "src/quantsys/strategy/"
+    - "src/quantsys/data/"
+    - "src/quantsys/backtest/"  # backtest functionality
+  docs_paths:
+    - "docs/REPORT/tasks/"
+    - "docs/LOG/"

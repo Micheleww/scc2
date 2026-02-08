@@ -1,0 +1,132 @@
+# Map Link Report (v1)
+
+- generated_at: 2026-02-07T06:03:18.416Z
+- map_hash: sha256:8a710bc9ae957087b19a27ca8ed42e8ed36bd903824794082e2b1d49ac6c5899
+
+## Missing doc_refs counts
+- modules_missing: 43
+- entry_points_missing: 36
+- key_symbols_missing: 2000
+
+## Samples (capped)
+### modules
+- `contracts`
+- `docs`
+- `oc-scc-local`
+- `roles`
+- `scc-top`
+- `scc-top/_docker_ctx_scc/tools/a2a_hub`
+- `scc-top/_docker_ctx_scc/tools/exchange_server`
+- `scc-top/_docker_ctx_scc/tools/mcp_bus`
+- `scc-top/_docker_ctx_scc/tools/scc_ui`
+- `scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser`
+- `scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master`
+- `scc-top/_docker_ctx_scc/tools/unified_server`
+- `scc-top/docs/INPUTS/yme_restaurant/model_code/yme_backend`
+- `scc-top/factor_mining_service`
+- `scc-top/opencode-dev/opencode-dev`
+- `scc-top/opencode-dev/opencode-dev/github`
+- `scc-top/opencode-dev/opencode-dev/packages/app`
+- `scc-top/opencode-dev/opencode-dev/packages/console/app`
+- `scc-top/packages/strategies/eth_perp_trend_1h`
+- `scc-top/packages/strategies/test_mean_reversion`
+- `scc-top/packages/strategies/test_trend_strategy`
+- `scc-top/tools/a2a_hub`
+- `scc-top/tools/ai_cli`
+- `scc-top/tools/aws_relay`
+- `scc-top/tools/chatgpt_chat_archive_mvp`
+- `scc-top/tools/config_manager`
+- `scc-top/tools/desktop`
+- `scc-top/tools/exchange_server`
+- `scc-top/tools/freqtrade_ui_streamlit`
+- `scc-top/tools/local_agent`
+- `scc-top/tools/mcp_bus`
+- `scc-top/tools/oc-scc-local`
+- `scc-top/tools/scc_ui`
+- `scc-top/tools/scc/apps/browser/scc-chatgpt-browser`
+- `scc-top/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master`
+- `scc-top/tools/trae_native_wrapper`
+- `scc-top/tools/unified_server`
+- `scc-top/tools/vscode-scc`
+- `scc-top/tools/web_console`
+- `scc-top/tools/yme_backend`
+
+### entry_points
+- `pkg:oc-scc-local/package.json:dev`
+- `pkg:oc-scc-local/package.json:map:build`
+- `pkg:oc-scc-local/package.json:map:query`
+- `pkg:oc-scc-local/package.json:map:query-sqlite`
+- `pkg:oc-scc-local/package.json:map:sqlite`
+- `pkg:oc-scc-local/package.json:pins:build`
+- `pkg:oc-scc-local/package.json:preflight:check`
+- `pkg:oc-scc-local/package.json:smoke`
+- `pkg:oc-scc-local/package.json:start`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc_ui/package.json:build`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc_ui/package.json:dev`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser/package.json:start`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/package.json:test`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:build`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:start`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:test`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/console/app/package.json:build`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/console/app/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/console/app/package.json:start`
+- `pkg:scc-top/package.json:test`
+- `pkg:scc-top/tools/oc-scc-local/package.json:dev`
+- `pkg:scc-top/tools/oc-scc-local/package.json:smoke`
+- `pkg:scc-top/tools/oc-scc-local/package.json:start`
+- `pkg:scc-top/tools/scc_ui/package.json:build`
+- `pkg:scc-top/tools/scc_ui/package.json:dev`
+- `pkg:scc-top/tools/scc/apps/browser/scc-chatgpt-browser/package.json:start`
+- `pkg:scc-top/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master/package.json:dev`
+- `pkg:scc-top/tools/trae_native_wrapper/package.json:build`
+- `pkg:scc-top/tools/trae_native_wrapper/package.json:test`
+- `pkg:scc-top/tools/vscode-scc/package.json:build`
+- `pkg:scc-top/tools/web_console/package.json:build`
+- `pkg:scc-top/tools/web_console/package.json:dev`
+- `pkg:scc-top/tools/web_console/package.json:start`
+
+### key_symbols
+- `sha256FileOrNull@oc-scc-local/scripts/lib/trace_v1.mjs:5`
+- `buf@oc-scc-local/scripts/lib/trace_v1.mjs:8`
+- `writeTraceV1@oc-scc-local/scripts/lib/trace_v1.mjs:15`
+- `tid@oc-scc-local/scripts/lib/trace_v1.mjs:16`
+- `root@oc-scc-local/scripts/lib/trace_v1.mjs:18`
+- `artDir@oc-scc-local/scripts/lib/trace_v1.mjs:21`
+- `submitPath@oc-scc-local/scripts/lib/trace_v1.mjs:22`
+- `now@oc-scc-local/scripts/lib/trace_v1.mjs:25`
+- `trace@oc-scc-local/scripts/lib/trace_v1.mjs:26`
+- `parseArgs@oc-scc-local/scripts/map_build_v1.mjs:7`
+- `out@oc-scc-local/scripts/map_build_v1.mjs:8`
+- `a@oc-scc-local/scripts/map_build_v1.mjs:20`
+- `next@oc-scc-local/scripts/map_build_v1.mjs:21`
+- `args@oc-scc-local/scripts/map_build_v1.mjs:75`
+- `repoRoot@oc-scc-local/scripts/map_build_v1.mjs:76`
+- `roots@oc-scc-local/scripts/map_build_v1.mjs:77`
+- `excludes@oc-scc-local/scripts/map_build_v1.mjs:78`
+- `startedAt@oc-scc-local/scripts/map_build_v1.mjs:80`
+- `res@oc-scc-local/scripts/map_build_v1.mjs:81`
+- `wrote@oc-scc-local/scripts/map_build_v1.mjs:90`
+- `ms@oc-scc-local/scripts/map_build_v1.mjs:91`
+- `sqlite@oc-scc-local/scripts/map_build_v1.mjs:93`
+- `wantSqlite@oc-scc-local/scripts/map_build_v1.mjs:94`
+- `stdout@oc-scc-local/scripts/map_build_v1.mjs:103`
+- `parseArgs@oc-scc-local/scripts/map_query_v1.mjs:7`
+- `out@oc-scc-local/scripts/map_query_v1.mjs:8`
+- `a@oc-scc-local/scripts/map_query_v1.mjs:10`
+- `next@oc-scc-local/scripts/map_query_v1.mjs:11`
+- `args@oc-scc-local/scripts/map_query_v1.mjs:41`
+- `repoRoot@oc-scc-local/scripts/map_query_v1.mjs:42`
+- `backend@oc-scc-local/scripts/map_query_v1.mjs:43`
+- `wantSqlite@oc-scc-local/scripts/map_query_v1.mjs:44`
+- `strict@oc-scc-local/scripts/map_query_v1.mjs:45`
+- `v@oc-scc-local/scripts/map_query_v1.mjs:46`
+- `sqlitePath@oc-scc-local/scripts/map_query_v1.mjs:50`
+- `q@oc-scc-local/scripts/map_query_v1.mjs:56`
+- `limit@oc-scc-local/scripts/map_query_v1.mjs:57`
+- `stdout@oc-scc-local/scripts/map_query_v1.mjs:58`
+- `loaded@oc-scc-local/scripts/map_query_v1.mjs:67`
+- `out@oc-scc-local/scripts/map_query_v1.mjs:68`

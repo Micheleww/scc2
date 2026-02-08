@@ -1,0 +1,20 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill: true 120 30
+[scc-chatgpt-browser] electron ipc keys: ipcMain
+[scc-chatgpt-browser] electron ipcMain typeof: object
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_backfill_autostart","url":"https://chatgpt.com/","opts":{"limit":120,"scroll_steps":30}}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"backfill_start_main_execjs","run_id":"1769915142629_e5c54d0b92833","opts":{"limit":120,"scroll_steps":30,"scroll_delay_ms":220,"per_conv_wait_ms":15000}}
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"backfill_snapshot_failed","url":"https://chatgpt.com/","snapshot":{"ok":false,"conversation_id":"url_1865eb7","title":"ChatGPT","source":"webgpt_embedded_browser","page_url":"https://chatgpt.com/","captured_at":"2026-02-01T03:06:10.348Z","messages":[],"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"}}}
+[scc-chatgpt-browser] {"event":"backfill_done","ok":0,"fail":1,"total":1}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":false,"debug":{"mode":"article_nodes","counts":{"role_nodes":0,"conversation_turn":0,"message_testid":0,"articles":0,"markdown":0},"node_count":0,"message_count":0,"title_preview":"ChatGPT","url_preview":"https://chatgpt.com/"},"url":"https://chatgpt.com/"}

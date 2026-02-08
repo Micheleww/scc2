@@ -1,0 +1,31 @@
+{
+  "schema_version": "scc.connector_registry.v1",
+  "updated_at": "2026-02-07",
+  "connectors": [
+    {
+      "connector_id": "gateway.local",
+      "type": "http_service",
+      "endpoints": ["http://127.0.0.1:18788"],
+      "scopes": ["board", "dispatch", "replay", "gates", "debug"],
+      "allowed_roles": ["*"],
+      "audit": { "logs": ["artifacts/executor_logs/route_decisions.jsonl", "artifacts/executor_logs/jobs.jsonl"] }
+    },
+    {
+      "connector_id": "codex.cli",
+      "type": "cli",
+      "endpoints": ["codex"],
+      "scopes": ["llm.chat_completions"],
+      "allowed_roles": ["designer", "architect", "integrator", "engineer", "qa", "doc", "retry_orchestrator", "factory_manager"],
+      "audit": { "logs": ["artifacts/executor_logs/jobs.jsonl"] }
+    },
+    {
+      "connector_id": "opencode.cli",
+      "type": "cli",
+      "endpoints": ["opencode"],
+      "scopes": ["llm.chat_completions", "llm.providers"],
+      "allowed_roles": ["designer", "architect", "integrator", "engineer", "qa", "doc", "pinser", "retry_orchestrator", "factory_manager"],
+      "audit": { "logs": ["artifacts/executor_logs/jobs.jsonl"] }
+    }
+  ]
+}
+

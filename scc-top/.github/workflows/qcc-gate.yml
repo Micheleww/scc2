@@ -1,0 +1,174 @@
+name: QCC Gatekeeper CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # 并行执行独立检查任务
+  gatekeeper-checks:
+    name: Gatekeeper Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        continue-on-error: false
+      
+      - name: Run Gatekeeper checks
+        run: |
+          python -m tools.gatekeeper all --check --report-json docs/REPORT/artifacts/qcc_gatekeeper/CI_qcc_gate_report.json
+      
+      - name: Upload Gatekeeper report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: qcc-gatekeeper-report
+          path: docs/REPORT/artifacts/qcc_gatekeeper/
+          retention-days: 30
+
+  # 并行执行文档治理检查
+  docs-governance:
+    name: Docs Governance Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        continue-on-error: false
+      
+      - name: Run Docs Governance checks
+        run: |
+          python tools/docs_governance/check_docs.py --full
+        continue-on-error: false
+      
+      - name: Run Docs Governance tests
+        run: |
+          python -m pytest -q tools/docs_governance/tests
+        continue-on-error: false
+
+  # OID hard gate (fail-closed): requires runtime secrets injected via CI env, never committed.
+  oid-ci:
+    name: OID Validator (fail-closed)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Require OID registry secrets
+        run: |
+          if [ -z "${SCC_OID_PG_DSN:-}" ] || [ -z "${PGPASSWORD:-}" ]; then
+            echo "Missing required secrets: SCC_OID_PG_DSN and/or PGPASSWORD"
+            echo "Set them in CI secret store; do not commit secrets into repo."
+            exit 2
+          fi
+        env:
+          SCC_OID_PG_DSN: ${{ secrets.SCC_OID_PG_DSN }}
+          PGPASSWORD: ${{ secrets.SCC_OID_PG_PASSWORD }}
+
+      - name: Run oid-validator (Phase4 subset)
+        run: |
+          python tools/ci/run_phase4_checks.py --only oid-validator --area ci --taskcode OID_CI_WIRING_V010
+        env:
+          SCC_OID_PG_DSN: ${{ secrets.SCC_OID_PG_DSN }}
+          PGPASSWORD: ${{ secrets.SCC_OID_PG_PASSWORD }}
+
+  # TOP / SSOT topology hard gate (fail-closed)
+  top-ci:
+    name: TOP Validator (fail-closed)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run top_validator (fail-closed)
+        run: |
+          python tools/scc/ops/top_validator.py --registry docs/ssot/registry.json --out-dir artifacts/scc_state/top_validator_ci
+
+  # 汇总所有检查结果
+  gatekeeper-summary:
+    name: Gatekeeper Summary
+    runs-on: ubuntu-latest
+    needs: [gatekeeper-checks, docs-governance, oid-ci, top-ci]
+    if: always()
+    
+    steps:
+      - name: Check all jobs status
+        run: |
+          if [ "${{ needs.gatekeeper-checks.result }}" != "success" ] || [ "${{ needs.docs-governance.result }}" != "success" ] || [ "${{ needs.oid-ci.result }}" != "success" ]; then
+            echo "One or more gatekeeper checks failed"
+            exit 1
+          fi
+          echo "All gatekeeper checks passed"

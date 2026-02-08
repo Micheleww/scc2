@@ -1,0 +1,49 @@
+{
+  "schema_version": "scc.playbook.v1",
+  "playbook_id": "pb.auto.ci_failed.opencodecli.35a74495e1.v1",
+  "version": "1.0.0",
+  "pattern_id": "auto.ci_failed.opencodecli.35a74495e1",
+  "enablement": {
+    "schema_version": "scc.enablement.v1",
+    "status": "draft",
+    "rollout": {
+      "mode": "percent",
+      "percent": 0
+    },
+    "rollback_conditions": [
+      {
+        "metric": "ci_failed_rate_15m",
+        "op": ">",
+        "threshold": 0.2
+      },
+      {
+        "metric": "avg_retries",
+        "op": ">",
+        "threshold": 3
+      }
+    ]
+  },
+  "actions": [
+    {
+      "type": "note",
+      "params": {
+        "message": "Auto-draft playbook for pattern auto.ci_failed.opencodecli.35a74495e1 (CI_FAILED)."
+      }
+    },
+    {
+      "type": "route",
+      "lane": "fastlane",
+      "role": "ci_fixup",
+      "params": {
+        "reason": "auto_ci_fixup"
+      }
+    },
+    {
+      "type": "run_smoke",
+      "params": {
+        "tier": "smoke"
+      }
+    }
+  ],
+  "notes": "Auto-generated draft; must pass eval_replay before publish."
+}

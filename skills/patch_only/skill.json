@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "patch_only",
+  "version": "1.0.0",
+  "owner_role": "engineer",
+  "summary": "Make patch-only changes; no out-of-band edits; keep workspace clean.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": { "input_schema": "contracts/child_task/child_task.schema.json", "output_schema": "contracts/submit/submit.schema.json" },
+  "budgets": { "max_temp_files": 0 },
+  "quality_gates": { "must_not_leave_strays": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

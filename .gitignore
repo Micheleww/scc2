@@ -1,0 +1,101 @@
+# Keep the GitHub repo clean: source only, no runtime artifacts/secrets/caches.
+
+# --- OS/editor ---
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.*
+
+# --- Node/Electron ---
+node_modules/
+dist/
+build/
+.turbo/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- SCC runtime/state ---
+artifacts/
+metrics/
+logs/
+18788/
+_tmp/
+_docker_ctx_scc/
+_wheelhouse/
+_extracted_docs/
+__pycache__/
+*.log
+*.jsonl
+*.sqlite3
+*.db
+*.sqlite
+.tmp_*
+
+# --- Secrets ---
+.scc_secrets/
+secrets/
+**/*.key
+**/*.pem
+**/*.pfx
+**/*.p12
+**/*token*
+**/*secret*
+
+# --- Large binaries (do not version) ---
+*.exe
+*.msi
+*.iso
+*.img
+*.zip
+*.7z
+*.rar
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.xls
+*.xlsx
+*.lnk
+
+# --- Vendor / clones / local tools (not part of SCC source-of-truth) ---
+OpenCode/
+vscode-main/
+everything-claude-code-main/
+opencode-dev/
+cursor-agent/
+autogen/
+crewai/
+langchain/
+llama_index/
+dify/
+
+# Personal scratch / desktop exports (not part of repo)
+zhuomian/
+immc dataset/
+
+# Evidence snapshots / misc generated folders (keep out of git)
+*evidence/
+
+# Windows reserved "device" filenames (break checkouts on Windows)
+**/nul
+
+# Backups
+**/*.bak

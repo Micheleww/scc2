@@ -1,0 +1,37 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openai": {
+      "options": {
+        "baseURL": "https://api.openai.com/v1"
+      }
+    }
+  },
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "model": "openai/gpt-4o",
+      "description": "Primary development agent using GPT-4o"
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "openai/gpt-4o",
+      "temperature": 0.1,
+      "permission": {
+        "edit": "ask",
+        "bash": "ask",
+        "write": "ask"
+      },
+      "description": "Planning agent using GPT-4o with restricted permissions"
+    },
+    "general": {
+      "mode": "primary",
+      "model": "openai/gpt-4o",
+      "description": "General-purpose agent for research and multi-step tasks"
+    }
+  },
+  "plugin": [
+    "opencode-antigravity-auth",
+    "micode"
+  ]
+}

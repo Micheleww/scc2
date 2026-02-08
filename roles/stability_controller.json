@@ -1,0 +1,22 @@
+{
+  "schema_version": "scc.role_policy.v1",
+  "role": "stability_controller",
+  "context_mode": "external_context",
+  "allowed_context_refs": ["events", "queue", "metrics", "factory_policy"],
+  "capabilities": {
+    "can_plan": true,
+    "can_modify_contracts": false,
+    "can_write_code": false,
+    "can_run_tests": false,
+    "can_emit_events": true
+  },
+  "permissions": {
+    "read": { "pins_required": false, "allow_paths": ["artifacts/**", "contracts/**", "roles/**", "skills/**", "factory_policy.json"], "deny_paths": ["**/secrets/**"] },
+    "write": { "allow_paths": ["artifacts/**"], "deny_paths": ["contracts/**", "roles/**", "skills/**", "**/secrets/**"] },
+    "tools": { "allow": ["node", "python"], "deny": ["git", "network"] }
+  },
+  "required_outputs": { "artifacts": ["artifacts/stability_actions.json", "artifacts/report.md"], "submit_schema": "contracts/envelope/envelope.schema.json" },
+  "gates": { "preflight_required": false, "hygiene_required": false, "max_attempts": 2, "stop_conditions": ["POLICY_VIOLATION"] },
+  "events": { "must_emit_on_fail": ["POLICY_VIOLATION"], "must_emit_on_success": ["SUCCESS"] }
+}
+

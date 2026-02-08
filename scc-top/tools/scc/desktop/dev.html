@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SCC Dev</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 0; background:#0b1220; color:#e5e7eb; }
+      header { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,.08); display:flex; gap:14px; align-items:center; }
+      .dot { width:10px; height:10px; border-radius:999px; background:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.15); }
+      main { padding: 18px 20px; max-width: 980px; }
+      .row { display:flex; flex-wrap:wrap; gap:10px; margin: 12px 0 16px; }
+      a.btn { display:inline-block; padding:10px 12px; border:1px solid rgba(255,255,255,.14); border-radius:10px; color:#e5e7eb; text-decoration:none; background: rgba(255,255,255,.04); }
+      a.btn:hover { background: rgba(255,255,255,.07); }
+      code { background: rgba(255,255,255,.06); padding:2px 6px; border-radius:8px; }
+      pre { background: rgba(255,255,255,.06); padding:12px; border-radius:12px; overflow:auto; }
+      .muted { color:#9ca3af; }
+      .ok { color:#34d399; }
+      .bad { color:#fb7185; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="dot" id="dot"></div>
+      <div>
+        <div style="font-weight:600">SCC Dev（3 秒内可见）</div>
+        <div class="muted">正在连接本地统一服务器：<code id="base">http://127.0.0.1:18788</code></div>
+      </div>
+    </header>
+    <main>
+      <div class="row">
+        <a class="btn" id="open-desktop" href="http://127.0.0.1:18788/desktop" target="_blank" rel="noreferrer">打开 /desktop</a>
+        <a class="btn" id="open-scc" href="http://127.0.0.1:18788/scc" target="_blank" rel="noreferrer">打开 /scc</a>
+        <a class="btn" id="open-dashboard" href="http://127.0.0.1:18788/dashboard" target="_blank" rel="noreferrer">打开 /dashboard</a>
+        <a class="btn" id="open-viewer" href="http://127.0.0.1:18788/viewer" target="_blank" rel="noreferrer">打开 /viewer</a>
+        <a class="btn" id="open-clientcfg" href="http://127.0.0.1:18788/client-config" target="_blank" rel="noreferrer">客户端配置</a>
+      </div>
+
+      <div class="muted">状态（自动刷新）：</div>
+      <pre id="status">loading…</pre>
+    </main>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const port = params.get('port') || '18788';
+      const base = `http://127.0.0.1:${port}`;
+      document.getElementById('base').textContent = base;
+      for (const id of ['open-desktop','open-scc','open-dashboard','open-viewer','open-clientcfg']) {
+        const a = document.getElementById(id);
+        a.href = a.href.replace('http://127.0.0.1:18788', base);
+      }
+
+      async function tick() {
+        const dot = document.getElementById('dot');
+        const out = document.getElementById('status');
+        try {
+          const r = await fetch(`${base}/health/ready`, { cache: 'no-store' });
+          const j = await r.json();
+          if (r.ok && j.status === 'ready') {
+            dot.style.background = '#34d399';
+            dot.style.boxShadow = '0 0 0 3px rgba(52,211,153,.18)';
+            out.textContent = JSON.stringify({ ok:true, base, ready:j.status, services:j.services, persistence:j.persistence }, null, 2);
+          } else {
+            dot.style.background = '#f59e0b';
+            dot.style.boxShadow = '0 0 0 3px rgba(245,158,11,.15)';
+            out.textContent = JSON.stringify({ ok:false, base, http:r.status, body:j }, null, 2);
+          }
+        } catch (e) {
+          dot.style.background = '#fb7185';
+          dot.style.boxShadow = '0 0 0 3px rgba(251,113,133,.18)';
+          out.textContent = JSON.stringify({ ok:false, base, error: String(e) }, null, 2);
+        }
+      }
+      tick();
+      setInterval(tick, 1500);
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,48 @@
+{
+  "oid": "01KGFC6MQT1P74MRFAY4YP6JHH",
+  "layer": "CANON",
+  "primary_unit": "K.CONTRACT_DOC",
+  "tags": [
+    "K.ACCEPTANCE",
+    "V.VERDICT"
+  ],
+  "status": "active",
+  "schema_version": "v0.1.0",
+  "task_id": "BLACK_FRIDAY13_EMDAT_COUNTS_A_V010",
+  "contract_id": "BLACK_FRIDAY13_EMDAT_COUNTS_A_01",
+  "goal": "Part 1.1–1.3: Test whether Friday-13th is worse using EM-DAT daily event start frequency (Variant A main display: Natural only, missing Start Day dropped, post-2000 window).",
+  "scope_allow": "tools/scc/black_friday13/**, docs/ssot/04_contracts/black_friday13/**, docs/REPORT/control_plane/**",
+  "constraints": "Use EM-DAT + OWID only (no extra datasets); global scope; main display uses Natural+drop+post2000; do not copy artifacts evidence into normative docs.",
+  "acceptance": {
+    "checks": [
+      {
+        "name": "top_validator",
+        "command": "python tools/scc/ops/top_validator.py --registry docs/ssot/registry.json --out-dir docs/REPORT/control_plane/artifacts/%TASK_CODE%"
+      },
+      {
+        "name": "analyze_emdat_counts_A",
+        "command": "python tools/scc/black_friday13/analyze_emdat_counts.py --panel artifacts/black_friday13/ingest/panel__natural__drop__post2000.parquet --out-dir artifacts/black_friday13/emdat_counts_A"
+      },
+      {
+        "name": "verify_emdat_counts_A",
+        "command": "python tools/scc/black_friday13/verify_emdat_counts.py --out-dir artifacts/black_friday13/emdat_counts_A"
+      }
+    ]
+  },
+  "stop_condition": "If analysis fails due to missing columns or missing ingest outputs, stop and report; do not guess schema.",
+  "commands_hint": "Run ingest first, then run tools/scc/black_friday13/run_emdat_counts_A_task.py for a contractized, audited run.",
+  "inputs_ref": {
+    "paths": [
+      "artifacts/black_friday13/ingest/panel__natural__drop__post2000.parquet",
+      "docs/ssot/02_architecture/SCC_TOP.md",
+      "docs/ssot/04_contracts/contract.schema.json"
+    ]
+  },
+  "outputs_expected": {
+    "verdict_required": true,
+    "evidence_paths": [
+      "docs/REPORT/control_plane/artifacts/%TASK_CODE%/*",
+      "artifacts/black_friday13/emdat_counts_A/*"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0.1",
+  "task_code": "ATA-CONTEXT-SCHEMA-STRICT-v0.1__20260116",
+  "date": "20260116",
+  "owner_role": "Gatekeeper Engineer",
+  "goal": "Test v0.1 ATA context schema backward compatibility",
+  "scope_files": [
+    "tools/gatekeeper/schemas/ata_context.schema.json",
+    "tools/gatekeeper/commands/validate_ata.py"
+  ],
+  "how_to_repro": "Run validate_ata.py on this file",
+  "expected": "Validation should pass with deprecation warning",
+  "actual": "Validation passed with deprecation warning",
+  "next_actions": [
+    "Plan v0.1 schema migration",
+    "Update all v0.1 files to v0.2"
+  ],
+  "evidence_paths": [
+    "tools/gatekeeper/tests/ata_test_cases/valid_v0.1.json",
+    "tools/gatekeeper/schemas/ata_context.schema.json"
+  ],
+  "rollback": "Revert schema file and validation script changes"
+}

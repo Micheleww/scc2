@@ -1,0 +1,23 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill: true 10 3
+[10680:0201/020312.120:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[10680:0201/020312.120:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[10680:0201/020312.122:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[10680:0201/020312.127:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[10680:0201/020312.127:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[10680:0201/020312.127:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[10680:0201/020312.127:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[10680:0201/020312.127:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[10680:0201/020312.127:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[10680:0201/020312.304:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[10680:0201/020312.304:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[10680:0201/020312.306:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[10680:0201/020312.307:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[10680:0201/020312.307:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[10680:0201/020312.307:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[10680:0201/020312.307:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[10680:0201/020312.307:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[10680:0201/020312.307:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[scc-chatgpt-browser] {"event":"backfill_start_main_execjs","run_id":"1769882604845_15825296e04b","opts":{"limit":10,"scroll_steps":3,"scroll_delay_ms":220,"per_conv_wait_ms":15000}}
+[scc-chatgpt-browser] {"event":"backfill_error","error":"no_conversations_found (sidebar selector mismatch?)"}

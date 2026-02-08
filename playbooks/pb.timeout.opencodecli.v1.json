@@ -1,0 +1,42 @@
+{
+  "schema_version": "scc.playbook.v1",
+  "playbook_id": "pb.timeout.opencodecli.v1",
+  "version": "1.0.0",
+  "pattern_id": "timeout.opencodecli",
+  "enablement": {
+    "schema_version": "scc.enablement.v1",
+    "status": "gray",
+    "rollout": {
+      "mode": "percent",
+      "percent": 10
+    },
+    "rollback_conditions": [
+      { "metric": "timeout_rate_15m", "op": ">", "threshold": 0.02 },
+      { "metric": "p95_task_duration_s", "op": ">", "threshold": 900 }
+    ]
+  },
+  "actions": [
+    {
+      "type": "note",
+      "params": {
+        "message": "Mitigate opencodecli timeouts by reducing wall-clock: split work (inspect -> edit -> test -> submit), run the smallest allowed test early, and route to an alternate executor/model after repeated timeouts."
+      }
+    },
+    {
+      "type": "split_v2",
+      "params": {
+        "max_subtasks": 3,
+        "hint": "Prefer short, verifiable steps; avoid long one-shot refactors when timeouts are frequent."
+      }
+    },
+    {
+      "type": "route",
+      "params": {
+        "preferred_executor": "codex",
+        "preferred_model": "gpt-5.2",
+        "fallback_executor": "opencodecli"
+      }
+    }
+  ],
+  "notes": null
+}

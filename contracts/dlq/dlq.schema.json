@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/dlq/dlq.schema.json",
+  "title": "SCC DLQ Entry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dlq_id", "task_id", "created_at", "status", "reason_code", "summary", "missing_inputs"],
+  "properties": {
+    "schema_version": { "const": "scc.dlq.v1" },
+    "dlq_id": { "type": "string", "minLength": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["OPEN", "RESOLVED", "QUARANTINED"] },
+    "reason_code": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "missing_inputs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "last_event": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "properties": {
+        "event_type": { "type": "string" },
+        "t": { "type": "string" },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "retry_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["attempt", "event_type"],
+        "properties": {
+          "attempt": { "type": "integer", "minimum": 1 },
+          "event_type": { "type": "string", "minLength": 1 },
+          "notes": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts_root"],
+      "properties": {
+        "artifacts_root": { "type": "string", "minLength": 1 },
+        "report_md": { "type": ["string", "null"] },
+        "selftest_log": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
+

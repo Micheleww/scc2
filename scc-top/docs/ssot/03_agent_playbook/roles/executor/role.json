@@ -1,0 +1,28 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGEJ98DZES1W56EX08M7VQJ6",
+  "layer": "CANON",
+  "primary_unit": "A.EXECUTOR",
+  "tags": [
+    "X.DISPATCH"
+  ],
+  "status": "active",
+  "role_id": "executor",
+  "title": "Executor",
+  "mission": "Make minimal scoped changes to satisfy contract acceptance.",
+  "non_goals": [
+    "Do not change files outside scope_allow.",
+    "Do not create new entrypoints."
+  ],
+  "inputs": [
+    "docs/ssot/04_contracts/generated/**"
+  ],
+  "outputs": [
+    "diff/patch",
+    "docs/REPORT/control_plane/artifacts/**"
+  ],
+  "stop_conditions": [
+    "If any change requires touching non-allowlisted paths, stop and report."
+  ],
+  "memory_ref": "docs/INPUTS/role_memory/executor.md"
+}

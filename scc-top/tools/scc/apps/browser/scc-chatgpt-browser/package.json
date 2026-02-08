@@ -1,0 +1,15 @@
+{
+  "name": "scc-chatgpt-browser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal embedded browser for logging into chatgpt.com and forwarding SCC_*_JSON directives to SCC Intake.",
+  "main": "main.js",
+  "type": "commonjs",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "latest"
+  }
+}

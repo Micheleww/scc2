@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "lessons.mine",
+  "version": "1.0.0",
+  "owner_role": "lessons_miner",
+  "summary": "Mine events/submits/logs into patterns + playbooks + skill drafts (write to patterns/, playbooks/, skills_drafts/).",
+  "applies_to": { "task_class": ["batchlane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/event/event.schema.json",
+    "output_schema": "contracts/pattern/pattern.schema.json"
+  },
+  "budgets": { "max_patterns": 50, "max_playbooks": 50 },
+  "quality_gates": { "must_include_matcher": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

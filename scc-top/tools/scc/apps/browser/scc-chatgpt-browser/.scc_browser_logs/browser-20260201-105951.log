@@ -1,0 +1,7 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill:   
+[scc-chatgpt-browser] electron ipc keys: ipcMain
+[scc-chatgpt-browser] electron ipcMain typeof: object
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/"}

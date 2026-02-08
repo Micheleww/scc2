@@ -1,0 +1,16 @@
+{
+  "intent": "Add a config endpoint to switch free models",
+  "allowed_paths": ["oc-scc-local/src/gateway.mjs"],
+  "symbols": ["updateModelPools", "createContextPackFromPins"],
+  "line_windows": {
+    "oc-scc-local/src/gateway.mjs": [[960, 1040], [1700, 1795]]
+  },
+  "forbidden_paths": ["tools/unified_server/"],
+  "max_files": 3,
+  "max_loc": 200,
+  "ssot_hash": "sha256:...fill...",
+  "ssot_assumptions": [
+    "Executor must not scan repo; use pins only",
+    "Gateway port is 18788 by default"
+  ]
+}

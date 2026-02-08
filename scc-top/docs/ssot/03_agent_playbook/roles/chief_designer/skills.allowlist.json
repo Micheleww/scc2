@@ -1,0 +1,14 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGEJ98CJ56BQV2JR5796N34H",
+  "layer": "CANON",
+  "primary_unit": "V.SKILL_GUARD",
+  "tags": [
+    "A.PLANNER"
+  ],
+  "status": "active",
+  "role_id": "chief_designer",
+  "allowed_skills": [
+    "SHELL_READONLY"
+  ]
+}

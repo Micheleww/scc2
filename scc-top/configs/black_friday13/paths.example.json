@@ -1,0 +1,6 @@
+{
+  "emdat_xlsx": "C:/path/to/public_emdat_incl_hist_YYYY-MM-DD.xlsx",
+  "owid_csv": "C:/path/to/owid-covid-data.csv",
+  "notes": "Do not commit raw data into the repo. Use these paths as inputs to tools/scc/black_friday13/ingest.py or set BF13_EMDAT_XLSX/BF13_OWID_CSV env vars."
+}
+

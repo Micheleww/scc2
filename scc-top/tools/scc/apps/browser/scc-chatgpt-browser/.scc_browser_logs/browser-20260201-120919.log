@@ -1,0 +1,55 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill:   
+[scc-chatgpt-browser] electron ipc keys: ipcMain
+[scc-chatgpt-browser] electron ipcMain typeof: object
+[scc-chatgpt-browser] userData: C:\Users\Nwe-1\AppData\Roaming\scc-chatgpt-browser
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd#settings/Personalization"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd#settings/Personalization"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd#settings/Personalization"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":4,"conversation_turn":0,"message_testid":0,"articles":4,"markdown":2},"node_count":4,"message_count":2,"title_preview":"开源Cursor底座方案","url_preview":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd#settings/Personalization"},"url":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd#settings/Personalization"}
+[scc-chatgpt-browser] {"event":"browser_command","id":"20260201_040940_webgpt_capture_memory","cmd":"webgpt_capture_memory","args":{}}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":4,"conversation_turn":0,"message_testid":0,"articles":4,"markdown":2},"node_count":4,"message_count":4,"title_preview":"开源Cursor底座方案","url_preview":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd"},"url":"https://chatgpt.com/c/697a58cd-dbd4-8323-8449-3c17cc7912cd"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697eca3c-1108-83a8-8fa7-27aa1ba8dc28"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697eca3c-1108-83a8-8fa7-27aa1ba8dc28"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":2,"conversation_turn":0,"message_testid":0,"articles":2,"markdown":1},"node_count":2,"message_count":2,"title_preview":"2TB存储模型数量","url_preview":"https://chatgpt.com/c/697eca3c-1108-83a8-8fa7-27aa1ba8dc28"},"url":"https://chatgpt.com/c/697eca3c-1108-83a8-8fa7-27aa1ba8dc28"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":17,"conversation_turn":0,"message_testid":0,"articles":18,"markdown":8},"node_count":17,"message_count":11,"title_preview":"ai工程自动化总结","url_preview":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"},"url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697ecb81-4184-83a4-b4d9-fefa21d835e2"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697ecb81-4184-83a4-b4d9-fefa21d835e2"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":17,"conversation_turn":0,"message_testid":0,"articles":18,"markdown":8},"node_count":17,"message_count":11,"title_preview":"ai工程自动化总结","url_preview":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"},"url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":17,"conversation_turn":0,"message_testid":0,"articles":18,"markdown":8},"node_count":17,"message_count":10,"title_preview":"ai工程自动化总结","url_preview":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"},"url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"browser_command","id":"20260201_050824_open_url_f58c0d57","cmd":"open_url","args":{"url":"https://chatgpt.com/"}}
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":21,"conversation_turn":0,"message_testid":0,"articles":22,"markdown":10},"node_count":21,"message_count":13,"title_preview":"ai工程自动化总结","url_preview":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"},"url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"browser_command","id":"20260201_051100_open_url_d8fdcb36","cmd":"open_url","args":{"url":"https://chatgpt.com/"}}
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":21,"conversation_turn":0,"message_testid":0,"articles":22,"markdown":10},"node_count":21,"message_count":12,"title_preview":"ai工程自动化总结","url_preview":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"},"url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"browser_command","id":"20260201_051121_webgpt_backfill_start_d7ca8ec7","cmd":"webgpt_backfill_start","args":{"per_conv_wait_ms":2000,"scroll_delay_ms":240,"limit":1,"sidebar_scroll_steps":10,"scroll_steps":0}}
+[scc-chatgpt-browser] {"event":"backfill_start_main_execjs","run_id":"1769922681771_8366918ec07e7","opts":{"limit":1,"scroll_steps":0,"sidebar_scroll_steps":10,"scroll_delay_ms":240,"per_conv_wait_ms":2000}}
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"backfill_snapshot_debug","cid":"697d9cd4-995c-83a2-a16f-244a4980f100","debug":{"mode":"role_nodes","counts":{"role_nodes":21,"conversation_turn":0,"message_testid":0,"articles":22,"markdown":10},"node_count":21,"message_count":12,"title_preview":"ai工程自动化总结","url_preview":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"},"url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"backfill_done","ok":1,"fail":0,"total":1}
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_sync_capture","ok":true,"debug":{"mode":"role_nodes","counts":{"role_nodes":37,"conversation_turn":0,"message_testid":0,"articles":38,"markdown":17},"node_count":37,"message_count":20,"title_preview":"ai工程自动化总结","url_preview":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"},"url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+(electron) 'webContents.canGoBack' is deprecated and will be removed. Please use 'webContents.navigationHistory.canGoBack' instead.
+(electron) 'webContents.goBack' is deprecated and will be removed. Please use 'webContents.navigationHistory.goBack' instead.
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/"}
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+[scc-chatgpt-browser] {"event":"webgpt_autosync_trigger","url":"https://chatgpt.com/c/697d9cd4-995c-83a2-a16f-244a4980f100"}
+(electron) 'webContents.canGoForward' is deprecated and will be removed. Please use 'webContents.navigationHistory.canGoForward' instead.
+(electron) 'webContents.goForward' is deprecated and will be removed. Please use 'webContents.navigationHistory.goForward' instead.
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/"}

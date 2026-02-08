@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "retry.plan",
+  "version": "1.0.0",
+  "owner_role": "retry_orchestrator",
+  "summary": "Generate a machine-executable retry plan with budgets and stop conditions; route to next lane/role.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/event/event.schema.json",
+    "output_schema": "contracts/retry_plan/retry_plan.schema.json"
+  },
+  "budgets": { "max_total_attempts": 3 },
+  "quality_gates": { "must_emit_route": true, "must_respect_budget": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

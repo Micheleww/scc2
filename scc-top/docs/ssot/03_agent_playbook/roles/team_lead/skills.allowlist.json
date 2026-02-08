@@ -1,0 +1,14 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGEJ98TQC1N75EB7FFYD78VQ",
+  "layer": "CANON",
+  "primary_unit": "V.SKILL_GUARD",
+  "tags": [
+    "A.ROUTER"
+  ],
+  "status": "active",
+  "role_id": "team_lead",
+  "allowed_skills": [
+    "SHELL_READONLY"
+  ]
+}

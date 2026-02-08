@@ -1,0 +1,21 @@
+{
+  "name": "electron-quick-start-master",
+  "version": "0.1.0",
+  "description": "**Clone and run for a quick way to see Electron in action.**",
+  "main": "main.js",
+  "scripts": {
+    "dev": "electron .",
+    "pack:mac": "electron-builder -m",
+    "pack:win": "electron-builder -w",
+    "pack:linux": "electron-builder -l",
+    "pack": "electron-builder -mwl"
+  },
+  "keywords": [],
+  "author": "halo <haloislet@gmail.com> (https://github.com/haloislet)",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^1.7.11",
+    "electron-builder": "^19.55.2"
+  }
+}
+

@@ -1,0 +1,61 @@
+{
+  "oid": "01KGCY1QHA93Q2ZRTNHJ47QEC5",
+  "layer": "CANON",
+  "primary_unit": "K.CONTRACT_DOC",
+  "tags": [
+    "K.ACCEPTANCE",
+    "V.VERDICT"
+  ],
+  "status": "active",
+  "schema_version": "v0.1.0",
+  "task_id": "697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+  "contract_id": "contractize:697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+  "goal": "WebGPT user message 0002",
+  "scope_allow": [
+    "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json",
+    "docs/INPUTS/WEBGPT/conversations/697a1500-1e34-8321-ae0f-23f6314f1716.md",
+    "docs/REPORT/control_plane/artifacts/697a1500-1e34-8321-ae0f-23f6314f1716_0002/*",
+    "docs/DERIVED/task_tree.json"
+  ],
+  "constraints": "Fail-closed. Must stay within allowlist scope. Do not create a second docs entrypoint.",
+  "acceptance": {
+    "checks": [
+      {
+        "name": "contract_json_valid",
+        "command": "python -m json.tool docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json"
+      },
+      {
+        "name": "contract_required_fields_present",
+        "command": "python -c \"import json; p=r'docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json'; d=json.load(open(p,encoding='utf-8')); req=['goal','scope_allow','constraints','acceptance','stop_condition','commands_hint','inputs_ref','outputs_expected']; missing=[k for k in req if k not in d]; assert not missing, missing; sa=d.get('scope_allow'); assert (isinstance(sa, list) and [x for x in sa if str(x).strip()]) or (isinstance(sa, str) and sa.strip()); assert 'TBD' not in str(sa); assert isinstance(d.get('acceptance',{}).get('checks'), list) and d['acceptance']['checks']; assert isinstance(d.get('stop_condition'), str) and d['stop_condition'].strip(); assert isinstance(d.get('commands_hint'), str) and d['commands_hint'].strip(); print('OK')\""
+      },
+      {
+        "name": "contract_scope_allows_io_refs",
+        "command": "python -c \"import json; p=r'docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json'; d=json.load(open(p,encoding='utf-8')); sa=set(d.get('scope_allow',[]) if isinstance(d.get('scope_allow'), list) else [d.get('scope_allow')]); refs=set(); refs |= set((d.get('inputs_ref') or {}).get('paths') or []) if isinstance(d.get('inputs_ref'), dict) else set(); refs |= set((d.get('outputs_expected') or {}).get('evidence_paths') or []) if isinstance(d.get('outputs_expected'), dict) else set(); tt=d.get('task_tree_ref'); refs.add(tt) if isinstance(tt,str) and tt.strip() else None; missing=sorted([r for r in refs if str(r).strip() and str(r).strip() not in sa]); assert not missing, missing; print('OK')\""
+      }
+    ]
+  },
+  "stop_condition": "Stop immediately if any acceptance check fails, if any action would read/write outside scope_allow, or if any command would require network access.",
+  "commands_hint": "Use SSOT registry for deterministic context; minimize file scanning; prefer allowlisted edits.",
+  "inputs_ref": {
+    "paths": [
+      "docs/INPUTS/WEBGPT/conversations/697a1500-1e34-8321-ae0f-23f6314f1716.md"
+    ],
+    "oids": []
+  },
+  "outputs_expected": {
+    "verdict_required": true,
+    "evidence_paths": [
+      "docs/REPORT/control_plane/artifacts/697a1500-1e34-8321-ae0f-23f6314f1716_0002/*"
+    ]
+  },
+  "task_tree_ref": "docs/DERIVED/task_tree.json",
+  "epic": {
+    "id": "webgpt:697a1500-1e34-8321-ae0f-23f6314f1716",
+    "title": "开源模型配置建议"
+  },
+  "capability": {
+    "id": "697a1500-1e34-8321-ae0f-23f6314f1716:capability:raw",
+    "title": "raw_webgpt_import"
+  },
+  "source_anchor": "message-0002"
+}

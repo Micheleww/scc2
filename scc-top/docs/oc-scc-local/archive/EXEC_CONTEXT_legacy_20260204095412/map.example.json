@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "generated_at": "2026-02-04T00:00:00Z",
+  "modules": [
+    {
+      "id": "gateway",
+      "paths": ["oc-scc-local/src/"],
+      "entrypoints": ["oc-scc-local/src/gateway.mjs"],
+      "owners": ["integrator"],
+      "hotspots": ["executor routing", "context pack"],
+      "notes": "Unified gateway for SCC + OpenCode"
+    }
+  ],
+  "links": {
+    "navigation": "docs/NAVIGATION.md",
+    "ssot_index": "docs/ssot/00_index.md"
+  }
+}
+

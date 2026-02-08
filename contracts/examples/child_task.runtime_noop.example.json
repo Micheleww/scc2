@@ -1,0 +1,16 @@
+{
+  "title": "Runtime selfcheck (noop)",
+  "goal": "Prove runtime PRECHECK→PINS→PREFLIGHT→EXEC(noop)→VERIFY can PASS strict gates deterministically.",
+  "role": "executor",
+  "files": ["oc-scc-local/src/gateway.mjs"],
+  "allowedTests": ["python -m compileall oc-scc-local/src tools/scc"],
+  "pins": {
+    "allowed_paths": ["oc-scc-local/src/gateway.mjs"],
+    "forbidden_paths": ["**/secrets/**"],
+    "symbols": [],
+    "line_windows": {},
+    "max_files": 6,
+    "max_loc": 200,
+    "ssot_assumptions": []
+  }
+}

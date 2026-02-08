@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "queue_orchestration",
+  "version": "1.0.0",
+  "owner_role": "factory_manager",
+  "summary": "Orchestrate queue health, WIP, and fallback actions to keep factory running.",
+  "applies_to": { "task_class": ["control_plane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_wip": 10 },
+  "quality_gates": { "must_record_decisions": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

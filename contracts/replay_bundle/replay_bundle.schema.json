@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/replay_bundle/replay_bundle.schema.json",
+  "title": "SCC Replay Bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "created_at", "board_task_payload", "artifacts"],
+  "properties": {
+    "schema_version": { "const": "scc.replay_bundle.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "source": { "type": "object", "additionalProperties": true },
+    "board_task_payload": { "type": "object", "additionalProperties": true },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["submit_json", "preflight_json", "pins_json", "report_md", "selftest_log", "evidence_dir", "patch_diff"],
+      "properties": {
+        "submit_json": { "type": "string", "minLength": 1 },
+        "preflight_json": { "type": "string", "minLength": 1 },
+        "pins_json": { "type": "string", "minLength": 1 },
+        "report_md": { "type": "string", "minLength": 1 },
+        "selftest_log": { "type": "string", "minLength": 1 },
+        "evidence_dir": { "type": "string", "minLength": 1 },
+        "patch_diff": { "type": "string", "minLength": 1 }
+      }
+    },
+    "replay": { "type": "object", "additionalProperties": true }
+  }
+}
+

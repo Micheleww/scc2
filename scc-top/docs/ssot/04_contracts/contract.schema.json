@@ -1,0 +1,147 @@
+{
+  "oid": "01KGCWX9886CJM8GDC3K5JK39A",
+  "layer": "CANON",
+  "primary_unit": "K.SCHEMA",
+  "tags": [
+    "K.CONTRACT_DOC",
+    "K.ACCEPTANCE",
+    "V.VERDICT"
+  ],
+  "status": "active",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scc://contracts/scc_task_contract.schema.json",
+  "title": "SCC Task Contract (v0.1.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "goal",
+    "scope_allow",
+    "constraints",
+    "acceptance",
+    "stop_condition",
+    "commands_hint",
+    "inputs_ref",
+    "outputs_expected"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "v0.1.0"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "contract_id": {
+      "type": "string"
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope_allow": {
+      "type": "string"
+    },
+    "constraints": {
+      "type": "string"
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checks"
+      ],
+      "properties": {
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "command"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cwd": {
+                "type": "string"
+              },
+              "timeout_s": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "expects": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "exit_code": {
+                    "type": "integer"
+                  },
+                  "evidence_paths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "stop_condition": {
+      "type": "string"
+    },
+    "commands_hint": {
+      "type": "string"
+    },
+    "inputs_ref": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "oids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "outputs_expected": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "verdict_required": {
+          "type": "boolean"
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,347 @@
+{
+  "schema_version": "v0.1.0",
+  "generated_by": "manual",
+  "notes": [
+    "SSOT registry: machine-readable index for context assembly and doc authority.",
+    "Canonical docs live under docs/ssot/ (L2) unless explicitly marked as legacy pointer.",
+    "Raw inputs live under docs/INPUTS/ (L0). Evidence lives under artifacts/ and evidence/."
+  ],
+  "aliases": {
+    "registry_json": "docs/ssot/registry.json",
+    "registry_json_alias": "docs/ssot/_registry.json",
+    "ssot_start_here": "docs/ssot/START_HERE.md"
+  },
+  "entrypoints": [
+    {
+      "doc_id": "ENTRYPOINT-ROOT-NAV",
+      "title": "Docs Root Navigation（唯一入口 / SSOT）",
+      "layer": "L3",
+      "canonical_path": "docs/START_HERE.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "SSOT-TRUNK-INDEX",
+      "title": "SSOT Trunk Index",
+      "layer": "L3",
+      "canonical_path": "docs/ssot/00_index.md",
+      "audience": ["human", "agent"]
+    }
+  ],
+  "canonical": [
+    {
+      "doc_id": "SCC-TOP",
+      "title": "SCC_TOP — SCC 顶层架构与治理基线",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/02_architecture/SCC_TOP.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "DOCFLOW-SSOT",
+      "title": "Docflow SSOT",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/01_conventions/DOCFLOW_SSOT__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "SCC-RUNBOOK",
+      "title": "SCC Runbook",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/SCC_RUNBOOK__v0.1.0.md",
+      "audience": ["agent", "ops"]
+    },
+    {
+      "doc_id": "SCC-OBSERVABILITY",
+      "title": "SCC Observability Spec",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/SCC_OBSERVABILITY_SPEC__v0.1.0.md",
+      "audience": ["agent", "ops"]
+    },
+    {
+      "doc_id": "TRADING-ENGINE-RUNBOOK",
+      "title": "QuantSys Trading Engine 使用指南",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/TRADING_ENGINE_README.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "OID-PG-SETUP",
+      "title": "OID Postgres Setup (local 18777)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/OID_POSTGRES_SETUP__v0.1.0.md",
+      "audience": ["human", "agent", "ops"]
+    },
+    {
+      "doc_id": "UNIFIED-SERVER-RESTART",
+      "title": "Unified Server Restart (18788)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/UNIFIED_SERVER_18788_RESTART__v0.1.0.md",
+      "audience": ["human", "agent", "ops"]
+    },
+    {
+      "doc_id": "UNKNOWN-SCHEMA-351-MIGRATION",
+      "title": "Unknown Schema (351) Migration / DLQ Policy",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/UNKNOWN_SCHEMA_351_MIGRATION__v0.1.0.md",
+      "audience": ["human", "agent", "ops"]
+    },
+    {
+      "doc_id": "TRADING-UI-UNIFIED",
+      "title": "交易前端UI统一整合说明",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/02_architecture/TRADING_UI_UNIFIED.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "PROJECT-GROUP",
+      "title": "Project Group — SCC Production Projects",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/02_architecture/PROJECT_GROUP__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "PROJECT-CATALOG",
+      "title": "Project Catalog (machine-readable)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/02_architecture/project_catalog.json",
+      "audience": ["agent", "ops"]
+    },
+    {
+      "doc_id": "OID-SPEC",
+      "title": "OID Spec（Object Identity）",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "ROLE-SPEC-JSON",
+      "title": "RoleSpec JSON (machine-readable)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/role_spec.json",
+      "audience": ["agent", "ops"]
+    },
+    {
+      "doc_id": "SKILL-SPEC-JSON",
+      "title": "SkillSpec JSON (machine-readable)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/skill_spec.json",
+      "audience": ["agent", "ops"]
+    },
+    {
+      "doc_id": "WORKSPACE-SPEC-JSON",
+      "title": "WorkspaceSpec JSON (machine-readable)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/workspace_spec.json",
+      "audience": ["agent", "ops"]
+    },
+    {
+      "doc_id": "CAPABILITY-CATALOG-JSON",
+      "title": "Capability Catalog JSON (machine-readable)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/capability_catalog.json",
+      "audience": ["agent", "ops"]
+    },
+    {
+      "doc_id": "UNIT-REGISTRY",
+      "title": "Unit registry（primary_unit/tags）",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/01_conventions/UNIT_REGISTRY__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "SINGLE-TRUTH-PRIORITY",
+      "title": "Single Truth & Priority",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/02_architecture/canonical_truth.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CANON-GOALS",
+      "title": "Canonical GOALS",
+      "layer": "L2",
+      "canonical_path": "docs/CANONICAL/GOALS.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CANON-ROADMAP",
+      "title": "Canonical ROADMAP",
+      "layer": "L2",
+      "canonical_path": "docs/CANONICAL/ROADMAP.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CANON-CURRENT-STATE",
+      "title": "Canonical CURRENT_STATE",
+      "layer": "L2",
+      "canonical_path": "docs/CANONICAL/CURRENT_STATE.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CANON-ADR",
+      "title": "Canonical ADR Index",
+      "layer": "L2",
+      "canonical_path": "docs/CANONICAL/ADR/index.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CANON-PROGRESS",
+      "title": "Canonical PROGRESS",
+      "layer": "L2",
+      "canonical_path": "docs/CANONICAL/PROGRESS.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "TASK-MODEL-CODES",
+      "title": "Task Model & Codes",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/04_contracts/task_model.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CONTRACTIZE-PIPELINE",
+      "title": "Contractize Pipeline",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/04_contracts/CONTRACTIZE_PIPELINE__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "ROLE-SPEC",
+      "title": "RoleSpec",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/ROLE_SPEC__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "SKILL-SPEC",
+      "title": "SkillSpec",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/SKILL_SPEC__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "WORKSPACE-SPEC",
+      "title": "WorkspaceSpec",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/WORKSPACE_SPEC__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CAPABILITY-CATALOG",
+      "title": "CapabilityCatalog",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/CAPABILITY_CATALOG__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "DISPATCH-RUNBOOK",
+      "title": "Dispatch Runbook",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/03_agent_playbook/DISPATCH_RUNBOOK__v0.1.0.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CONTRACT-MIN-SPEC",
+      "title": "Contract Minimum Spec",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/04_contracts/contract_min_spec.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CONTRACT-SCHEMA",
+      "title": "Contract Schema (JSON, v0.1.0)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/04_contracts/contract.schema.json",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CONTRACT-EXAMPLE-DOC",
+      "title": "Contract Example (doc task)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/04_contracts/examples/contract_example_doc_task.json",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "CONTRACT-EXAMPLE-CODE",
+      "title": "Contract Example (code task)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/04_contracts/examples/contract_example_code_task.json",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "EXECUTOR-VERIFIER-INTERFACES",
+      "title": "Executor/Verifier Interfaces",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/execution_verification_interfaces.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "VERDICT-SCHEMA",
+      "title": "Verdict Schema (JSON, v0.1.0)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/verdict.schema.json",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "REVIEW-CADENCE-OUTPUTS",
+      "title": "Review Cadence & Outputs",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/review_progress.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "METRICS-ACCEPTANCE",
+      "title": "Metrics & Acceptance",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/metrics_spec.md",
+      "audience": ["human", "agent"]
+    },
+    {
+      "doc_id": "FACTORY-LOOP-ONCE",
+      "title": "Factory Loop Once (strong autonomy)",
+      "layer": "L2",
+      "canonical_path": "docs/ssot/05_runbooks/factory_loop_once.md",
+      "audience": ["agent", "ops"]
+    }
+  ],
+  "context_assembly": {
+    "default_order": [
+      "docs/START_HERE.md",
+      "docs/ssot/02_architecture/SCC_TOP.md",
+      "docs/ssot/02_architecture/canonical_truth.md",
+      "docs/CANONICAL/GOALS.md",
+      "docs/CANONICAL/ROADMAP.md",
+      "docs/CANONICAL/CURRENT_STATE.md",
+      "docs/CANONICAL/ADR/index.md",
+      "docs/CANONICAL/PROGRESS.md",
+      "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md",
+      "docs/ssot/01_conventions/UNIT_REGISTRY__v0.1.0.md",
+      "docs/ssot/03_agent_playbook/ROLE_SPEC__v0.1.0.md",
+      "docs/ssot/03_agent_playbook/SKILL_SPEC__v0.1.0.md",
+      "docs/ssot/03_agent_playbook/WORKSPACE_SPEC__v0.1.0.md",
+      "docs/ssot/03_agent_playbook/CAPABILITY_CATALOG__v0.1.0.md",
+      "docs/ssot/03_agent_playbook/DISPATCH_RUNBOOK__v0.1.0.md",
+      "docs/ssot/03_agent_playbook/roles/index.md",
+      "docs/ssot/03_agent_playbook/handoff_templates/index.md",
+      "docs/ssot/04_contracts/task_model.md",
+      "docs/ssot/04_contracts/contract_min_spec.md",
+      "docs/ssot/05_runbooks/execution_verification_interfaces.md",
+      "docs/ssot/05_runbooks/review_progress.md",
+      "docs/ssot/05_runbooks/metrics_spec.md",
+      "docs/ssot/05_runbooks/factory_loop_once.md",
+      "docs/ssot/01_conventions/DOCFLOW_SSOT__v0.1.0.md",
+      "docs/ssot/00_index.md"
+    ],
+    "rules": [
+      "Prefer SSOT trunk (docs/ssot/) over legacy docs/arch/ when both exist.",
+      "Never treat artifacts/ or evidence/ as narrative docs; they are evidence sources."
+    ]
+  }
+  ,
+  "recovered_placeholders": {
+    "recovered_at": "2026-02-01",
+    "mapping_ref": "docs/ssot/07_reports_evidence/DOCS_CLEANUP__RECOVERY_LOG__20260201.md",
+    "notes": [
+      "These files were recovered from placeholder 'content summary' only; original full text is currently unavailable.",
+      "Old locations remain as placeholder jumpers to the SSOT path."
+    ]
+  }
+}

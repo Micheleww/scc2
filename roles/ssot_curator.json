@@ -1,0 +1,22 @@
+{
+  "schema_version": "scc.role_policy.v1",
+  "role": "ssot_curator",
+  "context_mode": "external_context",
+  "allowed_context_refs": ["docs", "map", "roles", "skills", "contracts", "events"],
+  "capabilities": {
+    "can_plan": false,
+    "can_modify_contracts": false,
+    "can_write_code": false,
+    "can_run_tests": false,
+    "can_emit_events": true
+  },
+  "permissions": {
+    "read": { "pins_required": false, "allow_paths": ["docs/**", "map/**", "contracts/**", "roles/**", "skills/**"], "deny_paths": ["**/secrets/**"] },
+    "write": { "allow_paths": ["docs/**"], "deny_paths": ["docs/archive/**", "contracts/**", "roles/**", "skills/**", "map/**", "**/secrets/**"] },
+    "tools": { "allow": ["git", "rg", "node", "python"], "deny": ["network"] }
+  },
+  "required_outputs": { "artifacts": ["docs/INDEX.md", "docs/NAVIGATION.md", "artifacts/report.md"], "submit_schema": "contracts/envelope/envelope.schema.json" },
+  "gates": { "preflight_required": false, "hygiene_required": true, "max_attempts": 1, "stop_conditions": ["POLICY_VIOLATION"] },
+  "events": { "must_emit_on_fail": ["POLICY_VIOLATION"], "must_emit_on_success": ["SUCCESS"] }
+}
+

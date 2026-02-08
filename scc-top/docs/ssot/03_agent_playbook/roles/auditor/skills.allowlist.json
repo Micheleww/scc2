@@ -1,0 +1,16 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGEJ989NK4BJQR1F5153ZCBT",
+  "layer": "CANON",
+  "primary_unit": "V.SKILL_GUARD",
+  "tags": [
+    "A.AUDITOR"
+  ],
+  "status": "active",
+  "role_id": "auditor",
+  "allowed_skills": [
+    "SHELL_READONLY",
+    "DOCFLOW_AUDIT",
+    "REVIEW_JOB"
+  ]
+}

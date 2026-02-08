@@ -1,0 +1,18 @@
+{
+  "schema_version": "scc.submit.v1",
+  "task_id": "example-task-id",
+  "status": "DONE",
+  "changed_files": ["oc-scc-local/src/gateway.mjs"],
+  "new_files": [],
+  "allow_paths": { "read": ["**"], "write": ["oc-scc-local/src/"] },
+  "tests": { "commands": ["npm --prefix oc-scc-local run selfcheck:role-system"], "passed": true, "summary": "Selfcheck passed." },
+  "artifacts": {
+    "report_md": "artifacts/example-task-id/report.md",
+    "selftest_log": "artifacts/example-task-id/selftest.log",
+    "evidence_dir": "artifacts/example-task-id/evidence/",
+    "patch_diff": "artifacts/example-task-id/patch.diff",
+    "submit_json": "artifacts/example-task-id/submit.json"
+  },
+  "exit_code": 0,
+  "needs_input": []
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGCVFRZTA1MFR1XC350Y3D14",
+  "layer": "CANON",
+  "primary_unit": "X.DISPATCH",
+  "tags": [
+    "V.SKILL_GUARD",
+    "A.ROUTER",
+    "A.EXECUTOR",
+    "A.VERIFIER",
+    "A.AUDITOR"
+  ],
+  "status": "active",
+  "skills": [
+    {
+      "skill_id": "SHELL_READONLY",
+      "title": "Read-only shell inspection",
+      "guard": "codex_cli_sandbox_readonly"
+    },
+    {
+      "skill_id": "SHELL_WRITE",
+      "title": "Workspace write shell",
+      "guard": "codex_cli_sandbox_workspace_write"
+    },
+    {
+      "skill_id": "PATCH_APPLY",
+      "title": "Patch apply",
+      "guard": "permission_floor"
+    },
+    {
+      "skill_id": "SELFTEST",
+      "title": "Acceptance/selftest",
+      "guard": "evidence_verdict"
+    },
+    {
+      "skill_id": "DOCFLOW_AUDIT",
+      "title": "Docflow audit",
+      "guard": "docflow_audit_report"
+    },
+    {
+      "skill_id": "REVIEW_JOB",
+      "title": "Review job (progress+feedback+metrics)",
+      "guard": "review_outputs_present"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "interface_spec",
+  "version": "1.0.0",
+  "owner_role": "designer",
+  "summary": "Specify interfaces/contracts between modules to reduce integration churn.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_interfaces": 20 },
+  "quality_gates": { "must_define_io": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

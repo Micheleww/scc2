@@ -1,0 +1,26 @@
+
+[23296:0201/015440.723:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[23296:0201/015440.723:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[23296:0201/015440.723:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[23296:0201/015440.725:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[23296:0201/015440.725:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[23296:0201/015440.725:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[23296:0201/015440.725:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[23296:0201/015440.725:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[23296:0201/015440.725:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[23296:0201/015440.808:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[23296:0201/015440.808:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[23296:0201/015440.808:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[23296:0201/015440.808:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[23296:0201/015440.808:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[23296:0201/015440.808:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[23296:0201/015440.808:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[23296:0201/015440.808:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[23296:0201/015440.808:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[23296:0201/015443.426:ERROR:mojo\public\cpp\bindings\lib\interface_endpoint_client.cc:732] Message 0 rejected by interface blink.mojom.WidgetHost
+(electron) 'webContents.canGoBack' is deprecated and will be removed. Please use 'webContents.navigationHistory.canGoBack' instead.
+(electron) 'webContents.goBack' is deprecated and will be removed. Please use 'webContents.navigationHistory.goBack' instead.
+[23296:0201/015738.735:ERROR:storage\browser\quota\quota_database.cc:1013] Could not open the quota database, resetting.
+[23296:0201/015741.688:ERROR:storage\browser\quota\quota_database.cc:1013] Could not open the quota database, resetting.
+[23296:0201/015744.614:ERROR:storage\browser\quota\quota_database.cc:1018] Failed to reset the quota database.
+[23296:0201/015744.614:ERROR:storage\browser\quota\quota_database.cc:1018] Failed to reset the quota database.

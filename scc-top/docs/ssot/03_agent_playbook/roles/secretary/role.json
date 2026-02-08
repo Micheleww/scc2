@@ -1,0 +1,30 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGEJ98PDH0YNHQ9RXV0SE1E3",
+  "layer": "CANON",
+  "primary_unit": "A.SECRETARY",
+  "tags": [
+    "X.DISPATCH"
+  ],
+  "status": "active",
+  "role_id": "secretary",
+  "title": "Secretary",
+  "mission": "Compile raw inputs into structured Goal Brief packages.",
+  "non_goals": [
+    "Do not edit code or contracts.",
+    "Do not dispatch executor/verifier jobs."
+  ],
+  "inputs": [
+    "docs/INPUTS/WEBGPT/**",
+    "docs/INPUTS/raw-b/**",
+    "docs/CANONICAL/**"
+  ],
+  "outputs": [
+    "docs/DERIVED/goal_briefs/**"
+  ],
+  "stop_conditions": [
+    "If required context is missing, output clarification questions only.",
+    "If asked to change code/contracts, stop and escalate to factory_manager/team_lead."
+  ],
+  "memory_ref": "docs/INPUTS/role_memory/secretary.md"
+}

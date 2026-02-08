@@ -1,0 +1,23 @@
+{
+  "schema_version": "plugin_manifest_v1",
+  "id": "example.echo",
+  "name": "Example Echo Plugin",
+  "version": "0.1.0",
+  "requires": {
+    "plugin_api": "v1"
+  },
+  "hooks": [
+    {
+      "type": "after_job_finished",
+      "enabled": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "echo",
+      "description": "Echo a message via leader log"
+    }
+  ],
+  "evals": []
+}
+

@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "scc.trace.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "created_at", "updated_at", "config_hashes", "routing", "artifacts"],
+  "properties": {
+    "schema_version": { "const": "scc.trace.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "config_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factory_policy_sha256", "roles_registry_sha256", "skills_registry_sha256"],
+      "properties": {
+        "factory_policy_sha256": { "type": ["string", "null"] },
+        "roles_registry_sha256": { "type": ["string", "null"] },
+        "skills_registry_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executor", "model", "model_effective"],
+      "properties": {
+        "executor": { "type": ["string", "null"] },
+        "model": { "type": ["string", "null"] },
+        "model_effective": { "type": ["string", "null"] }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["submit_json", "report_md", "selftest_log", "evidence_dir", "patch_diff", "verdict_json"],
+      "properties": {
+        "submit_json": { "type": ["string", "null"] },
+        "report_md": { "type": ["string", "null"] },
+        "selftest_log": { "type": ["string", "null"] },
+        "evidence_dir": { "type": ["string", "null"] },
+        "patch_diff": { "type": ["string", "null"] },
+        "verdict_json": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
+

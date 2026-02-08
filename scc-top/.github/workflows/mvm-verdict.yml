@@ -1,0 +1,260 @@
+name: mvm-verdict
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  mvm-verdict:
+    runs-on: ubuntu-latest
+    name: mvm-verdict
+    strategy:
+      matrix:
+        attack_case: [basic_bypass, fake_selftest, selftest_contradiction, user_supplied_selftest, evidence_scope_violation]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      
+      - name: Run mvm-verdict checks for ${{ matrix.attack_case }}
+        id: mvm-verdict-check
+        run: |
+          python tools/ci/mvm-verdict.py --case comprehensive
+      
+      - name: Generate case verdict
+        id: generate-case-verdict
+        run: |
+          python -c "import json
+import os
+import sys
+import time
+import hashlib
+
+# Get GitHub context
+commit_sha = os.environ.get('GITHUB_SHA', 'unknown')
+run_id = os.environ.get('GITHUB_RUN_ID', 'unknown')
+runner = os.environ.get('RUNNER_NAME', 'unknown')
+attack_case = os.environ.get('ATTACK_CASE', 'unknown')
+timestamp = int(time.time())
+
+# Create artifacts directory if it doesn't exist
+os.makedirs('artifacts', exist_ok=True)
+
+# Read mvm-verdict output from previous step (captured from stdout)
+with open('artifacts/mvm-verdict-output.txt', 'w') as f:
+    f.write(os.environ.get('MVM_VERDICT_OUTPUT', ''))
+
+# Generate case verdict content
+case_verdict = {
+    'attack_case': attack_case,
+    'commit_sha': commit_sha,
+    'run_id': run_id,
+    'runner': runner,
+    'timestamp': timestamp,
+    'status': 'pending'  # Will be updated in summary
+}
+
+# Save verdict for this case
+verdict_file = f'artifacts/verdict-{attack_case}.json'
+with open(verdict_file, 'w') as f:
+    json.dump(case_verdict, f, indent=2)
+
+print(f'Generated case verdict: {verdict_file}')
+" 
+        env:
+          ATTACK_CASE: ${{ matrix.attack_case }}
+          MVM_VERDICT_OUTPUT: ${{ steps.mvm-verdict-check.outputs.stdout }}
+      
+      - name: Upload case verdict
+        uses: actions/upload-artifact@v4
+        with:
+          name: mvm-verdict-${{ matrix.attack_case }}
+          path: artifacts/verdict-${{ matrix.attack_case }}.json
+          retention-days: 30
+  
+  mvm-verdict-summary:
+    runs-on: ubuntu-latest
+    name: mvm-verdict
+    needs: mvm-verdict
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all case verdicts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: mvm-verdict-*
+          merge-multiple: true
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Generate summary verdict
+        id: generate-summary
+        run: |
+          python -c "import json
+import os
+import sys
+import time
+import hashlib
+
+# Get GitHub context
+commit_sha = os.environ.get('GITHUB_SHA', 'unknown')
+run_id = os.environ.get('GITHUB_RUN_ID', 'unknown')
+runner = os.environ.get('RUNNER_NAME', 'unknown')
+
+# Create artifacts directory if it doesn't exist
+os.makedirs('artifacts', exist_ok=True)
+
+# Collect all case verdicts
+case_verdicts = []
+all_passed = True
+fail_codes = []
+attack_results = {}
+
+# Run comprehensive mvm-verdict check
+print('Running comprehensive mvm-verdict check...')
+import subprocess
+result = subprocess.run(
+    ['python', 'tools/ci/mvm-verdict.py', '--case', 'comprehensive'],
+    capture_output=True,
+    text=True
+)
+
+# Capture the output
+mvm_output = result.stdout + result.stderr
+print(f'mvm-verdict output: {mvm_output}')
+
+# Check for fail codes in output
+for fail_code in ['SELFTEST_USER_SUPPLIED', 'SELFTEST_TRUSTED_INPUT', 'EVIDENCE_SCOPE_VIOLATION', 'STAGE_MISSING', 'STAGE_VALIDATION_FAILED', 'DIGEST_CHAIN_BROKEN', 'NON_CI_GENERATED_FIELD', 'FAKE_DIGEST_DETECTED', 'MANUAL_STAGE_MODIFICATION', 'LOCKED_STATE_DETECTED', 'SELFTTEST_CONTRADICTION', 'ABSOLUTE_PATH_IN_EVIDENCE', 'ROLLBACK_DELETE_FORBIDDEN', 'PLATFORM_PROOF_MISSING']:
+    if fail_code in mvm_output:
+        fail_codes.append(fail_code)
+
+# Check for selftest.log files in the repository
+print('Checking for selftest.log files in repository...')
+selftest_files = []
+for root, dirs, files in os.walk('.'):
+    # Skip artifacts directory in root (CI-generated)
+    if root == './artifacts':
+        continue
+    for file in files:
+        if file == 'selftest.log':
+            selftest_files.append(os.path.relpath(os.path.join(root, file), '.'))
+
+if selftest_files:
+    all_passed = False
+    if 'SELFTEST_USER_SUPPLIED' not in fail_codes:
+        fail_codes.append('SELFTEST_USER_SUPPLIED')
+    print(f'ERROR: Found selftest.log files in repository: {selftest_files}')
+
+# Check PR diff for selftest.log files
+print('Checking PR diff for selftest.log files...')
+try:
+    diff_result = subprocess.run(
+        ['git', 'diff', '--name-only', 'origin/' + os.environ.get('GITHUB_BASE_REF', 'main'), 'HEAD'],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    changed_files = diff_result.stdout.strip().split('\n') if diff_result.stdout.strip() else []
+    
+    pr_selftest_files = [f for f in changed_files if f.endswith('selftest.log') or ('artifacts/' in f and f.endswith('selftest.log'))]
+    if pr_selftest_files:
+        all_passed = False
+        if 'SELFTEST_USER_SUPPLIED' not in fail_codes:
+            fail_codes.append('SELFTEST_USER_SUPPLIED')
+        print(f'ERROR: Found selftest.log files in PR diff: {pr_selftest_files}')
+except subprocess.CalledProcessError as e:
+    print(f'Warning: Failed to get PR diff: {e}')
+
+# Read all case verdict files
+for file in os.listdir('artifacts'):
+    if file.startswith('verdict-') and file.endswith('.json'):
+        with open(os.path.join('artifacts', file), 'r') as f:
+            case_verdict = json.load(f)
+            attack_case = case_verdict['attack_case']
+            # Update case verdict with actual status
+            case_verdict['status'] = 'fail' if any(fail_code in mvm_output for fail_code in ['SELFTEST_USER_SUPPLIED', 'SELFTEST_TRUSTED_INPUT']) else 'pass'
+            attack_results[attack_case] = case_verdict['status']
+            case_verdicts.append(case_verdict)
+
+# Determine overall status
+all_passed = len(fail_codes) == 0
+
+# Generate CI-generated selftest摘要
+ci_selftest_summary = {
+    'run_id': run_id,
+    'runner': runner,
+    'commit_sha': commit_sha,
+    'case_count': len(case_verdicts),
+    'attack_results': attack_results,
+    'timestamp': int(time.time())
+}
+
+# Calculate hash of the summary
+selftest_hash = hashlib.sha256(json.dumps(ci_selftest_summary, sort_keys=True).encode()).hexdigest()
+ci_selftest_summary['hash'] = selftest_hash
+
+# Create final verdict
+final_verdict = {
+    'status': 'pass' if all_passed else 'fail',
+    'commit_sha': commit_sha,
+    'run_id': run_id,
+    'runner': runner,
+    'timestamp': int(time.time()),
+    'fail_codes': fail_codes,
+    'attack_cases': case_verdicts,
+    'attack_results': attack_results,
+    'ci_selftest_summary': ci_selftest_summary,
+    'all_passed': all_passed,
+    'output': mvm_output
+}
+
+# Save final verdict
+with open('artifacts/verdict.json', 'w') as f:
+    json.dump(final_verdict, f, indent=2)
+
+print(f'Generated final verdict: {json.dumps(final_verdict, indent=2)}')
+
+# Exit with appropriate code
+if not all_passed:
+    print(f'FAIL: Found {len(fail_codes)} issues: {fail_codes}')
+    sys.exit(1)
+else:
+    print('PASS: All mvm-verdict checks passed')
+    sys.exit(0)
+" 
+      
+      - name: Upload final verdict
+        uses: actions/upload-artifact@v4
+        with:
+          name: mvm-verdict
+          path: artifacts/verdict.json
+          retention-days: 30
+      
+      - name: Verify mvm-verdict result
+        run: |
+          python -c "import json
+import sys
+with open('artifacts/verdict.json', 'r') as f:
+    verdict = json.load(f)
+if not verdict['all_passed']:
+    sys.exit(1)
+"

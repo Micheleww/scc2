@@ -1,0 +1,58 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGCVFRX7X1TSDNMQMATFSARM",
+  "layer": "CANON",
+  "primary_unit": "X.DISPATCH",
+  "tags": [
+    "C.CAPABILITY",
+    "A.ROUTER",
+    "A.EXECUTOR",
+    "A.VERIFIER",
+    "A.AUDITOR"
+  ],
+  "status": "active",
+  "capabilities": [
+    {
+      "capability_id": "CAP_DOCFLOW_AUDIT",
+      "owner_role": "auditor",
+      "entry": "tools/scc/ops/docflow_audit.ps1",
+      "outputs": [
+        "artifacts/scc_state/docflow_audit__*.md"
+      ]
+    },
+    {
+      "capability_id": "CAP_RAW_TO_TASKTREE",
+      "owner_role": "executor",
+      "entry": "python tools/scc/raw_to_task_tree.py",
+      "outputs": [
+        "docs/DERIVED/task_tree.json"
+      ]
+    },
+    {
+      "capability_id": "CAP_REVIEW_JOB",
+      "owner_role": "auditor",
+      "entry": "python tools/scc/review_job.py",
+      "outputs": [
+        "docs/CANONICAL/PROGRESS.md",
+        "docs/INPUTS/raw-b/review_feedback_*.md"
+      ]
+    },
+    {
+      "capability_id": "CAP_CODEX_DELEGATION",
+      "owner_role": "factory_manager",
+      "entry": "python tools/scc/automation/run_batches.py --config <config.json>",
+      "outputs": [
+        "artifacts/scc_state/automation_runs/<run_id>/",
+        "artifacts/codexcli_remote_runs/<run_id>/"
+      ]
+    },
+    {
+      "capability_id": "CAP_TASKCODE_GUARD",
+      "owner_role": "auditor",
+      "entry": "python tools/ci/skill_call_guard.py --taskcode <TaskCode> --area <area>",
+      "outputs": [
+        "docs/REPORT/<area>/artifacts/<TaskCode>/guard_result.json"
+      ]
+    }
+  ]
+}

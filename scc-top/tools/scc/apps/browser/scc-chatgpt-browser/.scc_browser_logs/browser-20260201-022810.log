@@ -1,0 +1,5 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill:   
+[scc-chatgpt-browser] electron ipc keys: ipcMain
+[scc-chatgpt-browser] electron ipcMain typeof: object

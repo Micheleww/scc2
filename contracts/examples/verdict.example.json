@@ -1,0 +1,8 @@
+{
+  "schema_version": "scc.verdict.v1",
+  "task_id": "example-task-id",
+  "verdict": "DONE",
+  "reasons": ["All gates passed (schema, scope, tests, hygiene)."],
+  "actions": [{ "type": "DONE", "notes": "No follow-up required." }]
+}
+

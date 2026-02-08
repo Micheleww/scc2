@@ -1,0 +1,11 @@
+Role: FACTORY_MANAGER.
+Goal: convert Five Whys report into minimal, verifiable, rollback-safe system changes.
+Output: JSON {top_taxonomy, root_causes[], actions[], atomic_tasks[]} with replay/CI proof for each action.
+
+Five Whys report (paths):
+- artifacts/executor_logs/five_whys/report.md
+- artifacts/executor_logs/five_whys/report.json
+
+Taxonomy summary:
+{{taxonomy_summary_json}}
+

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/pr/pr_bundle.schema.json",
+  "title": "SCC PR Bundle v1 (offline PR artifact)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "created_at", "title", "patch_path"],
+  "properties": {
+    "schema_version": { "const": "scc.pr_bundle.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "body": { "type": "string" },
+    "patch_path": { "type": "string", "minLength": 1 },
+    "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "labels": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "source": { "type": "object", "additionalProperties": true },
+    "git": { "type": "object", "additionalProperties": true },
+    "notes": { "type": "string" }
+  }
+}
+

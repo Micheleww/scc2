@@ -1,0 +1,58 @@
+{
+  "enabled": true,
+  "on_report": true,
+  "match": [
+    "REPORT__GOAL_STATUS_ROLLUP__",
+    "Goal Status Rollup Report"
+  ],
+  "report_dir": "docs/REPORT/control_plane",
+  "artifacts_dir": "docs/REPORT/control_plane/artifacts/SCAN_HOOK",
+  "max_scans": 8,
+  "scans": [
+    {
+      "name": "docflow_audit",
+      "script": "tools/scc/ops/docflow_audit.py",
+      "args": [
+        "--repo-root",
+        "C:/scc/scc-top"
+      ],
+      "timeout_sec": 60
+    },
+    {
+      "name": "root_clutter_audit",
+      "script": "tools/scc/ops/root_clutter_audit.py",
+      "args": [],
+      "timeout_sec": 30
+    },
+    {
+      "name": "git_noise_audit",
+      "script": "tools/scc/ops/git_noise_audit.py",
+      "args": [],
+      "timeout_sec": 30
+    },
+    {
+      "name": "untracked_inventory",
+      "script": "tools/scc/ops/untracked_inventory.py",
+      "args": [
+        "--top-k",
+        "80"
+      ],
+      "timeout_sec": 60
+    },
+    {
+      "name": "evidence_budget_audit",
+      "script": "tools/scc/ops/evidence_budget_audit.py",
+      "args": [],
+      "timeout_sec": 90
+    },
+    {
+      "name": "port_reference_audit",
+      "script": "tools/scc/ops/port_reference_audit.py",
+      "args": [
+        "--mode",
+        "legacy"
+      ],
+      "timeout_sec": 90
+    }
+  ]
+}

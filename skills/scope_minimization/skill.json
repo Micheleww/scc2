@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "scope_minimization",
+  "version": "1.0.0",
+  "owner_role": "pinser",
+  "summary": "Minimize pins scope (allow_paths/max_files/max_loc) to reduce blast radius.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": { "input_schema": "contracts/pins/pins_request.schema.json", "output_schema": "contracts/pins/pins_result.schema.json" },
+  "budgets": { "max_files": 20, "max_loc": 240 },
+  "quality_gates": { "must_minimize_allow_paths": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

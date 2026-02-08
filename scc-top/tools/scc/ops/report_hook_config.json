@@ -1,0 +1,40 @@
+{
+  "enabled": true,
+  "parent_tasks": true,
+  "apply": true,
+  "max_new": 10,
+  "default_risk": "P1",
+  "goal_review_on_report": false,
+  "goal_review_match": [
+    "REPORT__GOAL_STATUS_ROLLUP__",
+    "Goal Status Rollup Report"
+  ],
+  "status_rollup_on_report": true,
+  "status_rollup_match": [
+    "REPORT__GOAL_CHAIN_STATUS__",
+    "Goal Chain Status Report",
+    "xianzhuang_shencha",
+    "STATUS_REVIEW",
+    "REPORT__STATUS_REVIEW__",
+    "REPORT__STATUS_REVIEW_AUDIT__",
+    "REPORT__TASK_LEDGER_AUDIT__",
+    "REPORT__DOD_AUDIT__"
+  ],
+  "board_hook_on_report": true,
+  "board_hook_apply": true,
+  "board_hook_split": true,
+  "board_hook_dispatch": true,
+  "board_hook_max_new": 50,
+  "board_hook_allowed_executors": [
+    "codex"
+  ],
+  "board_hook_allowed_models": [
+    "gpt-5.2"
+  ],
+  "board_hook_area": "control_plane",
+  "board_hook_runner": "external",
+  "board_hook_role": "designer",
+  "parents": "docs/TASKS/backlog/parent_tasks.json",
+  "scan_hook_on_report": true,
+  "scan_hook_config": "tools/scc/ops/scan_hook_config.json"
+}

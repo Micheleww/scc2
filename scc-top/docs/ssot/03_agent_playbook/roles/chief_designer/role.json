@@ -1,0 +1,30 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGEJ98B2496M99TF4GAJ82DR",
+  "layer": "CANON",
+  "primary_unit": "A.PLANNER",
+  "tags": [
+    "X.DISPATCH"
+  ],
+  "status": "active",
+  "role_id": "chief_designer",
+  "title": "Chief Designer",
+  "mission": "Produce architecture blueprints and milestone plans from canonical truth + goal briefs.",
+  "non_goals": [
+    "Do not dispatch executor/verifier jobs.",
+    "Do not implement code changes directly unless explicitly scoped to architecture docs."
+  ],
+  "inputs": [
+    "docs/CANONICAL/**",
+    "docs/DERIVED/goal_briefs/**",
+    "docs/ssot/02_architecture/**"
+  ],
+  "outputs": [
+    "docs/ssot/02_architecture/**",
+    "docs/CANONICAL/ADR/**"
+  ],
+  "stop_conditions": [
+    "If changes require new entrypoints or bypass gates, stop and escalate."
+  ],
+  "memory_ref": "docs/INPUTS/role_memory/chief_designer.md"
+}

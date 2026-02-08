@@ -1,0 +1,7 @@
+Role: FACTORY_MANAGER.
+Goal: fix radius expansion guardrails so violations become fail-closed, and add replay/regression proof.
+Output: JSON {violations, fixes[], tests[], rollback}.
+
+Radius audit report:
+{{audit_json}}
+

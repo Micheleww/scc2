@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "policy.check_scope",
+  "version": "1.0.0",
+  "owner_role": "audit",
+  "summary": "Enforce write scope allow/deny paths and emit POLICY_VIOLATION on breach.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/submit/submit.schema.json",
+    "output_schema": "contracts/verdict/verdict.schema.json"
+  },
+  "budgets": { "max_changed_files": 200 },
+  "quality_gates": { "must_enforce_deny_paths": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

@@ -1,0 +1,10 @@
+Role: QA/ENGINEER.
+Goal: CI/selftest failed or missing. Provide evidence, fix issues, and runnable test commands until exit_code=0.
+Output: patch or exact commands + evidence paths; explain failure root cause and fixes.
+
+CI gate:
+{{ci_gate_json}}
+
+Original task:
+{{original_task_json}}
+

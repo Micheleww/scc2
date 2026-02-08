@@ -1,0 +1,67 @@
+{
+  "schema_version": "scc.factory_policy.v1",
+  "updated_at": "2026-02-05",
+  "wip_limits": {
+    "WIP_TOTAL_MAX": 12,
+    "WIP_EXEC_MAX": 4,
+    "WIP_BATCH_MAX": 1,
+
+    "WIP_TOTAL_EXTERNAL_MAX": 12,
+    "WIP_TOTAL_INTERNAL_MAX": 6,
+    "WIP_EXEC_EXTERNAL_MAX": 4,
+    "WIP_EXEC_INTERNAL_MAX": 2,
+    "WIP_BATCH_EXTERNAL_MAX": 1,
+    "WIP_BATCH_INTERNAL_MAX": 1
+  },
+  "lanes": {
+    "fastlane": { "priority": 100, "entity_roles_max": 2 },
+    "mainlane": { "priority": 50, "entity_roles_max": 4 },
+    "batchlane": { "priority": 10, "entity_roles_max": 1 },
+    "dlq": { "priority": 0, "entity_roles_max": 1 },
+    "quarantine": { "priority": -10, "entity_roles_max": 1 }
+  },
+  "budgets": {
+    "max_children": 12,
+    "max_depth": 2,
+    "max_total_attempts": 3,
+    "max_total_tokens_budget": 200000,
+    "max_total_verify_minutes": 60
+  },
+  "event_routing": {
+    "default": { "lane": "mainlane", "virtual_roles": ["preflight_gate"], "entity_roles": ["pins", "executor", "verifier_judge"] },
+    "by_event_type": {
+      "PINS_INSUFFICIENT": { "lane": "fastlane", "virtual_roles": ["status_review"], "entity_roles": ["pinser"] },
+      "PREFLIGHT_FAILED": { "lane": "fastlane", "virtual_roles": ["preflight_gate"], "entity_roles": ["pinser", "ci_fixup"] },
+      "CI_FAILED": { "lane": "fastlane", "virtual_roles": ["status_review"], "entity_roles": ["ci_fixup"] },
+      "EXECUTOR_ERROR": { "lane": "fastlane", "virtual_roles": ["status_review"], "entity_roles": ["ci_fixup"] },
+      "RETRY_EXHAUSTED": { "lane": "dlq", "virtual_roles": ["status_review"], "entity_roles": ["retry_orchestrator"] },
+      "POLICY_VIOLATION": { "lane": "quarantine", "virtual_roles": ["audit"], "entity_roles": ["factory_manager"] },
+      "SUCCESS": { "lane": "batchlane", "virtual_roles": ["status_review"], "entity_roles": ["lessons_miner"] }
+    }
+  },
+  "circuit_breakers": [
+    {
+      "name": "isolate_repeating_ci_failed",
+      "match": { "event_type": "CI_FAILED" },
+      "trip": { "consecutive_failures": 3 },
+      "action": { "lane": "quarantine", "note": "Stop spawning new executor tasks; allow only fixup/triage until healthy." }
+    },
+    {
+      "name": "isolate_repeating_preflight_failed",
+      "match": { "event_type": "PREFLIGHT_FAILED" },
+      "trip": { "consecutive_failures": 3 },
+      "action": { "lane": "quarantine", "note": "Preflight failures are stop-signals; prioritize pins/test-command repair before spawning more executors." }
+    }
+  ],
+  "degradation_matrix": [
+    {
+      "when": { "queue_overload": true },
+      "do": { "verification_tier": "smoke", "reduce_WIP_EXEC_MAX_to": 2, "prefer_lane": "fastlane" }
+    },
+    {
+      "when": { "repo_unhealthy": true },
+      "do": { "mode": "stop_the_bleeding", "reduce_WIP_EXEC_MAX_to": 1, "prefer_lane": "fastlane", "allow_task_classes": ["ci_fixup_v1", "infra_repair", "repo_unhealthy_triage_v1"] }
+    }
+  ],
+  "verification_tiers": { "default": "smoke", "by_task_class": { "release": "regression" } }
+}

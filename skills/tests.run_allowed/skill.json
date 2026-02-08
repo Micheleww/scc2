@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "tests.run_allowed",
+  "version": "1.0.0",
+  "owner_role": "executor",
+  "summary": "Run only allowedTests commands and report results.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": { "max_commands": 8, "timeout_ms": 1200000 },
+  "quality_gates": { "must_not_run_unlisted_commands": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

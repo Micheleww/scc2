@@ -1,0 +1,8 @@
+{
+  "schema_version": "scc.preflight.v1",
+  "task_id": "example-task-id",
+  "pass": true,
+  "missing": { "files": [], "symbols": [], "tests": [], "write_scope": [] },
+  "notes": "All required inputs present."
+}
+

@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SCC Forwarder</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0b0f19;
+        --fg: #e7eaf0;
+        --muted: #9aa3b2;
+        --border: rgba(255, 255, 255, 0.12);
+        --accent: #6ea8fe;
+        --danger: #ff6b6b;
+        --ok: #2ecc71;
+      }
+      body {
+        margin: 0;
+        width: 360px;
+        font: 13px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      header {
+        padding: 12px 12px 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      header h1 {
+        font-size: 14px;
+        margin: 0;
+        font-weight: 600;
+      }
+      header .sub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      main {
+        padding: 12px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      button {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--fg);
+        padding: 8px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      button.primary {
+        background: rgba(110, 168, 254, 0.18);
+        border-color: rgba(110, 168, 254, 0.5);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--muted);
+      }
+      .dot.ok {
+        background: var(--ok);
+      }
+      .dot.bad {
+        background: var(--danger);
+      }
+      .section {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+      .kv {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        word-break: break-all;
+      }
+      .kv code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+      }
+      .err {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--danger);
+        white-space: pre-wrap;
+      }
+      label.toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        user-select: none;
+        cursor: pointer;
+      }
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>SCC Directive Forwarder</h1>
+      <div class="sub">
+        <span class="pill"><span id="statusDot" class="dot"></span><span id="statusText">Waiting…</span></span>
+      </div>
+    </header>
+    <main>
+      <div class="row">
+        <button id="sendBtn" class="primary" disabled>Send</button>
+        <button id="copyBtn" disabled>Copy</button>
+        <a id="optionsLink" href="#">Options</a>
+      </div>
+      <div class="section">
+        <label class="toggle"><input id="autosendToggle" type="checkbox" /> Auto-send</label>
+        <div class="kv">Endpoint: <code id="endpointText"></code></div>
+      </div>
+      <div id="errorText" class="err" hidden></div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
+

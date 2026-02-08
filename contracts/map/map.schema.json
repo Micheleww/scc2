@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/map/map.schema.json",
+  "title": "SCC Map v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "generator",
+    "coverage",
+    "modules",
+    "entry_points",
+    "key_symbols",
+    "test_entry_points",
+    "configs",
+    "doc_refs",
+    "file_index"
+  ],
+  "properties": {
+    "schema_version": { "const": "scc.map.v1" },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roots", "excluded_globs"],
+      "properties": {
+        "roots": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "excluded_globs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "notes": { "type": "string" }
+      }
+    },
+    "modules": { "type": "array", "items": { "$ref": "#/definitions/module" } },
+    "entry_points": { "type": "array", "items": { "$ref": "#/definitions/entryPoint" } },
+    "key_symbols": { "type": "array", "items": { "$ref": "#/definitions/keySymbol" } },
+    "test_entry_points": { "type": "array", "items": { "$ref": "#/definitions/testEntryPoint" } },
+    "configs": { "type": "array", "items": { "$ref": "#/definitions/configKey" } },
+    "doc_refs": { "type": "array", "items": { "$ref": "#/definitions/docRef" } },
+    "file_index": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mtimeMs", "size"],
+        "properties": {
+          "mtimeMs": { "type": "number" },
+          "size": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "root", "kind", "confidence", "signals", "doc_refs"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "signals": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "doc_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "entryPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "path", "command", "confidence", "reason", "doc_refs"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "path": { "type": ["string", "null"] },
+        "command": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": "string" },
+        "doc_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "keySymbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "kind", "path", "line", "line_window", "confidence", "doc_refs"],
+      "properties": {
+        "symbol": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "line_window": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "doc_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "testEntryPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "command", "paths", "confidence", "reason"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "command": { "type": "string", "minLength": 1 },
+        "paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": "string" }
+      }
+    },
+    "configKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "path", "line", "confidence", "reason"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": "string" }
+      }
+    },
+    "docRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code_path", "doc_path", "reason"],
+      "properties": {
+        "code_path": { "type": "string", "minLength": 1 },
+        "doc_path": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}
+

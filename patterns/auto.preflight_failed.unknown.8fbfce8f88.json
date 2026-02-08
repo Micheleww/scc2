@@ -1,0 +1,21 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "auto.preflight_failed.unknown.8fbfce8f88",
+  "created_at": "2026-02-06T20:09:10.050049+00:00",
+  "updated_at": null,
+  "severity": "P1",
+  "match": {
+    "event_type": "PREFLIGHT_FAILED",
+    "task_class": null,
+    "failing_test": null,
+    "stacktrace_hash": null,
+    "tool": "unknown",
+    "code": "test_command_missing"
+  },
+  "stats": {
+    "count": 7,
+    "first_seen": "2026-02-05T16:59:12.689Z",
+    "last_seen": "2026-02-05T17:00:12.696Z"
+  },
+  "notes": "Auto-mined cluster: event_type=PREFLIGHT_FAILED, executor=unknown, reason=test_command_missing"
+}

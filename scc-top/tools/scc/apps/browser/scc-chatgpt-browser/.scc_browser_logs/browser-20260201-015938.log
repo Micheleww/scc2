@@ -1,0 +1,20 @@
+
+[scc-chatgpt-browser] main.js boot
+[7924:0201/015939.167:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[7924:0201/015939.167:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[7924:0201/015939.168:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[7924:0201/015939.171:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[7924:0201/015939.171:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[7924:0201/015939.171:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[7924:0201/015939.171:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[7924:0201/015939.171:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[7924:0201/015939.171:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[7924:0201/015939.346:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[7924:0201/015939.346:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[7924:0201/015939.347:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[7924:0201/015939.350:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[7924:0201/015939.350:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[7924:0201/015939.350:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[7924:0201/015939.350:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[7924:0201/015939.350:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[7924:0201/015939.350:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2

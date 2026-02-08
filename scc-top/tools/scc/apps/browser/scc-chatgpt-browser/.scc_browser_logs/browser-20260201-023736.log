@@ -1,0 +1,8 @@
+
+[scc-chatgpt-browser] main.js boot
+[scc-chatgpt-browser] env backfill:   
+[scc-chatgpt-browser] electron ipc keys: ipcMain
+[scc-chatgpt-browser] electron ipcMain typeof: object
+[scc-chatgpt-browser] {"event":"navigate","url":"https://chatgpt.com/auth/login"}
+[scc-chatgpt-browser] {"event":"navigate_in_page","url":"https://chatgpt.com/auth/login"}
+[7548:0201/033127.156:ERROR:content\browser\network_service_instance_impl.cc:610] Network service crashed or was terminated, restarting service.

@@ -1,0 +1,48 @@
+{
+  "oid": "01KGCY2039ABQMM3WPSNSG5FJP",
+  "layer": "CANON",
+  "primary_unit": "K.CONTRACT_DOC",
+  "tags": [
+    "K.ACCEPTANCE",
+    "V.VERDICT"
+  ],
+  "status": "active",
+  "schema_version": "v0.1.0",
+  "task_id": "697ecb81-4184-83a4-b4d9-fefa21d835e2_0004",
+  "contract_id": "contractize:697ecb81-4184-83a4-b4d9-fefa21d835e2_0004",
+  "goal": "WebGPT user message 0004",
+  "scope_allow": "TBD (must be set by planner/manager before execution)",
+  "constraints": "Fail-closed. Must stay within allowlist scope. Do not create a second docs entrypoint.",
+  "acceptance": {
+    "checks": [
+      {
+        "name": "verdict_basic",
+        "command": "python tools/ci/mvm-verdict.py --case basic"
+      }
+    ]
+  },
+  "stop_condition": "If acceptance cannot be executed or violates scope_allow, stop and report.",
+  "commands_hint": "Use SSOT registry for deterministic context; minimize file scanning; prefer allowlisted edits.",
+  "inputs_ref": {
+    "paths": [
+      "docs/INPUTS/WEBGPT/conversations/697ecb81-4184-83a4-b4d9-fefa21d835e2.md"
+    ],
+    "oids": []
+  },
+  "outputs_expected": {
+    "verdict_required": true,
+    "evidence_paths": [
+      "docs/REPORT/control_plane/artifacts/697ecb81-4184-83a4-b4d9-fefa21d835e2_0004/*"
+    ]
+  },
+  "task_tree_ref": "docs/DERIVED/task_tree.json",
+  "epic": {
+    "id": "webgpt:697ecb81-4184-83a4-b4d9-fefa21d835e2",
+    "title": "Clawnbot 底层接口"
+  },
+  "capability": {
+    "id": "697ecb81-4184-83a4-b4d9-fefa21d835e2:capability:raw",
+    "title": "raw_webgpt_import"
+  },
+  "source_anchor": "message-0004"
+}

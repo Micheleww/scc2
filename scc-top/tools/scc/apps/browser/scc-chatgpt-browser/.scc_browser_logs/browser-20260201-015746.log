@@ -1,0 +1,20 @@
+
+[15748:0201/015746.766:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[15748:0201/015746.766:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[15748:0201/015746.766:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[15748:0201/015746.771:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[15748:0201/015746.771:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[15748:0201/015746.771:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[15748:0201/015746.771:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[15748:0201/015746.772:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[15748:0201/015746.772:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[15748:0201/015746.898:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[15748:0201/015746.898:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[15748:0201/015746.898:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: 拒绝访问。 (0x5)
+[15748:0201/015746.907:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[15748:0201/015746.907:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[15748:0201/015746.909:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[15748:0201/015746.909:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[15748:0201/015746.909:ERROR:net\disk_cache\disk_cache.cc:236] Unable to create cache
+[15748:0201/015746.909:ERROR:gpu\ipc\host\gpu_disk_cache.cc:724] Gpu Cache Creation failed: -2
+[15748:0201/015749.237:ERROR:mojo\public\cpp\bindings\lib\interface_endpoint_client.cc:732] Message 0 rejected by interface blink.mojom.WidgetHost

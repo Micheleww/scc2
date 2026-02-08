@@ -1,0 +1,14 @@
+{
+  "schema_version": "v0.1.0",
+  "oid": "01KGEJ98N02ZXV1JQKQ70M09MT",
+  "layer": "CANON",
+  "primary_unit": "V.SKILL_GUARD",
+  "tags": [
+    "A.FACTORY_MANAGER"
+  ],
+  "status": "active",
+  "role_id": "factory_manager",
+  "allowed_skills": [
+    "SHELL_READONLY"
+  ]
+}

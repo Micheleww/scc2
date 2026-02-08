@@ -1,0 +1,46 @@
+{
+  "oid": "01KGFC6NDNSX0N0S34BNSTR46T",
+  "layer": "CANON",
+  "primary_unit": "K.CONTRACT_DOC",
+  "tags": [
+    "K.ACCEPTANCE",
+    "V.VERDICT"
+  ],
+  "status": "active",
+  "schema_version": "v0.1.0",
+  "task_id": "BLACK_FRIDAY13_LUCK_INDEX_WORLD_TD_V010",
+  "contract_id": "BLACK_FRIDAY13_LUCK_INDEX_WORLD_TD_01",
+  "goal": "Part 2.0–2.2: Build a daily luck/unluck index U_t (World, Total Deaths main) combining EM-DAT (Natural, start-day totals) and OWID COVID (World), then test whether Friday-13 is worse; evaluate bad-day definitions at 5% and 1% tails.",
+  "scope_allow": "tools/scc/black_friday13/**, docs/ssot/04_contracts/black_friday13/**, docs/REPORT/control_plane/**",
+  "constraints": "Use only EM-DAT + OWID COVID; global scope; main disaster component uses Total Deaths; do not copy artifacts evidence into normative docs.",
+  "acceptance": {
+    "checks": [
+      {
+        "name": "top_validator",
+        "command": "python tools/scc/ops/top_validator.py --registry docs/ssot/registry.json --out-dir docs/REPORT/control_plane/artifacts/%TASK_CODE%"
+      },
+      {
+        "name": "analyze_luck_index_world_td",
+        "command": "python tools/scc/black_friday13/analyze_luck_index_world.py --panel artifacts/black_friday13/ingest/panel__natural__drop.parquet --out-dir artifacts/black_friday13/luck_index_world_td --bad-pcts 0.05,0.01 --w-emdat 1 --w-covid 1 --covid-mode ma7"
+      },
+      {
+        "name": "verify_luck_index_world_td",
+        "command": "python tools/scc/black_friday13/verify_luck_index_world.py --out-dir artifacts/black_friday13/luck_index_world_td"
+      }
+    ]
+  },
+  "stop_condition": "If ingest outputs are missing or the overlap window is empty, stop and report; do not impute new data sources.",
+  "commands_hint": "Run tools/scc/black_friday13/run_luck_index_world_td_task.py after ingest.",
+  "inputs_ref": {
+    "paths": [
+      "artifacts/black_friday13/ingest/panel__natural__drop.parquet"
+    ]
+  },
+  "outputs_expected": {
+    "verdict_required": true,
+    "evidence_paths": [
+      "docs/REPORT/control_plane/artifacts/%TASK_CODE%/*",
+      "artifacts/black_friday13/luck_index_world_td/*"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "pr.bundle_create",
+  "version": "1.0.0",
+  "owner_role": "release_integrator",
+  "summary": "Create offline PR bundle from a patch; optionally apply+commit+merge in a git repo (ff-only).",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/pr/pr_bundle.schema.json",
+    "output_schema": "contracts/pr/pr_bundle.schema.json"
+  },
+  "budgets": { "timeout_ms": 600000 },
+  "quality_gates": { "must_list_changed_files": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+
