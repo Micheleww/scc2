@@ -31,7 +31,8 @@ $WorkerOccli = Join-Path $repo "scripts\\worker-opencodecli.ps1"
 
 Write-Host "ensure-workers starting base=$Base desired codex=$DesiredCodex occli=$DesiredOccli minRunning=$MinRunning tick=${TickSeconds}s"
 
-$lockDir = "C:\\scc\\artifacts\\executor_logs"
+$repoRoot = Split-Path -Parent $repo
+$lockDir = if ($env:EXEC_LOG_DIR) { $env:EXEC_LOG_DIR } else { (Join-Path $repoRoot "artifacts\\executor_logs") }
 $lockFile = Join-Path $lockDir "ensure_workers.lock.json"
 try { New-Item -ItemType Directory -Force -Path $lockDir | Out-Null } catch {}
 try {

@@ -1,7 +1,11 @@
 $ErrorActionPreference = "Stop"
 
 $repo = $env:SCC_REPO
-if (-not $repo) { $repo = "C:\\scc\\scc-top" }
+if (-not $repo) {
+  $ocRoot = Split-Path -Parent $PSScriptRoot
+  $repoRoot = Split-Path -Parent $ocRoot
+  $repo = Join-Path $repoRoot "scc-top"
+}
 if (-not (Test-Path $repo)) { throw "SCC repo not found: $repo (set SCC_REPO to override)" }
 
 $compose = Join-Path $repo "docker-compose.scc.yml"

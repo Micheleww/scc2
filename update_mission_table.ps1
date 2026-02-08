@@ -71,6 +71,7 @@ $summary = [ordered]@{
 }
 
 $out = [ordered]@{ summary = $summary; rows = $rows }
-$path = "C:\\scc\\artifacts\\taskboard\\mission_fusion_table.json"
+$repoRoot = Split-Path -Parent $PSCommandPath
+$path = if ($env:BOARD_DIR) { (Join-Path $env:BOARD_DIR "mission_fusion_table.json") } else { (Join-Path $repoRoot "artifacts\\taskboard\\mission_fusion_table.json") }
 $out | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 $path
 Write-Host "wrote $path"

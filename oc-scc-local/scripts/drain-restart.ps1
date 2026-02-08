@@ -4,7 +4,8 @@ $Base = $env:GATEWAY_BASE
 if (-not $Base) { $Base = "http://127.0.0.1:18788" }
 
 $Repo = Split-Path -Parent $PSScriptRoot
-$LogDir = "C:\\scc\\artifacts\\executor_logs"
+$RepoRoot = Split-Path -Parent $Repo
+$LogDir = if ($env:EXEC_LOG_DIR) { $env:EXEC_LOG_DIR } else { (Join-Path $RepoRoot "artifacts\\executor_logs") }
 try { New-Item -ItemType Directory -Force -Path $LogDir | Out-Null } catch {}
 $Log = Join-Path $LogDir "drain_restart.log"
 

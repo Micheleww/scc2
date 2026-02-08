@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $Repo = Split-Path -Parent $PSScriptRoot
-$LogDir = "C:\\scc\\artifacts\\executor_logs"
+$RepoRoot = Resolve-Path (Join-Path $Repo "..\\..\\..")
+$LogDir = if ($env:EXEC_LOG_DIR) { $env:EXEC_LOG_DIR } else { (Join-Path $RepoRoot "artifacts\\executor_logs") }
 try { New-Item -ItemType Directory -Force -Path $LogDir | Out-Null } catch {}
 
 $GatewayPid = Join-Path $LogDir "gateway.pid"

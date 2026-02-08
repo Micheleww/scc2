@@ -56,6 +56,7 @@ const execRoot = cfg.execRoot
 const execLogDir = cfg.execLogDir
 const execLogJobs = path.join(execLogDir, "jobs.jsonl")
 const execLogFailures = path.join(execLogDir, "failures.jsonl")
+const gatewayErrorsFile = path.join(execLogDir, "gateway_errors.jsonl")
 const execLogHeartbeat = path.join(execLogDir, "heartbeat.jsonl")
 const ciGateResultsFile = path.join(execLogDir, "ci_gate_results.jsonl")
 const policyGateResultsFile = path.join(execLogDir, "policy_gate_results.jsonl")
@@ -195,6 +196,7 @@ function computeRouterStatsSnapshot() {
     fs.writeFileSync(out, JSON.stringify({ schema_version: "scc.router_stats.v1", t: new Date().toISOString(), tail, by_task_class: byTaskClass, by_model: byModel }, null, 2) + "\n", "utf8")
   } catch (e) {
     log.warn("router stats snapshot write failed", { err: log.errToObject(e) })
+    appendJsonlSafe(gatewayErrorsFile, { t: new Date().toISOString(), level: "warn", where: "router_stats_snapshot", err: log.errToObject(e) })
   }
   return routerStatsCache
 }
@@ -11263,11 +11265,101 @@ const server = http.createServer(async (req, res) => {
       return
     } catch (e) {
       log.warn("metrics render failed", { err: log.errToObject(e) })
+      appendJsonlSafe(gatewayErrorsFile, { t: new Date().toISOString(), level: "warn", where: "/metrics", err: log.errToObject(e) })
       res.statusCode = 500
       res.setHeader("Content-Type", "text/plain; charset=utf-8")
       res.end(`error: ${String(e?.message ?? e)}\n`)
       return
     }
+  }
+
+  // Rich health with dependency checks (file system + upstream reachability).
+  if (pathname === "/healthz" && method === "GET") {
+    const checks = []
+    const t0 = Date.now()
+
+    function checkFsWritableDir(name, dir) {
+      const started = Date.now()
+      try {
+        fs.mkdirSync(dir, { recursive: true })
+        const probe = path.join(dir, `.healthz_${process.pid}_${Math.random().toString(16).slice(2)}.tmp`)
+        fs.writeFileSync(probe, "ok\n", "utf8")
+        fs.unlinkSync(probe)
+        checks.push({ name, ok: true, ms: Date.now() - started })
+      } catch (e) {
+        checks.push({ name, ok: false, ms: Date.now() - started, error: String(e?.message ?? e) })
+      }
+    }
+
+    async function probeHttp(name, baseUrl) {
+      const started = Date.now()
+      const target = new URL("/health", baseUrl)
+      const timeoutMs = 1200
+      try {
+        const ok = await new Promise((resolve, reject) => {
+          const req2 = http.request(
+            target,
+            { method: "GET", timeout: timeoutMs },
+            (resp) => {
+              // Drain to allow socket reuse.
+              resp.on("data", () => {})
+              resp.on("end", () => resolve(resp.statusCode >= 200 && resp.statusCode < 300))
+            },
+          )
+          req2.on("timeout", () => req2.destroy(new Error("timeout")))
+          req2.on("error", reject)
+          req2.end()
+        })
+        checks.push({ name, ok: Boolean(ok), ms: Date.now() - started, url: String(target) })
+      } catch (e) {
+        checks.push({ name, ok: false, ms: Date.now() - started, url: String(target), error: String(e?.message ?? e) })
+      }
+    }
+
+    checkFsWritableDir("exec_log_dir_writable", execLogDir)
+    checkFsWritableDir("board_dir_writable", boardDir)
+    checkFsWritableDir("docs_root_writable", docsRoot)
+
+    await probeHttp("scc_upstream_health", sccUpstream)
+    await probeHttp("opencode_upstream_health", opencodeUpstream)
+
+    const ok = checks.every((c) => c.ok)
+    return sendJson(res, ok ? 200 : 503, { ok, t: new Date().toISOString(), ms: Date.now() - t0, checks })
+  }
+
+  // Debug state (safe summary; no secrets).
+  if (pathname === "/debug/state" && method === "GET") {
+    const board = listBoardTasks()
+    const byStatus = {}
+    for (const t of board) {
+      const st = String(t?.status ?? "unknown")
+      byStatus[st] = (byStatus[st] ?? 0) + 1
+    }
+    const running = runningCounts()
+    const repoHealth = loadRepoHealthState()
+    const breaker = loadCircuitBreakerState()
+    return sendJson(res, 200, {
+      ok: true,
+      t: new Date().toISOString(),
+      repoRoot: SCC_REPO_ROOT,
+      dirs: { execLogDir, boardDir, docsRoot },
+      board: { total: board.length, byStatus },
+      jobs: { total: jobs.size },
+      running,
+      factory: {
+        quarantine_active: quarantineActive(),
+        repo_unhealthy_active: repoUnhealthyActive(),
+        repo_health: repoHealth,
+        circuit_breaker: breaker,
+      },
+    })
+  }
+
+  // Recent gateway errors/warnings (JSONL tail).
+  if (pathname === "/debug/errors/recent" && method === "GET") {
+    const n = Math.max(1, Math.min(5000, Number(url.searchParams.get("n") ?? "200")))
+    const items = readJsonlTail(gatewayErrorsFile, Number.isFinite(n) ? n : 200)
+    return sendJson(res, 200, { ok: true, file: gatewayErrorsFile, n, items })
   }
 
   if (pathname === "/health") {

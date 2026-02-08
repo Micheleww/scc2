@@ -3,13 +3,18 @@ $ErrorActionPreference = "Stop"
 param(
   [Parameter(Mandatory = $true)][string]$Name,
   [Parameter(Mandatory = $false)][int]$Port = 0,
-  [Parameter(Mandatory = $false)][string]$Root = "C:\\scc\\tenants"
+  [Parameter(Mandatory = $false)][string]$Root = ""
 )
 
 function Write-FileUtf8([string]$path, [string]$text) {
   $dir = Split-Path -Parent $path
   if ($dir) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
   Set-Content -Encoding UTF8 -Path $path -Value $text
+}
+
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\\..\\..\\..")
+if (-not $Root) {
+  $Root = Join-Path $repoRoot "tenants"
 }
 
 $tenantRoot = Join-Path $Root $Name
@@ -59,7 +64,7 @@ CI_GATE_ENABLED=true
 CI_GATE_STRICT=true
 CI_GATE_ALLOW_ALL=false
 CI_GATE_TIMEOUT_MS=1200000
-CI_GATE_CWD=C:/scc
+CI_GATE_CWD=$repoRoot
 CI_ENFORCE_SINCE_MS=$now
 AUTO_DEFAULT_ALLOWED_TESTS=true
 
@@ -77,5 +82,5 @@ Write-FileUtf8 -path (Join-Path $tenantRoot "runtime.env") -text $runtimeEnv
 Write-Host "OK"
 Write-Host "  tenant: $tenantRoot"
 Write-Host "  port:   $Port"
-Write-Host "  next:   powershell -ExecutionPolicy Bypass -File C:\\scc\\scc-top\\tools\\oc-scc-local\\scripts\\tenant-start.ps1 -TenantRoot `"$tenantRoot`""
+Write-Host "  next:   powershell -ExecutionPolicy Bypass -File $(Join-Path $repoRoot 'scc-top\\tools\\oc-scc-local\\scripts\\tenant-start.ps1') -TenantRoot `"$tenantRoot`""
 

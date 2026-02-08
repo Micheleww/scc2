@@ -10,10 +10,18 @@ $Variant = $env:OPENCODE_VARIANT
 if (-not $Variant) { $Variant = "high" }
 
 $ExecRoot = $env:EXEC_ROOT
-if (-not $ExecRoot) { $ExecRoot = "C:\\scc" }
+if (-not $ExecRoot) {
+  $ocRoot = Split-Path -Parent $PSScriptRoot
+  $repoRoot = Split-Path -Parent $ocRoot
+  $ExecRoot = $repoRoot
+}
 
 $Bin = $env:OPENCODE_CLI_PATH
-if (-not $Bin) { $Bin = "C:\\scc\\OpenCode\\opencode-cli.exe" }
+if (-not $Bin) {
+  $ocRoot2 = Split-Path -Parent $PSScriptRoot
+  $repoRoot2 = Split-Path -Parent $ocRoot2
+  $Bin = Join-Path $repoRoot2 "OpenCode\\opencode-cli.exe"
+}
 
 $Name = $env:WORKER_NAME
 if (-not $Name) { $Name = "opencodecli-worker" }

@@ -2,7 +2,9 @@ $ErrorActionPreference = "Stop"
 
 $openCodeCli = $env:OPENCODE_CLI_PATH
 if (-not $openCodeCli) {
-  $openCodeCli = "C:\\scc\\OpenCode\\opencode-cli.exe"
+  $repo = Split-Path -Parent $PSScriptRoot
+  $repoRoot = Resolve-Path (Join-Path $repo "..\\..\\..")
+  $openCodeCli = Join-Path $repoRoot "OpenCode\\opencode-cli.exe"
 }
 if (-not (Test-Path $openCodeCli)) {
   throw "OpenCode CLI not found: $openCodeCli (set OPENCODE_CLI_PATH to override)"

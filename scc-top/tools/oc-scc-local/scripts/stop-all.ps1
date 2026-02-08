@@ -21,7 +21,11 @@ Stop-ListenersOnPort 18790
 
 Write-Host "== Stop SCC (Docker) =="
 $repo = $env:SCC_REPO
-if (-not $repo) { $repo = "C:\\scc\\scc-top" }
+if (-not $repo) {
+  $pkg = Split-Path -Parent $PSScriptRoot
+  $repoRoot = Resolve-Path (Join-Path $pkg "..\\..\\..")
+  $repo = Join-Path $repoRoot "scc-top"
+}
 $compose = Join-Path $repo "docker-compose.scc.yml"
 if (Test-Path $compose) {
   Push-Location $repo

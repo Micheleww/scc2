@@ -13,7 +13,11 @@ if (-not $CodexBin) {
 }
 
 $ExecRoot = $env:EXEC_ROOT
-if (-not $ExecRoot) { $ExecRoot = "C:\\scc" }
+if (-not $ExecRoot) {
+  $ocRoot = Split-Path -Parent $PSScriptRoot
+  $repoRoot = Split-Path -Parent $ocRoot
+  $ExecRoot = $repoRoot
+}
 
 $Name = $env:WORKER_NAME
 if (-not $Name) { $Name = "codex-worker" }
@@ -22,8 +26,13 @@ $IdleExitSeconds = if ($env:WORKER_IDLE_EXIT_SECONDS) { [int]$env:WORKER_IDLE_EX
 $idleSince = $null
 $StallSeconds = if ($env:WORKER_STALL_SECONDS) { [int]$env:WORKER_STALL_SECONDS } else { 240 }
 
-try { New-Item -ItemType Directory -Force -Path "C:\\scc\\artifacts\\executor_logs\\workers" | Out-Null } catch {}
-$WorkerLogFile = Join-Path "C:\\scc\\artifacts\\executor_logs\\workers" ($Name + ".log")
+$ocRoot2 = Split-Path -Parent $PSScriptRoot
+$repoRoot2 = Split-Path -Parent $ocRoot2
+$execLogDir2 = $env:EXEC_LOG_DIR
+if (-not $execLogDir2) { $execLogDir2 = Join-Path $repoRoot2 "artifacts\\executor_logs" }
+$workersDir = Join-Path $execLogDir2 "workers"
+try { New-Item -ItemType Directory -Force -Path $workersDir | Out-Null } catch {}
+$WorkerLogFile = Join-Path $workersDir ($Name + ".log")
 function Log-Worker([string]$msg) {
   try {
     $line = ("[{0}] {1}" -f (Get-Date).ToString("o"), $msg)

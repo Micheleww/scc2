@@ -7,7 +7,11 @@ $ModelDefault = $env:CODEX_MODEL
 if (-not $ModelDefault) { $ModelDefault = "gpt-5.1-codex-max" }
 
 $ExecRoot = $env:EXEC_ROOT
-if (-not $ExecRoot) { $ExecRoot = "C:\\scc\\opencode-dev" }
+if (-not $ExecRoot) {
+  $pkg = Split-Path -Parent $PSScriptRoot
+  $repoRoot = Resolve-Path (Join-Path $pkg "..\\..\\..")
+  $ExecRoot = Join-Path $repoRoot "opencode-dev"
+}
 
 $Name = $env:WORKER_NAME
 if (-not $Name) { $Name = "codex-worker" }

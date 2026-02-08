@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Continue"
 
-$LogDir = "C:\\scc\\artifacts\\executor_logs"
+$Repo = Split-Path -Parent $PSScriptRoot
+$RepoRoot = Resolve-Path (Join-Path $Repo "..\\..\\..")
+$LogDir = if ($env:EXEC_LOG_DIR) { $env:EXEC_LOG_DIR } else { (Join-Path $RepoRoot "artifacts\\executor_logs") }
 $GatewayPid = Join-Path $LogDir "gateway.pid"
 $WorkersPid = Join-Path $LogDir "ensure-workers.pid"
 

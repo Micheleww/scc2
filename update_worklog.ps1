@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $base = "http://127.0.0.1:18788"
-$logPath = "C:\\scc\\docs\\WORKLOG.md"
+$repoRoot = Split-Path -Parent $PSCommandPath
+$logPath = Join-Path $repoRoot "docs\\WORKLOG.md"
 
 function Get-Json($url) {
   (Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 $url).Content | ConvertFrom-Json

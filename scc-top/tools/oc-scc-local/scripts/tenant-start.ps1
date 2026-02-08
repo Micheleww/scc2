@@ -39,7 +39,7 @@ $gatewayErr = Join-Path $logDir "gateway.err.log"
 $workersOut = Join-Path $logDir "ensure-workers.out.log"
 $workersErr = Join-Path $logDir "ensure-workers.err.log"
 
-$repo = "C:\\scc\\scc-top\\tools\\oc-scc-local"
+$repo = Split-Path -Parent $PSScriptRoot
 
 Push-Location $repo
 try {

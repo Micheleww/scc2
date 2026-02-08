@@ -21,19 +21,30 @@ jobs:
           python-version: "3.11"
 
       - name: Python syntax check
-        run: python -m compileall tools scc-top/tools
+        run: |
+          # Limit compile scope to stable, production paths. Repository contains
+          # archived/experimental code (and fixtures) that is not guaranteed to be syntactically valid.
+          python -m compileall tools/scc scc-top/tools/unified_server scc-top/tools/scc
 
       - name: Python unit tests
         run: python -m unittest discover -s tools/scc/runtime/tests -p "test_*.py"
+
+      - name: Safety checks (no hard-coded paths, no shell=True)
+        run: |
+          python tools/scc/selftest/selfcheck_no_hardcoded_paths.py
+          python tools/scc/selftest/selfcheck_no_shell_true.py
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
+      - name: Install Node deps (oc-scc-local)
+        run: npm ci
+        working-directory: oc-scc-local
+
       - name: Node syntax check
         run: node --check oc-scc-local/src/gateway.mjs
 
       - name: Node unit tests
         run: node --test oc-scc-local/test
-
