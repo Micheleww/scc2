@@ -1633,7 +1633,7 @@ function updateInstinctArtifacts() {
     // ignore
   }
   try {
-    fs.writeFileSync(instinctSchemasFile, renderInstinctSchemasYaml() + "\\n", "utf8")
+    fs.writeFileSync(instinctSchemasFile, renderInstinctSchemasYaml() + "\n", "utf8")
   } catch {
     // ignore
   }
