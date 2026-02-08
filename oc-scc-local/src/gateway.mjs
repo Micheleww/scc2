@@ -14,6 +14,8 @@ import { getConfig } from "./lib/config.mjs"
 import { readJson, writeJsonAtomic, updateJsonLocked } from "./lib/state_store.mjs"
 import { loadJobsState, saveJobsState } from "./lib/jobs_store.mjs"
 import { hasShellMetacharacters, parseCmdline } from "./lib/cmdline.mjs"
+import { loadCircuitBreakerState as loadCircuitBreakerStateImpl, saveCircuitBreakerState as saveCircuitBreakerStateImpl, quarantineActive as quarantineActiveImpl } from "./lib/circuit_breaker_store.mjs"
+import { loadRepoHealthState as loadRepoHealthStateImpl, saveRepoHealthState as saveRepoHealthStateImpl, repoUnhealthyActive as repoUnhealthyActiveImpl } from "./lib/repo_health_store.mjs"
 import {
   BOARD_LANES,
   BOARD_STATUS,
@@ -2611,39 +2613,17 @@ function appendIsolation(rec) {
 }
 
 function loadCircuitBreakerState() {
-  try {
-    if (!fs.existsSync(circuitBreakerStateFile)) {
-      return { schema_version: "scc.circuit_breaker_state.v1", updated_at: new Date().toISOString(), breakers: {}, quarantine_until: 0 }
-    }
-    const raw = fs.readFileSync(circuitBreakerStateFile, "utf8")
-    const parsed = JSON.parse(raw.replace(/^\uFEFF/, ""))
-    if (!parsed || typeof parsed !== "object") throw new Error("invalid state")
-    return {
-      schema_version: "scc.circuit_breaker_state.v1",
-      updated_at: parsed.updated_at ?? new Date().toISOString(),
-      breakers: parsed.breakers && typeof parsed.breakers === "object" ? parsed.breakers : {},
-      quarantine_until: Number(parsed.quarantine_until ?? 0) || 0,
-      quarantine_reason: parsed.quarantine_reason ?? null,
-      quarantine_breaker: parsed.quarantine_breaker ?? null,
-    }
-  } catch {
-    return { schema_version: "scc.circuit_breaker_state.v1", updated_at: new Date().toISOString(), breakers: {}, quarantine_until: 0 }
-  }
+  return loadCircuitBreakerStateImpl({ file: circuitBreakerStateFile })
 }
 
 function saveCircuitBreakerState(state) {
-  try {
-    updateJsonLocked(circuitBreakerStateFile, {}, () => state, { lockTimeoutMs: 6000 })
-  } catch (e) {
-    if (cfg.strictWrites) throw e
-  }
+  return saveCircuitBreakerStateImpl({ file: circuitBreakerStateFile, state, strictWrites: cfg.strictWrites })
 }
 
 let circuitBreakerState = loadCircuitBreakerState()
 
 function quarantineActive() {
-  const until = Number(circuitBreakerState?.quarantine_until ?? 0)
-  return Number.isFinite(until) && until > 0 && Date.now() < until
+  return quarantineActiveImpl(circuitBreakerState, Date.now())
 }
 
 const repoUnhealthyWindowMs = Number(process.env.REPO_UNHEALTHY_WINDOW_MS ?? "1800000") // 30 min
@@ -2651,40 +2631,17 @@ const repoUnhealthyFailThreshold = Number(process.env.REPO_UNHEALTHY_FAIL_THRESH
 const repoUnhealthyCooldownMs = Number(process.env.REPO_UNHEALTHY_COOLDOWN_MS ?? "900000") // 15 min
 
 function loadRepoHealthState() {
-  const fallback = {
-    schema_version: "scc.repo_health_state.v1",
-    updated_at: new Date().toISOString(),
-    failures: [],
-    unhealthy_until: 0,
-    unhealthy_reason: null,
-    unhealthy_task_created_at: null,
-  }
-  const parsed = readJson(repoHealthStateFile, null)
-  if (!parsed || typeof parsed !== "object") return fallback
-  const failures = Array.isArray(parsed?.failures) ? parsed.failures.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0) : []
-  return {
-    schema_version: "scc.repo_health_state.v1",
-    updated_at: parsed?.updated_at ?? new Date().toISOString(),
-    failures,
-    unhealthy_until: Number(parsed?.unhealthy_until ?? 0) || 0,
-    unhealthy_reason: parsed?.unhealthy_reason ?? null,
-    unhealthy_task_created_at: parsed?.unhealthy_task_created_at ?? null,
-  }
+  return loadRepoHealthStateImpl({ file: repoHealthStateFile })
 }
 
 function saveRepoHealthState(state) {
-  try {
-    updateJsonLocked(repoHealthStateFile, {}, () => state, { lockTimeoutMs: 6000 })
-  } catch (e) {
-    if (cfg.strictWrites) throw e
-  }
+  return saveRepoHealthStateImpl({ file: repoHealthStateFile, state, strictWrites: cfg.strictWrites })
 }
 
 let repoHealthState = loadRepoHealthState()
 
 function repoUnhealthyActive() {
-  const until = Number(repoHealthState?.unhealthy_until ?? 0)
-  return Number.isFinite(until) && until > 0 && Date.now() < until
+  return repoUnhealthyActiveImpl(repoHealthState, Date.now())
 }
 
 // ---------------- Playbooks (L8 MVP) ----------------
