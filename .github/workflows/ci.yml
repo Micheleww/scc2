@@ -29,6 +29,9 @@ jobs:
       - name: Python unit tests
         run: python -m unittest discover -s tools/scc/runtime/tests -p "test_*.py"
 
+      - name: Contract examples
+        run: python tools/scc/selftest/validate_contract_examples.py
+
       - name: Safety checks (no hard-coded paths, no shell=True)
         run: |
           python tools/scc/selftest/selfcheck_no_hardcoded_paths.py
