@@ -9,6 +9,8 @@ import httpProxy from "http-proxy"
 import Ajv from "ajv"
 import addFormats from "ajv-formats"
 import { toYaml } from "./lib/yaml.mjs"
+import { readJsonlTail, countJsonlLines } from "./lib/jsonl_tail.mjs"
+import { getConfig } from "./lib/config.mjs"
 import { createPromptRegistry } from "./prompt_registry.mjs"
 import { loadRoleSystem, normalizeRoleName, roleRequiresRealTestsFromPolicy, validateRoleSkills } from "./role_system.mjs"
 import { buildMapV1, loadMapV1, queryMapV1, writeMapV1Outputs } from "./map_v1.mjs"
@@ -20,17 +22,18 @@ import { computeVerdictV1 } from "./verifier_judge_v1.mjs"
 const gatewayPort = Number(process.env.GATEWAY_PORT ?? "18788")
 const sccUpstream = new URL(process.env.SCC_UPSTREAM ?? "http://127.0.0.1:18789")
 const opencodeUpstream = new URL(process.env.OPENCODE_UPSTREAM ?? "http://127.0.0.1:18790")
-const codexBin = process.env.CODEX_BIN ?? process.env.CODEXCLI_BIN ?? "codex"
+const cfg = getConfig()
+const codexBin = cfg.codexBin
 // Default to the strongest Codex model we can actually run (validated via codex exec).
 let codexModelDefault = process.env.CODEX_MODEL ?? "gpt-5.3-codex"
 const codexModelForced = (process.env.FORCE_CODEX_MODEL ?? "").trim() || null
-const occliBin = process.env.OPENCODE_BIN ?? "C:/scc/OpenCode/opencode-cli.exe"
+const occliBin = cfg.occliBin
 let occliModelDefault = process.env.OPENCODE_MODEL ?? "opencode/kimi-k2.5-free"
 const occliVariantDefault = process.env.OPENCODE_VARIANT ?? "high"
 const codexMax = Number(process.env.EXEC_CONCURRENCY_CODEX ?? "4")
 const occliMax = Number(process.env.EXEC_CONCURRENCY_OPENCODE ?? "6")
-const execRoot = process.env.EXEC_ROOT ?? "C:/scc/opencode-dev"
-const execLogDir = process.env.EXEC_LOG_DIR ?? "C:/scc/artifacts/executor_logs"
+const execRoot = cfg.execRoot
+const execLogDir = cfg.execLogDir
 const execLogJobs = path.join(execLogDir, "jobs.jsonl")
 const execLogFailures = path.join(execLogDir, "failures.jsonl")
 const execLogHeartbeat = path.join(execLogDir, "heartbeat.jsonl")
@@ -69,16 +72,16 @@ const execLeaderLog = path.join(execLogDir, "leader.jsonl")
 const isolationFile = path.join(execLogDir, "isolation.jsonl")
 const circuitBreakerStateFile = path.join(execLogDir, "circuit_breakers_state.json")
 const repoHealthStateFile = path.join(execLogDir, "repo_health_state.json")
-const docsRoot = process.env.DOCS_ROOT ?? "C:/scc/docs"
-const boardDir = process.env.BOARD_DIR ?? "C:/scc/artifacts/taskboard"
+const docsRoot = cfg.docsRoot
+const boardDir = cfg.boardDir
 const boardFile = path.join(boardDir, "tasks.json")
 const missionFile = path.join(boardDir, "mission.json")
-const runtimeEnvFile = process.env.RUNTIME_ENV_FILE ?? "C:/scc/oc-scc-local/config/runtime.env"
-const promptRegistryRoot = process.env.PROMPT_REGISTRY_ROOT ?? "C:/scc/oc-scc-local/prompts"
+const runtimeEnvFile = process.env.RUNTIME_ENV_FILE ?? path.join(cfg.repoRoot, "oc-scc-local", "config", "runtime.env")
+const promptRegistryRoot = process.env.PROMPT_REGISTRY_ROOT ?? path.join(cfg.repoRoot, "oc-scc-local", "prompts")
 const promptRegistryFile = process.env.PROMPT_REGISTRY_FILE ?? path.join(promptRegistryRoot, "registry.json")
 const promptRegistry = createPromptRegistry({ registryFile: promptRegistryFile, rootDir: promptRegistryRoot })
 const allowedRootsRaw =
-  process.env.EXEC_ALLOWED_ROOTS ?? `${execRoot};C:/scc/scc-top;${docsRoot};${execLogDir};${boardDir}`
+  process.env.EXEC_ALLOWED_ROOTS ?? `${execRoot};${path.join(cfg.repoRoot, "scc-top")};${docsRoot};${execLogDir};${boardDir}`
 const allowedRoots = allowedRootsRaw
   .split(/[;,]/g)
   .map((x) => x.trim())
@@ -167,7 +170,7 @@ function computeRouterStatsSnapshot() {
   const now = Date.now()
   routerStatsCache = { computedAt: now, by_task_class: byTaskClass, by_model: byModel }
   try {
-    const out = path.join(SCC_REPO_ROOT ?? "C:/scc", "metrics", "router_stats_latest.json")
+    const out = path.join(SCC_REPO_ROOT, "metrics", "router_stats_latest.json")
     fs.mkdirSync(path.dirname(out), { recursive: true })
     fs.writeFileSync(out, JSON.stringify({ schema_version: "scc.router_stats.v1", t: new Date().toISOString(), tail, by_task_class: byTaskClass, by_model: byModel }, null, 2) + "\n", "utf8")
   } catch {
@@ -499,7 +502,7 @@ function isSccPath(pathname) {
   return SCC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
 
-const sccDevUiDir = process.env.SCCDEV_UI_DIR ?? "C:/scc/oc-scc-local/ui/sccdev"
+const sccDevUiDir = process.env.SCCDEV_UI_DIR ?? path.join(cfg.repoRoot, "oc-scc-local", "ui", "sccdev")
 
 function contentTypeFor(file) {
   const ext = path.extname(String(file ?? "")).toLowerCase()
@@ -672,41 +675,6 @@ function getCiHandbookText() {
     ? handbook.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")
     : ""
   return `CI_HANDBOOK: ${handbook.title ?? "CI guide"}\n${steps}`
-}
-
-function readJsonlTail(file, limit) {
-  try {
-    if (!fs.existsSync(file)) return []
-    const raw = fs.readFileSync(file, "utf8")
-    const lines = raw
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0)
-    const tail = Number.isFinite(limit) && limit > 0 ? lines.slice(-limit) : lines
-    return tail
-      .map((l) => {
-        try {
-          return JSON.parse(l)
-        } catch {
-          return null
-        }
-      })
-      .filter(Boolean)
-  } catch {
-    return []
-  }
-}
-
-function countJsonlLines(file) {
-  try {
-    if (!fs.existsSync(file)) return 0
-    const raw = fs.readFileSync(file, "utf8")
-    if (!raw) return 0
-    // Best-effort: count non-empty lines.
-    return raw.split("\n").filter((l) => String(l).trim().length > 0).length
-  } catch {
-    return 0
-  }
 }
 
 function getLastCiGateSummary(taskId) {
@@ -1078,7 +1046,7 @@ function pickAllowedTestsForTask(task) {
       const degradation = computeDegradationState()
       const overrideTier = degradation?.action?.verification_tier ? String(degradation.action.verification_tier) : null
       if (overrideTier && ["smoke", "regression"].includes(overrideTier)) tier = overrideTier
-      const evalPath = path.join(SCC_REPO_ROOT ?? "C:/scc", "eval", "eval_manifest.json")
+      const evalPath = path.join(SCC_REPO_ROOT, "eval", "eval_manifest.json")
       if (fs.existsSync(evalPath)) {
         const raw = fs.readFileSync(evalPath, "utf8")
         const man = JSON.parse(raw.replace(/^\uFEFF/, ""))
@@ -1144,7 +1112,7 @@ function appendStateEvent(value) {
     appendJsonl(stateEventsFile, value)
     const taskId = value && typeof value === "object" ? String(value.task_id ?? "").trim() : ""
     if (!taskId) return
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", taskId, "events.jsonl")
+    const file = path.join(SCC_REPO_ROOT, "artifacts", taskId, "events.jsonl")
     fs.mkdirSync(path.dirname(file), { recursive: true })
     appendJsonl(file, value)
   } catch {
@@ -1258,7 +1226,7 @@ async function runRadiusAuditReport(taskId) {
       "python",
       args,
       {
-        cwd: "C:/scc",
+        cwd: cfg.repoRoot,
         timeout: Math.max(60000, Math.min(10 * 60 * 1000, Number(radiusAuditHookTimeoutMs) || 180000)),
         maxBuffer: 10 * 1024 * 1024,
       },
@@ -1294,7 +1262,7 @@ async function runFiveWhysReport() {
       "python",
       args,
       {
-        cwd: "C:/scc",
+        cwd: cfg.repoRoot,
         timeout: Math.max(60000, Math.min(20 * 60 * 1000, Number(fiveWhysTimeoutMs) || 300000)),
         maxBuffer: 10 * 1024 * 1024,
       },
@@ -1320,7 +1288,7 @@ async function runSccPythonOp({ scriptRel, args = [], timeoutMs = 300000, maxBuf
       "python",
       argv,
       {
-        cwd: "C:/scc",
+        cwd: cfg.repoRoot,
         timeout: Math.max(10000, Math.min(60 * 60 * 1000, Number(timeoutMs) || 300000)),
         maxBuffer: Math.max(1, Math.min(64, Number(maxBufferMb) || 12)) * 1024 * 1024,
       },
@@ -2156,7 +2124,7 @@ const newBoardTaskId = () => crypto.randomUUID()
 // ---------------- Project taskboard (long-lived) ----------------
 const boardTasks = new Map()
 
-	const SCC_REPO_ROOT = process.env.SCC_REPO_ROOT ?? "C:/scc"
+	const SCC_REPO_ROOT = cfg.repoRoot
 	const defaultTaskRole = String(process.env.DEFAULT_TASK_ROLE ?? "engineer").trim().toLowerCase()
 	const roleSystemEnabled = String(process.env.ROLE_SYSTEM_ENABLED ?? "true").toLowerCase() !== "false"
  	const roleSystemStrict = String(process.env.ROLE_SYSTEM_STRICT ?? "true").toLowerCase() !== "false"
@@ -2248,7 +2216,7 @@ const ROLE_NAMES = roleSystem
     ]
 
 let STRICT_DESIGNER_MODEL = process.env.STRICT_DESIGNER_MODEL ?? "gpt-5.3-codex"
-const roleConfigFile = process.env.ROLE_CONFIG_FILE ?? "C:/scc/oc-scc-local/config/roles.json"
+const roleConfigFile = process.env.ROLE_CONFIG_FILE ?? path.join(cfg.repoRoot, "oc-scc-local", "config", "roles.json")
 const ledgerStallMinutes = Number(process.env.LEDGER_STALL_MINUTES ?? "15")
 
 function normalizeRole(v) {
@@ -2290,7 +2258,7 @@ function rootParentIdForTask(task) {
 
 function parentLedgerPaths(parentId) {
   const pid = String(parentId ?? "").trim()
-  const root = SCC_REPO_ROOT ?? "C:/scc"
+  const root = SCC_REPO_ROOT
   return {
     task_ledger_json: path.join(root, "artifacts", pid, "task_ledger.json"),
     progress_ledger_json: path.join(root, "artifacts", pid, "progress_ledger.json"),
@@ -2809,7 +2777,7 @@ let playbooksCache = { loadedAt: 0, patterns: [], playbooks: [] }
 function loadPlaybooksCache({ maxAgeMs = 120000 } = {}) {
   const now = Date.now()
   if (playbooksCache.loadedAt && now - playbooksCache.loadedAt < maxAgeMs) return playbooksCache
-  const root = SCC_REPO_ROOT ?? "C:/scc"
+  const root = SCC_REPO_ROOT
   const patternsDir = path.join(root, "patterns")
   const playbooksDir = path.join(root, "playbooks")
   const overridesPath = path.join(playbooksDir, "overrides.json")
@@ -3164,7 +3132,7 @@ function applyCircuitBreakersFromEvent(stateEvent) {
 }
 
 function dlqFilePath() {
-  const root = SCC_REPO_ROOT ?? "C:/scc"
+  const root = SCC_REPO_ROOT
   return path.join(root, "artifacts", "dlq", "dlq.jsonl")
 }
 
@@ -3204,7 +3172,7 @@ function openDlqForTask({ task, reason_code, summary, missing_inputs, last_event
 }
 
 function retryPlanPath(taskId) {
-  const root = SCC_REPO_ROOT ?? "C:/scc"
+  const root = SCC_REPO_ROOT
   return path.join(root, "artifacts", String(taskId), "retry_plan.json")
 }
 
@@ -6339,9 +6307,9 @@ function writeSplitArtifacts({ taskId, jobId, stdout, arr, check }) {
   }
   return {
     ok: true,
-    dir: path.relative(SCC_REPO_ROOT ?? "C:/scc", base).replaceAll("\\", "/"),
-    split_json: path.relative(SCC_REPO_ROOT ?? "C:/scc", path.join(base, "split.json")).replaceAll("\\", "/"),
-    split_check_json: path.relative(SCC_REPO_ROOT ?? "C:/scc", path.join(base, "split_check.json")).replaceAll("\\", "/"),
+    dir: path.relative(SCC_REPO_ROOT, base).replaceAll("\\", "/"),
+    split_json: path.relative(SCC_REPO_ROOT, path.join(base, "split.json")).replaceAll("\\", "/"),
+    split_check_json: path.relative(SCC_REPO_ROOT, path.join(base, "split_check.json")).replaceAll("\\", "/"),
   }
 }
 
@@ -6782,7 +6750,7 @@ function capturePreSnapshot({ boardTask, pins, maxFiles = 64, maxBytes = 1024 * 
           }
         }
         if (full.length) {
-          const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", String(boardTask.id), "pre_snapshot_full.json")
+          const file = path.join(SCC_REPO_ROOT, "artifacts", String(boardTask.id), "pre_snapshot_full.json")
           fs.mkdirSync(path.dirname(file), { recursive: true })
           fs.writeFileSync(
             file,
@@ -6842,7 +6810,7 @@ function diffSnapshot(pre, { maxFiles = 80, maxBytes = 1024 * 1024 } = {}) {
 
 function readPreSnapshotFull(taskId) {
   try {
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", String(taskId), "pre_snapshot_full.json")
+    const file = path.join(SCC_REPO_ROOT, "artifacts", String(taskId), "pre_snapshot_full.json")
     if (!fs.existsSync(file)) return null
     const raw = fs.readFileSync(file, "utf8")
     const obj = JSON.parse(raw)
@@ -6930,7 +6898,7 @@ function applyAutoRollbackOnCiFailed({ boardTask, job, snapshotDiff, patchStats,
       applied,
       ci_gate: ciGate ?? null,
     }
-    const out = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", taskId, "rollback_report.json")
+    const out = path.join(SCC_REPO_ROOT, "artifacts", taskId, "rollback_report.json")
     fs.mkdirSync(path.dirname(out), { recursive: true })
     fs.writeFileSync(out, JSON.stringify(report, null, 2) + "\n", "utf8")
 
@@ -7790,7 +7758,7 @@ async function runGatewayAllowedTests({ boardTask, job }) {
   const taskId = String(boardTask.id ?? job.boardTaskId ?? "")
   try {
     if (taskId) {
-      const evDir = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", taskId, "evidence")
+      const evDir = path.join(SCC_REPO_ROOT, "artifacts", taskId, "evidence")
       fs.mkdirSync(evDir, { recursive: true })
       fs.writeFileSync(path.join(evDir, "allowed_tests.json"), JSON.stringify({ schema_version: "scc.allowed_tests_run.v1", task_id: taskId, ok, results }, null, 2) + "\n", "utf8")
     }
@@ -7813,7 +7781,7 @@ async function runCiGateForTask({ job, boardTask }) {
   // CI gate is a system-level invariant check (schema/scope/hygiene/ssot/doclink/etc).
   // It must NOT depend on task.allowedTests (which are project-level tests).
   const submitPathRel = `artifacts/${boardTask.id}/submit.json`
-  const gateScript = path.join(SCC_REPO_ROOT ?? "C:/scc", "tools", "scc", "gates", "run_ci_gates.py")
+  const gateScript = path.join(SCC_REPO_ROOT, "tools", "scc", "gates", "run_ci_gates.py")
   if (!fs.existsSync(gateScript)) return { ran: false, skipped: "missing_gate_script", required: true }
   const strictFlag = ciGatesStrict ? "--strict " : ""
   const cmd = `python tools/scc/gates/run_ci_gates.py ${strictFlag}--submit ${submitPathRel}`
@@ -7830,7 +7798,7 @@ function writeVerdictArtifact({ taskId, verdict }) {
       appendJsonl(execLeaderLog, { t: new Date().toISOString(), type: "verdict_invalid", task_id: tid, details: check })
       return { ok: false, error: check.reason ?? "invalid_verdict_schema", details: check }
     }
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", tid, "verdict.json")
+    const file = path.join(SCC_REPO_ROOT, "artifacts", tid, "verdict.json")
     fs.mkdirSync(path.dirname(file), { recursive: true })
     fs.writeFileSync(file, JSON.stringify(verdict, null, 2) + "\n", "utf8")
     return { ok: true, file }
@@ -7844,7 +7812,7 @@ function writeTraceArtifact({ taskId, job, boardTask }) {
   try {
     const tid = String(taskId ?? "").trim()
     if (!tid) return { ok: false, error: "missing_task_id" }
-    const root = SCC_REPO_ROOT ?? "C:/scc"
+    const root = SCC_REPO_ROOT
     const now = new Date().toISOString()
 
     const factoryPolicySha = sha256HexOfFile(path.join(root, "factory_policy.json"))
@@ -8164,7 +8132,7 @@ function readCiGateFailures({ taskId }) {
   const tid = String(taskId ?? "").trim()
   if (!tid) return { ok: false, error: "missing_task_id", failures: [] }
   const rel = `artifacts/${tid}/ci_gate_results.jsonl`
-  const file = path.join(SCC_REPO_ROOT ?? "C:/scc", rel)
+  const file = path.join(SCC_REPO_ROOT, rel)
   const rows = readJsonlTail(file, 600).filter(Boolean)
   const failures = []
   for (const r of rows) {
@@ -8258,7 +8226,7 @@ function maybeCreateCiGateFixupTasks({ boardTask, job, ciGate }) {
         "Goal: CI gate failed due to missing/invalid events.jsonl for this task. Backfill artifacts/<task_id>/events.jsonl deterministically, then re-run strict CI gate.",
         "",
         "Required:",
-        `- Run: python tools/scc/ops/backfill_events_v1.py --repo-root C:/scc --task-id ${taskId}`,
+        `- Run: python tools/scc/ops/backfill_events_v1.py --repo-root ${cfg.repoRoot.replaceAll("\\\\", "/")} --task-id ${taskId}`,
         `- Verify: ${gateCmdStrict}`,
         "",
         "CI gate failures (excerpt):",
@@ -8590,7 +8558,7 @@ let factoryPolicyCache = null
 let factoryPolicyMtimeMs = 0
 function getFactoryPolicy() {
   try {
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "factory_policy.json")
+    const file = path.join(SCC_REPO_ROOT, "factory_policy.json")
     const st = fs.statSync(file)
     const m = Number(st.mtimeMs ?? 0)
     if (!factoryPolicyCache || (Number.isFinite(m) && m > factoryPolicyMtimeMs)) {
@@ -8611,7 +8579,7 @@ let mapVersionCache = null
 let mapVersionMtimeMs = 0
 function getMapVersion() {
   try {
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "map", "version.json")
+    const file = path.join(SCC_REPO_ROOT, "map", "version.json")
     const st = fs.statSync(file)
     const m = Number(st.mtimeMs ?? 0)
     if (!mapVersionCache || (Number.isFinite(m) && m > mapVersionMtimeMs)) {
@@ -8638,7 +8606,7 @@ function currentMapRef() {
 
 function loadEvalManifest() {
   try {
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "eval", "eval_manifest.json")
+    const file = path.join(SCC_REPO_ROOT, "eval", "eval_manifest.json")
     if (!fs.existsSync(file)) return null
     const raw = fs.readFileSync(file, "utf8")
     const parsed = JSON.parse(raw.replace(/^\uFEFF/, ""))
@@ -8741,7 +8709,7 @@ function syncSsotRegistryFromMap({ mapObj, versionObj } = {}) {
       },
       notes: "Auto-synced from Map v1 (coverage.roots + oc-scc-local entry points + contracts/*.schema.json).",
     }
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "docs", "SSOT", "registry.json")
+    const file = path.join(SCC_REPO_ROOT, "docs", "SSOT", "registry.json")
     fs.mkdirSync(path.dirname(file), { recursive: true })
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + "\n", "utf8")
     return { ok: true, file, stats: { modules: out.facts.modules.length, entry_points: out.facts.entry_points.length, contracts: out.facts.contracts.length } }
@@ -9124,7 +9092,7 @@ async function schedule() {
 function readPolicyGateErrors(policyGate) {
   const rel = policyGate?.resultsPath ? String(policyGate.resultsPath) : ""
   if (!rel) return []
-  const file = path.join(SCC_REPO_ROOT ?? "C:/scc", rel)
+  const file = path.join(SCC_REPO_ROOT, rel)
   const rows = readJsonlTail(file, 400).filter(Boolean)
   const out = []
   for (const r of rows) {
@@ -9580,7 +9548,7 @@ async function runJob(job) {
       const verdict = computeVerdictV1({ taskId: boardTask.id, submit: done.submit, job: done, ciGate, policyGate, hygiene })
       done.verdict = verdict
       const written = writeVerdictArtifact({ taskId: boardTask.id, verdict })
-      done.verdict_path = written.ok ? path.relative(SCC_REPO_ROOT ?? "C:/scc", written.file).replaceAll("\\", "/") : null
+      done.verdict_path = written.ok ? path.relative(SCC_REPO_ROOT, written.file).replaceAll("\\", "/") : null
 
       try {
         if (written?.ok) writeTraceArtifact({ taskId: boardTask.id, job: done, boardTask })
@@ -10192,7 +10160,7 @@ const ciGatesStrict = String(process.env.CI_GATES_STRICT ?? process.env.CI_GATE_
 const ciGateStrict = ciGatesStrict
 const ciGateAllowAll = String(process.env.CI_GATE_ALLOW_ALL ?? "false").toLowerCase() === "true"
 const ciGateTimeoutMs = Number(process.env.CI_GATE_TIMEOUT_MS ?? "1200000")
-const ciGateCwd = process.env.CI_GATE_CWD ?? "C:/scc"
+const ciGateCwd = process.env.CI_GATE_CWD ?? cfg.repoRoot
 const ciEnforceSinceMs = Number(process.env.CI_ENFORCE_SINCE_MS ?? "0")
 const ciAntiforgerySinceMs = Number(process.env.CI_ANTIFORGERY_SINCE_MS ?? "0")
 const autoDefaultAllowedTests = String(process.env.AUTO_DEFAULT_ALLOWED_TESTS ?? "true").toLowerCase() !== "false"
@@ -10925,7 +10893,7 @@ function poolSnapshot() {
 
 function summarizeRouterStatsForUi() {
   try {
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "metrics", "router_stats_latest.json")
+    const file = path.join(SCC_REPO_ROOT, "metrics", "router_stats_latest.json")
     let obj = null
     if (fs.existsSync(file)) {
       obj = JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""))
@@ -11078,7 +11046,7 @@ const server = http.createServer(async (req, res) => {
       ok: true,
       schema_version: "scc.sccdev_snapshot.v1",
       t: new Date().toISOString(),
-      repoRoot: SCC_REPO_ROOT ?? "C:/scc",
+      repoRoot: SCC_REPO_ROOT,
       board: { counts: boardCounts(boardAll), tasks },
       executor: {
         jobs: { byStatus, items: jobArr },
@@ -11126,12 +11094,12 @@ const server = http.createServer(async (req, res) => {
         if (v === "auto") return wantSqlite
         return v === "1" || v === "true" || v === "yes" || v === "on"
       })()
-      const sqlitePath = path.join(SCC_REPO_ROOT ?? "C:/scc", "map", "map.sqlite")
+        const sqlitePath = path.join(SCC_REPO_ROOT, "map", "map.sqlite")
       if (wantSqlite && strict && !fs.existsSync(sqlitePath)) {
         return sendJson(res, 400, { ok: false, error: "missing_sqlite", db: "map/map.sqlite", hint: "Rebuild map with sqlite (POST /map/v1/build or npm --prefix oc-scc-local run map:build)" })
       }
       if (wantSqlite && fs.existsSync(sqlitePath)) {
-        const root = SCC_REPO_ROOT ?? "C:/scc"
+        const root = SCC_REPO_ROOT
         const stdout = execFileSync(
           "python",
           ["tools/scc/map/map_query_sqlite_v1.py", "--repo-root", root, "--db", "map/map.sqlite", "--q", String(q), "--limit", String(Number.isFinite(limit) ? limit : 20)],
@@ -11596,8 +11564,8 @@ const server = http.createServer(async (req, res) => {
       runtime,
       live,
       restartHint: {
-        daemonStart: "C:/scc/oc-scc-local/scripts/daemon-start.ps1",
-        daemonStop: "C:/scc/oc-scc-local/scripts/daemon-stop.ps1",
+        daemonStart: path.join(cfg.repoRoot, "oc-scc-local", "scripts", "daemon-start.ps1").replaceAll("\\\\", "/"),
+        daemonStop: path.join(cfg.repoRoot, "oc-scc-local", "scripts", "daemon-stop.ps1").replaceAll("\\\\", "/"),
         note: "Changes in runtime.env apply on next daemon restart.",
       },
     })
@@ -12215,7 +12183,7 @@ const server = http.createServer(async (req, res) => {
   if (pathname === "/verdict" && method === "GET") {
     const taskId = String(url.searchParams.get("task_id") ?? "").trim()
     if (!taskId) return sendJson(res, 400, { error: "missing_task_id" })
-    const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", taskId, "verdict.json")
+    const file = path.join(SCC_REPO_ROOT, "artifacts", taskId, "verdict.json")
     if (!fs.existsSync(file)) return sendJson(res, 404, { error: "verdict_missing", file })
     try {
       const raw = fs.readFileSync(file, "utf8")
@@ -13364,7 +13332,7 @@ const server = http.createServer(async (req, res) => {
     const lastJob = t?.lastJobId ? jobs.get(String(t.lastJobId)) ?? null : null
     let verdict = null
     try {
-      const file = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", taskId, "verdict.json")
+      const file = path.join(SCC_REPO_ROOT, "artifacts", taskId, "verdict.json")
       if (fs.existsSync(file)) {
         const raw = fs.readFileSync(file, "utf8")
         verdict = JSON.parse(raw.replace(/^\uFEFF/, ""))
@@ -13397,7 +13365,7 @@ const server = http.createServer(async (req, res) => {
       timeoutMs: 180000,
     })
     try {
-      const evDir = path.join(SCC_REPO_ROOT ?? "C:/scc", "artifacts", taskId, "evidence")
+      const evDir = path.join(SCC_REPO_ROOT, "artifacts", taskId, "evidence")
       fs.mkdirSync(evDir, { recursive: true })
       fs.writeFileSync(
         path.join(evDir, "replay_smoke.json"),
