@@ -1,9 +1,0 @@
-{
-  "ssot_hash": "sha256:...fill...",
-  "assumptions": [
-    "All monetary values are stored in cents",
-    "Order lifecycle is immutable after PAID",
-    "Schema migrations are append-only"
-  ]
-}
-

@@ -566,6 +566,57 @@ L17 知识与本体层（基础层）
 - 更新path，oid保持不变
 - 追加oid_events记录
 
+### 17.2.5 Unit Registry（来自SSOT）
+
+**目标**: 定义 `primary_unit` 和 `tags[]` 的允许值
+
+**命名约定**:
+- Unit token格式: `<Stream>.<Unit>`
+- Stream: 单个大写字母
+- Unit: 大写，可选下划线
+
+**Streams（规范）**:
+| Stream | 含义 |
+|--------|------|
+| G | Goal & Intake（人工目标输入和摄入路由） |
+| R | Raw Capture（捕获原始来源+清单） |
+| N | Normalize（事件规范化、绑定、去重） |
+| D | Derive Tasks（从原始派生任务树） |
+| K | Contractize（合同+验收定义） |
+| X | Execute（分发+执行器集成） |
+| V | Verify（测试+裁决+质量门禁） |
+| P | Progress Review（定期进度审计） |
+| S | Synthesize & Publish（规范更新+分发） |
+| F | Feedback（反馈包->raw-b重新摄入） |
+| A | Agent Roles（路由/执行角色） |
+| C | Capability Catalog（能力清单+映射） |
+| W | Workspace（工作空间不变量/规范） |
+
+**规则**:
+- 每个对象必须有且仅有一个来自此注册表的 `primary_unit`
+- 对象可以有来自此注册表的 `tags[]`（多选）
+- 验证器必须失败如果引用的unit未注册
+- 更改此注册表需要changelog条目，应该很少发生
+
+### 17.2.6 Doc Registry（来自SSOT）
+
+**目标**: 定义SCC文档系统的"机器可读索引"入口
+
+**权威索引文件**:
+- `docs/ssot/registry.json`（别名：`docs/ssot/_registry.json`）
+
+**AI拼装上下文使用方式**:
+1. 固定先读: `docs/START_HERE.md`
+2. 再读顶层治理: `docs/ssot/02_architecture/SCC_TOP.md`
+3. 再读Docflow规则: `docs/ssot/01_conventions/DOCFLOW_SSOT__v0.1.0.md`
+4. 按 `_registry.json` 选择相关leaf docs（按EPIC/CAPABILITY/COMPONENT/JOB/TASK）
+5. 注入输入: `docs/INPUTS/...`
+6. 证据只从: `artifacts/...` / `evidence/...` 读取与引用
+
+**维护规则**:
+- `_registry.json` 只记录"权威路径"和"拼装顺序"，不复制长文内容
+- 任意新增规范/作业手册，必须放入 `docs/ssot/` 的对应分区并在 `_registry.json` 登记
+
 ---
 
 

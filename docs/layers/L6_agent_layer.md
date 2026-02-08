@@ -252,6 +252,28 @@ L6 Agent层
 | `CAP_CODEX_DELEGATION` | 通过`/executor/codex/run`分发并行CodexCLI父任务 |
 | `CAP_TASKCODE_GUARD` | 通过`tools/ci/skill_call_guard.py`验证TaskCode三元组 |
 
+### 6.2.6 角色详情（来自SSOT）
+
+**Executor（执行器）**:
+- **使命**: 在scope_allow内做最小必要改动，产出可验证证据
+- **非目标**: 不扩范围；不改入口；不碰未allowlisted文件
+- **输入**: Contract (task_id + scope_allow + acceptance)
+- **输出**: Workspace diff/patch, Evidence paths
+
+**Factory Manager（工厂经理）**:
+- **使命**: 排产与门禁：把Blueprint/Goal Brief编译为Epic/Capability队列与优先级
+- **非目标**: 不直接改代码；不直接在执行层跑修复
+- **输入**: Blueprint/ADR, Goal Brief, PROGRESS/metrics
+- **输出**: Epic/Capability Order, Dispatch plan
+
+**Auditor（审计员）**:
+- **使命**: 执行CI/selftest证据验证(exit_code==0)并记录gaps供跟进
+- **非目标**: 不修代码；不改合同（只报告问题与建议）
+
+**Verifier（验证器）**:
+- **使命**: 只执行acceptance，产出verdict（pass/fail + fail_class）与证据
+- **非目标**: 不改代码/文档（除了写报告/证据）
+
 ---
 
 

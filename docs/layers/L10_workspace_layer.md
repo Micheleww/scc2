@@ -234,6 +234,27 @@ L10 工作空间层
 - 每个合同必须声明 `project_id`
 - 分发必须从项目目录派生 `allowed_globs[]`，然后进一步按 `contract.scope_allow` 缩小
 
+### 10.2.6 Project Group（来自SSOT）
+
+**目标**: 定义SCC的"工作区(workspace) + 项目组(project group) + 项目(projects)"最小结构
+
+**Workspace身份**:
+- `workspace_id`: `scc-top`
+- `workspace_root`: `<REPO_ROOT>`
+
+**项目组**:
+- `project_group_id`: `scc-top-products`
+- 项目列表:
+  - `quantsys` — 量化金融（现有主工程）
+  - `yme` — YME连锁餐饮（产物项目）
+  - `math_modeling` — 数模竞赛（产物项目）
+
+**规范项目目录**:
+- 权威机器索引: `docs/ssot/02_architecture/project_catalog.json`
+- 每个合同必须声明其 `project_id`（来自catalog）
+- 每个执行器parent必须使用该项目allowlist roots生成 `allowed_globs[]`
+- 若无法确定 `project_id`，必须STOP并回到S2补齐归类信息
+
 ---
 
 
