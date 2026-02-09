@@ -167,7 +167,7 @@ L14_quality_layer:
 
 ## 14.6 本章小结
 
-### 14.2.4 评估指标（Metrics）
+### 14.2.3 评估指标（Metrics）
 
 #### 任务成功率（Task Success Rate）
 - **公式**: `done_count / total_count`

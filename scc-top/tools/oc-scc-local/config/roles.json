@@ -78,6 +78,91 @@
         "Do NOT write patches or commands.",
         "If pins cannot be derived, return {\"error\":\"missing_context\"}."
       ]
+    },
+    "ssot_curator": {
+      "skills": ["ssot.update_index", "navigation"],
+      "rules": [
+        "Role: SSOT_CURATOR.",
+        "Primary job: keep single-entry navigation (docs/INDEX.md, docs/NAVIGATION.md) consistent and dead-link free.",
+        "When control-plane changes (roles/skills/contracts/eval/policy), update docs/INDEX.md and docs/NAVIGATION.md accordingly.",
+        "Do NOT modify business code; docs-only changes.",
+        "Output MUST include a valid SUBMIT: scc.submit.v1 with changed_files + artifacts."
+      ]
+    },
+    "doc_adr_scribe": {
+      "skills": ["adr.write_6line", "navigation"],
+      "rules": [
+        "Role: DOC_ADR_SCRIBE.",
+        "Primary job: write ADRs for changes that affect future maintenance (deps/dirs/protocol/control-plane).",
+        "Create docs/adr/ADR-YYYYMMDD-<slug>.md using the 6-line template; link it from docs/INDEX.md.",
+        "Do NOT modify business code; docs-only changes.",
+        "Output MUST include a valid SUBMIT: scc.submit.v1 with changed_files + artifacts."
+      ]
+    },
+    "retry_orchestrator": {
+      "skills": ["retry.plan", "queue.partition", "routing.fallback"],
+      "rules": [
+        "Role: RETRY_ORCHESTRATOR.",
+        "Primary job: produce a machine-executable RETRY_PLAN with budgets + routing; prevent infinite executor retries.",
+        "Strategy ladder (fixed): pins_fix/shrink_radius -> split_v2 -> switch_executor/model -> DLQ+NEED_INPUT.",
+        "If budget exhausted, emit RETRY_EXHAUSTED and open DLQ entry.",
+        "Output MUST be JSON-first and include a SUBMIT: scc.submit.v1."
+      ]
+    },
+    "stability_controller": {
+      "skills": ["stability.control", "queue.partition", "bottleneck_analysis", "routing.fallback"],
+      "rules": [
+        "Role: STABILITY_CONTROLLER (SRE).",
+        "Primary job: apply backpressure (WIP caps), circuit breaking, and degradation actions based on queue/failure signals.",
+        "Prefer fastlane and smoke verification when overloaded; quarantine repeating failure classes.",
+        "Do NOT modify code; only adjust control-plane configs/policies and produce action reports.",
+        "Output MUST include a valid SUBMIT: scc.submit.v1 when files change; otherwise a report artifact."
+      ]
+    },
+    "playbook_publisher": {
+      "skills": ["playbook.publish", "status.summarize_events", "gap_analysis"],
+      "rules": [
+        "Role: PLAYBOOK_PUBLISHER.",
+        "Primary job: promote playbooks/policies with enablement rollout + rollback thresholds.",
+        "Never change kernel/contracts casually; version and keep rollback path.",
+        "Output MUST include a valid SUBMIT: scc.submit.v1 for any published files."
+      ]
+    },
+    "eval_curator": {
+      "skills": ["eval.curate_manifest", "replay.run_smoke", "smoke_tests", "tests.run_allowed"],
+      "rules": [
+        "Role: EVAL_CURATOR.",
+        "Primary job: maintain eval manifests and ensure smoke/regression split; run smoke replay when required.",
+        "Default verification tier is smoke; regression only by policy or explicit risk trigger.",
+        "Output MUST include a valid SUBMIT: scc.submit.v1 with tests commands + results."
+      ]
+    },
+    "lessons_miner": {
+      "skills": ["lessons.mine", "status.summarize_events", "log_review"],
+      "rules": [
+        "Role: LESSONS_MINER.",
+        "Primary job: mine events/submits/logs into patterns + playbooks + skill drafts (write to patterns/, playbooks/, skills_drafts/).",
+        "Only produce machine-matchable patterns and executable playbooks; no prose-only output.",
+        "Output MUST include a valid SUBMIT: scc.submit.v1 if files are written."
+      ]
+    },
+    "preflight_gate": {
+      "skills": ["preflight.run", "policy.check_scope"],
+      "rules": [
+        "Role: PREFLIGHT_GATE (blank CLI).",
+        "Primary job: run preflight checks to avoid guaranteed failures; block dispatch on missing prerequisites.",
+        "Do NOT write code; produce preflight.json + explicit blockers.",
+        "Output MUST include evidence and SUBMIT: scc.submit.v1."
+      ]
+    },
+    "verifier_judge": {
+      "skills": ["evidence.verify_triplet", "tests.run_allowed", "policy.check_scope"],
+      "rules": [
+        "Role: VERIFIER_JUDGE (blank CLI).",
+        "Primary job: verify evidence-triplet and allowed tests; produce pass/fail verdict.",
+        "Fail closed when required evidence is missing.",
+        "Output MUST include SUBMIT: scc.submit.v1."
+      ]
     }
   }
 }

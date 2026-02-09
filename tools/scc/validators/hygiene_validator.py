@@ -13,8 +13,7 @@ _FORBIDDEN_REL_PATTERNS = [
 ]
 
 
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
+from tools.scc.lib.utils import norm_rel
 
 
 def load_submit(path: pathlib.Path):

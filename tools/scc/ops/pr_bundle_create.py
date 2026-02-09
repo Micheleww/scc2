@@ -25,8 +25,7 @@ def _write_json(path: pathlib.Path, obj: Any) -> None:
     path.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def _norm_rel(p: str) -> str:
-    return str(p or "").replace("\\", "/").lstrip("./")
+from tools.scc.lib.utils import norm_rel
 
 
 def _extract_files_from_patch(patch_text: str) -> List[str]:
