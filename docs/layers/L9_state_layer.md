@@ -165,28 +165,43 @@ L9_state_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/03_agent_playbook/roles/index.md
+      oid: 015C4C86F1A01940A09E334DD01F
       description: "角色包索引，包含记忆路径"
     - path: scc-top/docs/ssot/05_runbooks/SCC_RUNBOOK__v0.1.0.md
+      oid: 01F867317D77E4480492D217E5D9
       description: "包含执行状态机定义"
   
   memory_files:
     - path: scc-top/docs/INPUTS/role_memory/router.md
+      oid: 01EE34EDE02E704B699CB78FC213
     - path: scc-top/docs/INPUTS/role_memory/planner.md
+      oid: 015F1C1ADD823A4DE0A3221E50B6
     - path: scc-top/docs/INPUTS/role_memory/executor.md
+      oid: 01385C726CF25D4636AB2B92AD57
     - path: scc-top/docs/INPUTS/role_memory/verifier.md
+      oid: 019AB1CECA783447D3ACD9FF9DA7
     - path: scc-top/docs/INPUTS/role_memory/auditor.md
+      oid: 01771B3A83C13E4C149363E4AC69
     - path: scc-top/docs/INPUTS/role_memory/secretary.md
+      oid: 01343CFB49DBF14BD8BF61755DE7
     - path: scc-top/docs/INPUTS/role_memory/factory_manager.md
+      oid: 014603FF617A784B5686538C7730
   
   tools:
-    - tools/scc/ops/state_manager.py
-    - tools/scc/ops/memory_store.py
-    - tools/scc/ops/memory_retrieve.py
-    - tools/scc/ops/context_manager.py
-    - tools/scc/ops/state_machine.py
+    - path: tools/scc/ops/state_manager.py
+      oid: 015043E539CEF94C09B04C0B7B74
+    - path: tools/scc/ops/memory_store.py
+      oid: 0157ABBC2018794C59BB339280CF
+    - path: tools/scc/ops/memory_retrieve.py
+      oid: 01AA58BE9B8D5B4774B25896BD07
+    - path: tools/scc/ops/context_manager.py
+      oid: 01CBE8B99524A046BB8760BE36FC
+    - path: tools/scc/ops/state_machine.py
+      oid: 01FBE8D2145BB84F50AAD54DF73D
   
   related_chapters:
-    - technical_manual/chapter_04_state_layer.md
+    - chapter: technical_manual/chapter_04_state_layer.md
+      oid: 01F0DC8CE95CC345E99B701D5787
 ```
 
 ---

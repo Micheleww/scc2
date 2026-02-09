@@ -218,17 +218,24 @@ L12_cost_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/05_runbooks/metrics_spec.md
+      oid: 0110927C53AED748C7B77FBAF7E2
       description: "指标规范，定义最小指标集"
   
   tools:
-    - tools/scc/ops/token_tracker.py
-    - tools/scc/ops/cost_report.py
-    - tools/scc/ops/budget_checker.py
-    - tools/scc/ops/efficiency_metrics.py
-    - tools/scc/ops/cost_alert.py
+    - path: tools/scc/ops/token_tracker.py
+      oid: 016CB0196E3D9F401FBD2C5EC9D0
+    - path: tools/scc/ops/cost_report.py
+      oid: 01B3289BC1AA844ACC93491681B9
+    - path: tools/scc/ops/budget_checker.py
+      oid: 0145F3F728B5B8470B8F290AB56F
+    - path: tools/scc/ops/efficiency_metrics.py
+      oid: 01AF3FAC5D569246AABEC14F1D04
+    - path: tools/scc/ops/cost_alert.py
+      oid: 016561EC2B1BE24CAEAF2E103029
   
   related_chapters:
-    - technical_manual/chapter_05_cost_layer.md
+    - chapter: technical_manual/chapter_05_cost_layer.md
+      oid: 0144473B43225B40069A7A13B293
 ```
 
 ---

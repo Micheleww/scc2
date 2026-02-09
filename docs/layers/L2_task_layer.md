@@ -377,24 +377,34 @@ L2_task_layer:
       primary_unit: K.CONTRACT_DOC
       description: "契约最小规范，可执行任务的最小字段"
     - path: scc-top/docs/ssot/04_contracts/task_tree.md
+      oid: 01F5F2520606B949659DD8568BD2
       description: "任务树结构详细说明"
     - path: scc-top/docs/ssot/04_contracts/CONTRACT_MIN_SPEC__v0.1.0.md
+      oid: 01BC006B11161C45F785CD98CE77
       description: "契约规范（规范格式版）"
   
   schema_files:
     - path: scc-top/docs/ssot/04_contracts/contract.schema.json
+      oid: 01E2BF8F0D16664C8B8F7EBFD4BC
       description: "契约Schema（机器可读）"
   
   tools:
-    - tools/scc/ops/task_creator.py
-    - tools/scc/ops/task_query.py
-    - tools/scc/ops/contract_validator.py
-    - tools/scc/ops/contract_generator.py
-    - tools/scc/ops/task_transition.py
-    - tools/scc/ops/task_id_generator.py
+    - path: tools/scc/ops/task_creator.py
+      oid: 010EDBB7017B92426FBB37C258B1
+    - path: tools/scc/ops/task_query.py
+      oid: 01EC317A3EDC794237AA5540E7B3
+    - path: tools/scc/ops/contract_validator.py
+      oid: 0121AC2ECCD3524F948A92645B59
+    - path: tools/scc/ops/contract_generator.py
+      oid: 0169AC19EDAA124A5F839FADE559
+    - path: tools/scc/ops/task_transition.py
+      oid: 0106D1E7D26CAD4E6B98C1DFB0C4
+    - path: tools/scc/ops/task_id_generator.py
+      oid: 01F00395DFC8C34BF883176715A4
   
   related_chapters:
-    - technical_manual/chapter_10_task_layer.md
+    - chapter: technical_manual/chapter_10_task_layer.md
+      oid: 01D1AF702C975E4400A2FDB3247B
 ```
 
 ---

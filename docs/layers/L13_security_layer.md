@@ -143,8 +143,10 @@ L13_security_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/03_agent_playbook/SKILL_SPEC__v0.1.0.md
+      oid: 01F1257545743A4185AAF7EA6436
       description: "技能规范，定义门禁规则"
     - path: scc-top/docs/ssot/04_contracts/contract_min_spec.md
+      oid: 01D433B7D4D22F47AAA7AF4E9706
       description: "契约规范，定义安全相关字段"
   
   gates:
@@ -163,14 +165,20 @@ L13_security_layer:
     - G13: VerifierJudgeGate
   
   tools:
-    - tools/scc/ops/gates_runner.py
-    - tools/ci/skill_call_guard.py
-    - tools/scc/ops/rbac_check.py
-    - tools/scc/ops/security_audit.py
-    - tools/scc/ops/secret_manager.py
+    - path: tools/scc/ops/gates_runner.py
+      oid: 0152D7C801CC9149AC93A64C0628
+    - path: tools/ci/skill_call_guard.py
+      oid: 01C5892325A29A4ABDBCA8674FE0
+    - path: tools/scc/ops/rbac_check.py
+      oid: 01E42EB96555F945C2A93DDFFEA8
+    - path: tools/scc/ops/security_audit.py
+      oid: 014A39463002A14BBCA94358873E
+    - path: tools/scc/ops/secret_manager.py
+      oid: 01A7FEAC9F6792456CA263805240
   
   related_chapters:
-    - technical_manual/chapter_06_security_layer.md
+    - chapter: technical_manual/chapter_06_security_layer.md
+      oid: 018D40076E85FB4FDC9F1FAA5398
 ```
 
 ---

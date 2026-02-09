@@ -164,25 +164,35 @@ L10_workspace_layer:
       primary_unit: W.WORKSPACE
       description: "项目组与工作空间定义"
     - path: scc-top/docs/ssot/06_inputs/index.md
+      oid: 0142576DB3CAF44BC98FDC008E33
       description: "输入层索引，外部输入落点规范"
   
   related_files:
     - path: scc-top/docs/ssot/02_architecture/project_catalog.json
+      oid: 013F6321FF109644D39C250553E4
       description: "项目目录机器索引"
     - path: scc-top/docs/INPUTS/WEBGPT/index.md
+      oid: 019DD882CA16E2453CBBA28F8C15
       description: "WebGPT输入入口"
     - path: scc-top/docs/INPUTS/WEBGPT/memory.md
+      oid: 010060861AC20D4EB08B59903D49
       description: "WebGPT记忆"
   
   tools:
-    - tools/scc/ops/workspace_validator.py
-    - tools/scc/ops/project_catalog.py
-    - tools/scc/ops/input_archiver.py
-    - tools/scc/ops/env_config.py
-    - tools/scc/ops/scope_checker.py
+    - path: tools/scc/ops/workspace_validator.py
+      oid: 011E6DE042BA5148C58855F75A66
+    - path: tools/scc/ops/project_catalog.py
+      oid: 019FFBBD8667594D3FBB2EABB1F4
+    - path: tools/scc/ops/input_archiver.py
+      oid: 01E2A1210B0D7E4A3694A44ACD58
+    - path: tools/scc/ops/env_config.py
+      oid: 012791D14BA3EB4BD5B24E3FC3E0
+    - path: tools/scc/ops/scope_checker.py
+      oid: 014FD47E6095164A858B65C2D038
   
   related_chapters:
-    - technical_manual/chapter_16_workspace_layer.md
+    - chapter: technical_manual/chapter_16_workspace_layer.md
+      oid: 0167F7C56A02EA42C9A305424F78
 ```
 
 ---

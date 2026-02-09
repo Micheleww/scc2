@@ -166,16 +166,22 @@ L5_model_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/02_architecture/SCC_TOP.md
+      oid: 0173770674431A4AA9A063E7DAB3
       description: "包含模型升级策略（4级升级路径）"
   
   tools:
-    - tools/scc/ops/model_config.py
-    - tools/scc/ops/model_selector.py
-    - tools/scc/ops/token_tracker.py
-    - tools/scc/ops/escalation_decider.py
+    - path: tools/scc/ops/model_config.py
+      oid: 01A105ACA966F14AFFA2387A6808
+    - path: tools/scc/ops/model_selector.py
+      oid: 0118B9983B2B684874AE939F3B88
+    - path: tools/scc/ops/token_tracker.py
+      oid: 0123479B332CEC4E409765A4CF0C
+    - path: tools/scc/ops/escalation_decider.py
+      oid: 01102CC0EC6E36412B87A7E65EA5
   
   related_chapters:
-    - technical_manual/chapter_14_model_layer.md
+    - chapter: technical_manual/chapter_14_model_layer.md
+      oid: 01803C9089EC0648C78D1E793767
 ```
 
 ---

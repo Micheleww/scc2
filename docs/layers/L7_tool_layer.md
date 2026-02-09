@@ -309,7 +309,54 @@ Risk level controls the required gating before a tool call.
 
 ---
 
-## 7.3 核心功能与脚本
+## 7.3 Connector（连接器）体系
+
+根据 `connectors/registry.json`，SCC支持以下连接器：
+
+### 7.3.1 连接器注册表
+
+| 连接器ID | 类型 | 端点 | 作用域 | 允许角色 |
+|----------|------|------|--------|----------|
+| **gateway.local** | http_service | http://127.0.0.1:18788 | board, dispatch, replay, gates, debug | * (所有角色) |
+| **codex.cli** | cli | codex | llm.chat_completions | designer, architect, integrator, engineer, qa, doc, retry_orchestrator, factory_manager |
+| **opencode.cli** | cli | opencode | llm.chat_completions, llm.providers | designer, architect, integrator, engineer, qa, doc, pinser, retry_orchestrator, factory_manager |
+
+### 7.3.2 连接器配置
+
+```json
+{
+  "schema_version": "scc.connector_registry.v1",
+  "connectors": [
+    {
+      "connector_id": "gateway.local",
+      "type": "http_service",
+      "endpoints": ["http://127.0.0.1:18788"],
+      "scopes": ["board", "dispatch", "replay", "gates", "debug"],
+      "allowed_roles": ["*"],
+      "audit": {
+        "logs": [
+          "artifacts/executor_logs/route_decisions.jsonl",
+          "artifacts/executor_logs/jobs.jsonl"
+        ]
+      }
+    }
+  ]
+}
+```
+
+### 7.3.3 连接器使用场景
+
+| 场景 | 推荐连接器 | 说明 |
+|------|-----------|------|
+| 本地网关调用 | gateway.local | 访问SCC本地服务(18788端口) |
+| Codex CLI执行 | codex.cli | 调用OpenAI Codex模型 |
+| Opencode CLI执行 | opencode.cli | 调用Opencode免费模型 |
+| 任务调度 | gateway.local | 通过网关进行任务分发 |
+| 日志审计 | 所有连接器 | 统一记录到executor_logs |
+
+---
+
+## 7.4 核心功能与脚本
 
 | 功能 | 说明 | 脚本/工具 | 命令示例 |
 |------|------|-----------|----------|
@@ -378,19 +425,27 @@ L7_tool_layer:
       primary_unit: X.DISPATCH
       description: "执行与验证接口规范"
     - path: scc-top/docs/ssot/05_runbooks/SCC_RUNBOOK__v0.1.0.md
+      oid: 016683521F67984518A418C8A0EA
       description: "SCC运行手册，包含执行状态机"
     - path: scc-top/docs/ssot/03_agent_playbook/SKILL_SPEC__v0.1.0.md
+      oid: 01D28BB9CFDEA045A5884ABCF754
       description: "技能规范，定义最小技能集"
   
   tools:
-    - tools/scc/ops/tool_registry.py
-    - tools/scc/ops/tool_runner.py
-    - tools/scc/ops/tool_discovery.py
-    - tools/ci/skill_call_guard.py
-    - tools/scc/ops/tool_evidence.py
+    - path: tools/scc/ops/tool_registry.py
+      oid: 01E5BAE2AAEBAA4960AE80531A54
+    - path: tools/scc/ops/tool_runner.py
+      oid: 018029E6A9AAAC41D1B07B0FC29D
+    - path: tools/scc/ops/tool_discovery.py
+      oid: 01ACCE043CB0C04EEC89994B4F45
+    - path: tools/ci/skill_call_guard.py
+      oid: 01EAC0046C0A0B4D4DA6A2899587
+    - path: tools/scc/ops/tool_evidence.py
+      oid: 014D3FA135544D4211B87FB41776
   
   related_chapters:
-    - technical_manual/chapter_15_tool_layer.md
+    - chapter: technical_manual/chapter_15_tool_layer.md
+      oid: 012C1DCBB1781F4586B9E0743B24
 ```
 
 ---

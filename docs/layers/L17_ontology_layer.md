@@ -476,14 +476,18 @@ L17_ontology_layer:
       primary_unit: N.EVENTS
       description: "Unit注册表，定义13个Stream和40+Unit"
     - path: scc-top/docs/ssot/01_conventions/DOCFLOW_SSOT__v0.1.0.md
+      oid: 01F48D74A1BD014170B730D7880C
       description: "文档流SSOT规范"
     - path: scc-top/docs/ssot/01_conventions/DOC_REGISTRY__v0.1.0.md
+      oid: 0139E60C5FABAE4CA38A1A4C58B0
       description: "文档注册表规范"
     - path: scc-top/docs/ssot/01_conventions/SINGLE_TRUTH_PRIORITY__v0.1.0.md
+      oid: 01337CF12110ED42BF9471DB6A4B
       description: "单一事实优先级规则"
   
   related_files:
     - path: scc-top/docs/ssot/04_contracts/OID_SPEC__v0.1.0.md
+      oid: 01AE30F9C6E00E424EB2A6BD6DF2
       note: "Contracts分区的OID_SPEC跳转文件，指向01_conventions版本"
   
   tools:
@@ -507,7 +511,8 @@ L17_ontology_layer:
     - oid_events: "OID事件日志（ISSUED/MIGRATED/COLLISION）"
   
   related_chapters:
-    - technical_manual/chapter_02_ontology_layer.md
+    - chapter: technical_manual/chapter_02_ontology_layer.md
+      oid: 01D8C2978F167C42E8994663A7BF
 ```
 
 ---

@@ -254,19 +254,27 @@ L11_routing_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/03_agent_playbook/ROLE_SPEC__v0.1.0.md
+      oid: 01121FE04B53964D91B7B7D3A8A7
       description: "角色规范，定义路由契约"
     - path: scc-top/docs/ssot/05_runbooks/SCC_RUNBOOK__v0.1.0.md
+      oid: 01E7A0E270EE464D378B9A74417B
       description: "运行手册，定义调度策略和重试规则"
   
   tools:
-    - tools/scc/ops/task_router.py
-    - tools/scc/ops/scheduler.py
-    - tools/scc/ops/load_balancer.py
-    - tools/scc/ops/retry_manager.py
-    - tools/scc/ops/dlq_manager.py
+    - path: tools/scc/ops/task_router.py
+      oid: 01B1D1BD3A9B214083A28EE45358
+    - path: tools/scc/ops/scheduler.py
+      oid: 017650462A7A054CC088858A6FCC
+    - path: tools/scc/ops/load_balancer.py
+      oid: 01AE352412AB814059BAF62A1952
+    - path: tools/scc/ops/retry_manager.py
+      oid: 01A400C75778D54E9F958E59BD03
+    - path: tools/scc/ops/dlq_manager.py
+      oid: 0102E19A48C20E44DAA669189BA4
   
   related_chapters:
-    - technical_manual/chapter_12_routing_layer.md
+    - chapter: technical_manual/chapter_12_routing_layer.md
+      oid: 011E56A955AF4E4ABAB460B06EDD
 ```
 
 ---

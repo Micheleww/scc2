@@ -211,14 +211,20 @@ L16_observability_layer:
       description: "可观测性规范，定义事件落盘、日志、追踪规则"
   
   tools:
-    - tools/scc/ops/log_collector.py
-    - tools/scc/ops/metrics_collector.py
-    - tools/scc/ops/trace_analyzer.py
-    - tools/scc/ops/alert_manager.py
-    - tools/scc/ops/dashboard_generator.py
+    - path: tools/scc/ops/log_collector.py
+      oid: 01CDB895D0833E4315A6098E55EB
+    - path: tools/scc/ops/metrics_collector.py
+      oid: 01B3EAEA0808454E3A89D5E3728F
+    - path: tools/scc/ops/trace_analyzer.py
+      oid: 014AD6E5F3C0F745CCBFE523B042
+    - path: tools/scc/ops/alert_manager.py
+      oid: 01BA96C0739B6C49E6824BB975F0
+    - path: tools/scc/ops/dashboard_generator.py
+      oid: 01CA2A65B0180042578CEB786C82
   
   related_chapters:
-    - technical_manual/chapter_03_observability_layer.md
+    - chapter: technical_manual/chapter_03_observability_layer.md
+      oid: 011BE5AF5D6C2748C8BFA601FFBB
 ```
 
 ---

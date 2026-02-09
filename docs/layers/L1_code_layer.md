@@ -384,18 +384,25 @@ L1_code_layer:
   
   related_files:
     - path: scc-top/docs/ssot/02_architecture/project_catalog.json
+      oid: 012A85A390CEE94D18B7A432F700
       description: "项目目录机器索引"
     - path: scc-top/docs/ssot/02_architecture/canonical_truth.md
+      oid: 015D746D506A7C4BB8AA76AAEE71
       description: "规范事实集与冲突优先级"
   
   tools:
-    - tools/scc/ops/top_validator.py
-    - tools/scc/ops/project_catalog.py
-    - tools/scc/ops/workspace_validator.py
-    - tools/scc/ops/gap_analyzer.py
+    - path: tools/scc/ops/top_validator.py
+      oid: 01F7990535B115436DA55995B0B5
+    - path: tools/scc/ops/project_catalog.py
+      oid: 0164B8A20CB396483D92014890DE
+    - path: tools/scc/ops/workspace_validator.py
+      oid: 01CBDF68D023834FE783E6FE0B51
+    - path: tools/scc/ops/gap_analyzer.py
+      oid: 01137FCA4A3F884F2197F91ACFE9
   
   related_chapters:
-    - technical_manual/chapter_17_code_layer.md
+    - chapter: technical_manual/chapter_17_code_layer.md
+      oid: 01AE3CDCA10EDD4C17A3B4F42065
 ```
 
 ---

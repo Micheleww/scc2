@@ -445,19 +445,27 @@ L8_evidence_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/04_contracts/contract_min_spec.md
+      oid: 01891D2ED9EDD141F7A88297698B
       description: "契约规范，定义acceptance和verdict"
     - path: scc-top/docs/ssot/05_runbooks/execution_verification_interfaces.md
+      oid: 0134F186F18A844FCCB01634A0C2
       description: "执行与验证接口，定义verifier输出"
   
   tools:
-    - tools/scc/ops/evidence_collector.py
-    - tools/scc/ops/verdict_engine.py
-    - tools/scc/ops/evidence_query.py
-    - tools/scc/ops/fail_classifier.py
-    - tools/scc/ops/evidence_validator.py
+    - path: tools/scc/ops/evidence_collector.py
+      oid: 018A54E990922545E6B5415AA533
+    - path: tools/scc/ops/verdict_engine.py
+      oid: 01F55EF61C7F8044B9B3E6A84EE2
+    - path: tools/scc/ops/evidence_query.py
+      oid: 01BBFE5E1D93E64EA1BE5DE79F7D
+    - path: tools/scc/ops/fail_classifier.py
+      oid: 013BD0E493BDD44576A433834041
+    - path: tools/scc/ops/evidence_validator.py
+      oid: 0118A16A013C8243ECB18FA8C994
   
   related_chapters:
-    - technical_manual/chapter_11_evidence_layer.md
+    - chapter: technical_manual/chapter_11_evidence_layer.md
+      oid: 015563A46583EC4885BEA4A2020A
 ```
 
 ---

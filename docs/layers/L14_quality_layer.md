@@ -140,19 +140,27 @@ L14_quality_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/04_contracts/contract_min_spec.md
+      oid: 01689594F805AD4E88933D05B574
       description: "契约规范，定义acceptance和fail_code"
     - path: scc-top/docs/ssot/05_runbooks/metrics_spec.md
+      oid: 01BAAEE872F7FA4B0A913E71A75A
       description: "指标规范，定义质量指标"
   
   tools:
-    - tools/scc/ops/quality_eval.py
-    - tools/scc/ops/quality_report.py
-    - tools/scc/ops/defect_analyzer.py
-    - tools/scc/ops/eval_runner.py
-    - tools/scc/ops/quality_gate.py
+    - path: tools/scc/ops/quality_eval.py
+      oid: 01493BAC53B1AD4F55BB8D3743EC
+    - path: tools/scc/ops/quality_report.py
+      oid: 016052B4F177C0449B8344AC6C5C
+    - path: tools/scc/ops/defect_analyzer.py
+      oid: 011BEF0DE533C0448FB3681E2F08
+    - path: tools/scc/ops/eval_runner.py
+      oid: 011F726FFC06BB4E34A07B3CADBF
+    - path: tools/scc/ops/quality_gate.py
+      oid: 01DBD8B902E9884F3C867BAADBF4
   
   related_chapters:
-    - technical_manual/chapter_07_quality_layer.md
+    - chapter: technical_manual/chapter_07_quality_layer.md
+      oid: 01DA01112472DF45F5BE1E7FDB5D
 ```
 
 ---

@@ -295,19 +295,27 @@ L15_change_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/02_architecture/SCC_TOP.md
+      oid: 014896F22E01F3478FA6C1D5018A
       description: "包含降级规则"
     - path: scc-top/docs/ssot/05_runbooks/SCC_RUNBOOK__v0.1.0.md
+      oid: 01A59804D5FC0E40A18859B17FDD
       description: "包含发布流程"
   
   tools:
-    - tools/scc/ops/changelog.py
-    - tools/scc/ops/release_manager.py
-    - tools/scc/ops/demotion_checker.py
-    - tools/scc/ops/rollback.py
-    - tools/scc/ops/release_validator.py
+    - path: tools/scc/ops/changelog.py
+      oid: 01CD0CC1A6E0464333B31B936C82
+    - path: tools/scc/ops/release_manager.py
+      oid: 010D7C47222FA746148F63BE3B15
+    - path: tools/scc/ops/demotion_checker.py
+      oid: 01C60F02CB04D345EBA54BFA6B45
+    - path: tools/scc/ops/rollback.py
+      oid: 01CE3EFEE9A3344DFCB3EFAFC881
+    - path: tools/scc/ops/release_validator.py
+      oid: 01F34B1A46820B406AA3A4A05C19
   
   related_chapters:
-    - technical_manual/chapter_18_change_layer.md
+    - chapter: technical_manual/chapter_18_change_layer.md
+      oid: 01B44BD2FC4CE94A1CA999F722DE
 ```
 
 ---

@@ -508,44 +508,62 @@ L4_prompt_layer:
   
   role_packs:
     - path: scc-top/docs/ssot/03_agent_playbook/roles/router/
+      oid: 011F1603B44E614A36AC6D0301B2
       description: "Router角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/planner/
+      oid: 010F2FE9E35B714E709D1A03C8B8
       description: "Planner角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/executor/
+      oid: 01A8D9DFC365D749C4941E64CDCB
       description: "Executor角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/verifier/
+      oid: 010326A948C7804EE3A1BBC90998
       description: "Verifier角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/auditor/
+      oid: 01170F0D2B11A24D698D543C3715
       description: "Auditor角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/secretary/
+      oid: 0185EAD8B5EC4E4EE68C41CB821D
       description: "Secretary角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/factory_manager/
+      oid: 013BC4018FDA4D4B9E8DC410FD07
       description: "Factory Manager角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/team_lead/
+      oid: 014C26424A53BA442CA52DD29AC0
       description: "Team Lead角色包"
     - path: scc-top/docs/ssot/03_agent_playbook/roles/chief_designer/
+      oid: 01327AFF4F47BF43B8A0B1D6BD76
       description: "Chief Designer角色包"
   
   handoff_templates:
     - path: scc-top/docs/ssot/03_agent_playbook/handoff_templates/TASK_CONTRACT__TEMPLATE__v0.1.0.md
+      oid: 01C2F7E900D1224BC983C4A4B61D
       description: "任务契约模板（Team Lead → Crew）"
     - path: scc-top/docs/ssot/03_agent_playbook/handoff_templates/BLUEPRINT__TEMPLATE__v0.1.0.md
+      oid: 016C54F893F50E4BB094A4F1C31B
       description: "蓝图模板（Chief Designer → Factory）"
     - path: scc-top/docs/ssot/03_agent_playbook/handoff_templates/GOAL_BRIEF__TEMPLATE__v0.1.0.md
+      oid: 0150A0818124A34CDC806E66F6BF
       description: "目标简报模板（Secretary → Designer/Factory）"
     - path: scc-top/docs/ssot/03_agent_playbook/handoff_templates/CAPABILITY_ORDER__TEMPLATE__v0.1.0.md
+      oid: 01C46BA8F41D3548AC8E73D86E30
       description: "能力订单模板（Factory → Team Lead）"
     - path: scc-top/docs/ssot/03_agent_playbook/handoff_templates/PROGRESS_REPORT__TEMPLATE__v0.1.0.md
+      oid: 017842432E70D147CA96792B46A1
       description: "进度报告模板（Auditor → Canonical）"
     - path: scc-top/docs/ssot/03_agent_playbook/handoff_templates/FEEDBACK_PACKAGE__TEMPLATE__v0.1.0.md
+      oid: 01D4939E7263414C23BA755CAF55
       description: "反馈包模板（Auditor → Raw-b）"
   
   machine_readable_specs:
     - path: scc-top/docs/ssot/03_agent_playbook/role_spec.json
+      oid: 01F22F65C17E2C46CDB0E5EC1CE6
       description: "角色规范（JSON格式）"
     - path: scc-top/docs/ssot/03_agent_playbook/skill_spec.json
+      oid: 01707A98E483E54BF6AF495221E7
       description: "技能规范（JSON格式）"
     - path: scc-top/docs/ssot/03_agent_playbook/capability_catalog.json
+      oid: 01B9E8CC449E6D48C3BB98CBFA74
       description: "能力目录（JSON格式）"
   
 ### 4.2.7 Context Pack规范（Slot-Based）
@@ -647,15 +665,22 @@ Slot顺序具有约束力：
 
   
   tools:
-    - tools/scc/ops/role_router.py
-    - tools/ci/skill_call_guard.py
-    - tools/scc/ops/capability_query.py
-    - tools/scc/ops/role_checklist.py
-    - tools/scc/ops/handoff_generator.py
-    - tools/scc/ops/template_renderer.py
+    - path: tools/scc/ops/role_router.py
+      oid: 01B942B9D4F21E4574B3136D56FA
+    - path: tools/ci/skill_call_guard.py
+      oid: 01B9D5BFEFB6214F11B9AA796DC5
+    - path: tools/scc/ops/capability_query.py
+      oid: 01F9582ED9AA7440B7940403D36A
+    - path: tools/scc/ops/role_checklist.py
+      oid: 0148E89CDDA0604927B8D061A999
+    - path: tools/scc/ops/handoff_generator.py
+      oid: 01702FCC1FA2F94BAD93B9EE20BC
+    - path: tools/scc/ops/template_renderer.py
+      oid: 0197CA42206FEE40C98E6D706556
   
   related_chapters:
-    - technical_manual/chapter_09_prompt_layer.md
+    - chapter: technical_manual/chapter_09_prompt_layer.md
+      oid: 019B4B039D5B274A6DB045E9C5F7
 ```
 
 ---

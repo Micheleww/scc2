@@ -451,24 +451,35 @@ L3_documentation_layer:
   
   related_files:
     - path: scc-top/docs/ssot/02_architecture/canonical_truth.md
+      oid: 01DFD8B9435F10410289743C65D7
       description: "规范事实集与冲突优先级（单一事实优先级的权威版本）"
     - path: scc-top/docs/ssot/registry.json
+      oid: 01F24671BF70BA4E62B9283434F2
       description: "权威机器可读索引（alias: _registry.json）"
     - path: scc-top/docs/START_HERE.md
+      oid: 01BF91ED2148924D359168758B8D
       description: "总入口"
     - path: scc-top/docs/arch/00_index.md
+      oid: 01AFFEB401F90043FABB2D56E919
       description: "架构/运维入口"
   
   tools:
-    - tools/scc/ops/doc_registry.py
-    - tools/scc/ops/doc_query.py
-    - tools/scc/ops/doc_transition.py
-    - tools/scc/ops/ssot_consistency_check.py
-    - tools/scc/ops/docflow_audit.ps1
-    - tools/scc/ops/entry_validator.py
+    - path: tools/scc/ops/doc_registry.py
+      oid: 01D680CA819052462D9D6C2D8111
+    - path: tools/scc/ops/doc_query.py
+      oid: 0197C35D0C8CDE4389B50475EBCD
+    - path: tools/scc/ops/doc_transition.py
+      oid: 01C0F9631FF53F43C2B64EBBE9A6
+    - path: tools/scc/ops/ssot_consistency_check.py
+      oid: 017D8322D3018147E2942CC2126C
+    - path: tools/scc/ops/docflow_audit.ps1
+      oid: 0147DAAAB986EC4655A1B7C61A8B
+    - path: tools/scc/ops/entry_validator.py
+      oid: 0125A4BD5099F9471A859BF15E91
   
   related_chapters:
-    - technical_manual/chapter_08_documentation_layer.md
+    - chapter: technical_manual/chapter_08_documentation_layer.md
+      oid: 01F69BAE6DA23344698A6606D2D8
 ```
 
 ---

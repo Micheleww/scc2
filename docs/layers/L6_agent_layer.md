@@ -146,19 +146,27 @@ L6_agent_layer:
   
   core_spec_files:
     - path: scc-top/docs/ssot/03_agent_playbook/ROLE_SPEC__v0.1.0.md
+      oid: 0177B7715042074657BF5B17472B
       description: "角色规范，定义9个Agent角色"
     - path: scc-top/docs/ssot/05_runbooks/SCC_RUNBOOK__v0.1.0.md
+      oid: 016289D32E7DEF489A89B633C897
       description: "SCC运行手册，包含执行状态机定义"
   
   tools:
-    - tools/scc/ops/agent_router.py
-    - tools/scc/ops/execution_engine.py
-    - tools/scc/ops/evidence_collector.py
-    - tools/scc/ops/dlq_manager.py
-    - tools/scc/ops/agent_handoff.py
+    - path: tools/scc/ops/agent_router.py
+      oid: 011933AF0EDBA14156B133E794E0
+    - path: tools/scc/ops/execution_engine.py
+      oid: 011AE52C73BB6A4FDF98D88A7C46
+    - path: tools/scc/ops/evidence_collector.py
+      oid: 019798F6D7C1744C21A6DA671B48
+    - path: tools/scc/ops/dlq_manager.py
+      oid: 0197CAD12833264788BE752FD379
+    - path: tools/scc/ops/agent_handoff.py
+      oid: 01634D110B08D348139404B67146
   
   related_chapters:
-    - technical_manual/chapter_13_agent_layer.md
+    - chapter: technical_manual/chapter_13_agent_layer.md
+      oid: 013EFAC599787E46E59C2E757B62
 ```
 
 ---
