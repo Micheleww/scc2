@@ -385,10 +385,18 @@ L4_prompt_layer:
 
 ```json
 {
-  "ssot_hash": "sha256:TODO",
+  "schema_version": "scc.ssot_axioms.v1",
   "axioms": [
-    "Executor never reads SSOT directly",
-    "All tasks must use pins-first constraints"
+    {
+      "id": "AXIOM-001",
+      "statement": "Executor never reads SSOT directly",
+      "rationale": "Ensures all context is explicitly provided via pins"
+    },
+    {
+      "id": "AXIOM-002", 
+      "statement": "All tasks must use pins-first constraints",
+      "rationale": "Minimizes context window and improves reproducibility"
+    }
   ]
 }
 ```

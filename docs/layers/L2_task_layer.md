@@ -151,7 +151,7 @@ inputs_ref:
 outputs_expected:
 ```
 
-### 2.2.4 Task Bundle 结构
+### 2.2.3 Task Bundle 结构
 
 Task Bundle是可执行的最小任务单元：
 
@@ -176,7 +176,7 @@ task_bundle/
 | tool_allowlist.json | 允许使用的工具列表 | 否 |
 | input/ | 输入文件目录 | 否 |
 
-### 2.2.5 任务生命周期
+### 2.2.4 任务生命周期
 
 ```
 Created → Ready → In Progress → Selftest → Verification → Done
@@ -197,7 +197,7 @@ Created → Ready → In Progress → Selftest → Verification → Done
 | Blocked | 阻塞 | 依赖未满足或需要输入 |
 | Failed | 失败 | 执行失败或验证失败 |
 
-### 2.2.6 Task Bundle 规范详情
+### 2.2.5 Task Bundle 规范详情
 
 #### 目录结构
 
@@ -235,7 +235,7 @@ task_bundle/
 }
 ```
 
-### 2.2.7 Pins 规范
+### 2.2.6 Pins 规范
 
 **Pins** 是任务范围内的文件访问控制声明。
 
@@ -259,7 +259,7 @@ task_bundle/
 - `*` 匹配单个目录段内的内容（例如：`src/*.ts` 匹配 `src/a.ts` 但不匹配 `src/x/a.ts`）
 - `**` 匹配跨多个目录段的内容（例如：`docs/**` 匹配 `docs/a.md` 和 `docs/x/a.md`）
 
-### 2.2.8 Task Contract 规范
+### 2.2.7 Task Contract 规范
 
 任务合同定义了执行Agent与SCC系统运行时之间的规范性"任务合同"。
 

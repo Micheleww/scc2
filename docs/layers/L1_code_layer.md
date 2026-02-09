@@ -109,43 +109,6 @@ catalog: "docs/ssot/02_architecture/project_catalog.json"
 
 1. 每个契约必须声明其 `project_id`（来自catalog）
 
-### 1.2.6 Executor JSON Context（降低读文件成本）
-
-> **详见**: [L6 Agent层 - Executor规范](./L6_agent_layer.md#621-执行状态机)
-
-#### 核心文件
-
-| 文件路径 | 说明 | 关键内容 |
-|----------|------|----------|
-| `ssot/03_agent_playbook/exec_context/pins.schema.json` | Pins结构规范 | 执行器消费的JSON结构 |
-| `ssot/03_agent_playbook/exec_context/pins.example.json` | Pins示例 | 示例数据 |
-| `ssot/03_agent_playbook/exec_context/map.example.json` | 模块索引 | 给Designer/Planner生成pins |
-
-#### Pins JSON规范
-
-```yaml
-执行器只消费 Pins JSON + 最小切片，禁止自由读仓：
-  pins:
-    - 结构规范: exec_context/pins.schema.json
-    - 示例: exec_context/pins.example.json
-    - 模块索引: exec_context/map.example.json（给Designer/Planner生成pins）
-  
-  禁止:
-    - 执行器不得自由读取仓库文件
-    - 所有必需上下文必须通过Pins JSON提供
-```
-
-#### 事实源定义
-
-```
-- docs/：只放规范/索引/输入（可读可引用）
-- docs/INPUTS/：外部输入（网页对话/需求原文/共享记忆）
-- artifacts/：运行产物与证据（SQLite/jsonl/logs/状态文件）
-- evidence/：审计证据（append-only）
-```
-2. 每个执行器parent必须使用该项目allowlist roots生成 `allowed_globs[]`（scope gate）
-3. 若无法确定 `project_id`，必须STOP并回到S2补齐归类信息，不得猜测
-
 ### 1.2.3 降级规则（强制）
 
 ```
