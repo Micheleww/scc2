@@ -48,19 +48,9 @@ L11是SCC架构的**路由调度层**，为全系统提供：
 | `ssot/03_agent_playbook/ROLE_SPEC__v0.1.0.md` | 角色规范 | 路由契约定义 |
 | `ssot/05_runbooks/SCC_RUNBOOK__v0.1.0.md` | 运行手册 | 调度策略、重试规则 |
 
-#### 路由契约（规范）
-
-```yaml
-Routing Contract (normative):
-  Input:
-    - 任务描述（目标文本）
-    - 可选元数据（类型、受影响路径、风险标志）
-  Output:
-    - 一个role_id
-    - reason
-    - 可选required_skills[]
-  Rule: 给定相同输入和RoleSpec，路由必须是确定性的
-```
+> **完整路由契约定义**: 详见 [L4 提示词层 - 角色规范](./L4_prompt_layer.md#421-角色规范rolespec)
+>
+> L11关注路由调度的执行策略，路由契约的静态定义在L4的ROLE_SPEC中。
 
 ### 11.2.2 调度策略
 

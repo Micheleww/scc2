@@ -351,16 +351,9 @@ contracts/task.json@schema-v2
 
 ### 3.2.7 单一事实优先级
 
-> **注意**: 本文件已合并到 `docs/ssot/02_architecture/canonical_truth.md`
-
-#### 优先级（高→低）
-
-1. **PostgreSQL object_index**（运行时权威）
-2. **内联YAML frontmatter**（文档自描述）
-3. **文件路径/命名约定**
-4. **SSOT registry缓存**
-
-冲突解决：低优先级必须向高优先级对齐
+> **完整单一事实优先级定义**: 详见 [L17 知识与本体层 - 规范事实集](./L17_ontology_layer.md)
+>
+> L3关注文档流程中的优先级应用，完整的优先级规范在L17的canonical_truth.md中定义。
 
 ---
 

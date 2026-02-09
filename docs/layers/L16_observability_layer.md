@@ -290,14 +290,15 @@ L16 观测与可观测性层
 
 **目标**: 把SCC的关键指标"口径统一 + 采集点明确 + 阈值可告警"固化成单页SSOT
 
-**核心指标（SCC任务执行）**:
+> **完整质量指标定义**: 详见 [L14 质量与评测层 - 8个核心指标](./L14_quality_layer.md#1421-质量指标)
+>
+> L16关注指标的采集和观测，完整的质量指标定义在L14。
 
-| 指标 | 定义 | 阈值 |
-|------|------|------|
-| `pass_rate` | `DONE` / (`DONE` + `FAIL`) | ≥ 0.90（本地压测）；≥ 0.97（稳定运行） |
-| `mean_retries` | 每个task的平均重试次数 | ≤ 0.6（健康）；> 1.0触发"混乱度治理"检查 |
-| `time_to_green` | 从task创建到首次`DONE`的耗时 | P50 < 10min（本地）；P95 < 45min |
-| `dlq_rate` | 进入DLQ的task / 总task | ≤ 0.03（连续3天） |
+**L16采集的核心指标**:
+- `pass_rate` - 任务成功率
+- `mean_retries` - 平均重试次数
+- `time_to_green` - 任务完成时间
+- `dlq_rate` - DLQ比率
 
 **上下文与成本指标**:
 - `tokens_per_task`: 每个task的总tokens（prompt+completion）
