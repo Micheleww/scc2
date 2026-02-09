@@ -287,7 +287,7 @@ L4_prompt_layer:
       primary_unit: S.NAV_UPDATE
       description: "交接模板索引，角色间文档即接口的模板"
 
-### 4.2.4 Pins-first规范与CI手册
+### 4.2.5 Pins-first规范与CI手册
 
 #### 核心规则
 
