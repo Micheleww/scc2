@@ -291,7 +291,7 @@ roles/executor.json@v2.1.0#def456
 
 ---
 
-## 1.4 脚本使用示例
+## 1.5 脚本使用示例
 
 ```bash
 # 1. 验证SSOT拓扑完整性（CI门）
@@ -320,7 +320,7 @@ python tools/scc/ops/gap_analyzer.py \
 
 ---
 
-## 1.5 关键文件针脚
+## 1.6 关键文件针脚
 
 ```yaml
 L1_code_layer:
@@ -370,35 +370,35 @@ L1_code_layer:
 
 ---
 
-## 1.6 本章小结
+## 1.7 本章小结
 
-### 1.6.1 核心概念
+### 1.7.1 核心概念
 
-| 概念 | 说明 | 来源文件 |
-|------|------|----------|
-| North Star | 北极星目标：全自动代码工厂 | SCC_TOP.md |
-| S1-S7 | 闭环7阶段 | SCC_TOP.md |
-| SSOT Trunk | 唯一规范治理文档载体 | SCC_TOP.md |
-| workspace_id | 工作空间身份标识 | PROJECT_GROUP__v0.1.0.md |
-| project_group | 项目组定义 | PROJECT_GROUP__v0.1.0.md |
-| Demotion Rule | 降级规则：>80行必须降级 | SCC_TOP.md |
+| 概念 | 说明 |
+|------|------|
+| **SCC_TOP** | 顶层治理文档，包含宪法和核心原则 |
+| **Project Group** | 项目组，包含多个产物项目 |
+| **SSOT** | 单一事实来源，所有规范的权威来源 |
+| **Pins-First** | 执行器只消费Pins JSON，禁止自由读仓 |
+| **Connector** | 外部系统连接器（gateway.local, codex.cli等） |
 
-### 1.6.2 关键规则
+### 1.7.2 关键规则
 
-1. **SSOT权威链**: START_HERE → 00_index → _registry.json
-2. **降级规则**: TOP中超过80行的内容必须降级到叶文档
-3. **project_id强制**: 每个契约必须声明有效的project_id
-4. **故障关闭**: CI必须运行top_validator，失败阻止合并
+1. **每个契约必须声明其 `project_id`**（来自catalog）
+2. **执行器parent必须使用allowlist roots生成 `allowed_globs[]`**
+3. **若无法确定 `project_id`，必须STOP并回到S2补齐归类信息**
+4. **TOP超过80行必须降级到SSOT叶文档**
+5. **所有OID必须注册到registry**
 
-### 1.6.3 依赖关系
+### 1.7.3 依赖关系
 
 ```
-L1 代码层（顶层治理）
-    │
-    ├─ 提供North Star给 → L2-L17所有层
-    ├─ 提供project定义给 → L2任务层, L10工作空间层
-    ├─ 提供SSOT权威链给 → L3文档层, L17本体层
-    └─ 提供治理协议给 → L13安全层, L15变更层
+L1 代码层
+├─ 依赖 → L3 文档层（SSOT规范）
+├─ 依赖 → L10 工作空间层（workspace定义）
+├─ 依赖 → L17 本体层（OID/ULID体系）
+└─ 被依赖 → L2 任务层（契约结构）
+     └─ 被依赖 → L4-L16（所有执行层）
 ```
 
 ---

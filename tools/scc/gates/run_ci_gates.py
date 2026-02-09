@@ -1,14 +1,10 @@
-﻿import argparse
+import argparse
 import json
 import os
 import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
 from subprocess import run
-
-_REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
 
 from tools.scc.gates import (
     connector_gate,

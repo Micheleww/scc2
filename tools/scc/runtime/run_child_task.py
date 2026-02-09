@@ -15,13 +15,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from tools.scc.runtime.diff_extract import extract_unified_diff  # noqa: E402
-from tools.scc.runtime.unified_diff_apply import apply_unified_diff  # noqa: E402
-from tools.scc.runtime.unified_diff_guard import guard_diff  # noqa: E402
+from tools.scc.runtime.diff_extract import extract_unified_diff
+from tools.scc.runtime.unified_diff_apply import apply_unified_diff
+from tools.scc.runtime.unified_diff_guard import guard_diff
 
 
 def _now_iso() -> str:
