@@ -37,9 +37,55 @@ L5是SCC架构的**模型管理层**，为全系统提供：
 
 ---
 
-## 5.2 来自02_architecture/的核心内容
+## 5.2 模型能力矩阵
 
-### 5.2.1 模型升级策略
+### 5.2.1 SCC支持的模型详情
+
+根据 `runtime.env` 配置，SCC使用以下模型池：
+
+**付费模型池 (MODEL_POOL_PAID)** - Codex CLI使用:
+| 模型 | 提供商 | 上下文窗口 | 能力 | 适用场景 |
+|------|--------|-----------|------|----------|
+| **gpt-5.3-codex** | OpenAI (Codex) | 256K | 代码生成、推理 | 复杂代码任务、严格设计 |
+| **gpt-5.2** | OpenAI | 128K | 通用能力 | 标准代码生成、审查 |
+| **gpt-5.1-codex-max** | OpenAI (Codex) | 128K | 代码优化 | CI修复、五问分析 |
+
+**免费模型池 (MODEL_POOL_FREE)** - Opencode CLI使用:
+| 模型 | 提供商 | 上下文窗口 | 能力 | 适用场景 |
+|------|--------|-----------|------|----------|
+| **kimi-k2.5-free** | Moonshot | 256K | 代码、中文 | 代码生成、中文任务 |
+| **glm-4.7-free** | Zhipu | 128K | 通用 | 通用任务 |
+| **minimax-m2.1-free** | MiniMax | 128K | 通用 | 通用任务 |
+| **trinity-large-preview-free** | 未知 | 128K | 通用 | 通用任务 |
+
+### 5.2.2 模型选择策略
+
+| 任务类型 | 推荐模型 | 选择理由 |
+|----------|----------|----------|
+| 严格设计任务 | gpt-5.3-codex | STRICT_DESIGNER_MODEL指定 |
+| 标准代码生成 | gpt-5.2, gpt-5.1-codex-max | WORKER_MODELS_CODEX配置 |
+| CI自动修复 | gpt-5.2, gpt-5.1-codex-max | CI_FIXUP_ALLOWED_MODELS |
+| 五问分析 | gpt-5.2, gpt-5.1-codex-max | FIVE_WHYS_ALLOWED_MODELS |
+| 免费/低成本任务 | kimi-k2.5-free | OPENCODE_MODEL默认 |
+| 视觉任务 | MODEL_POOL_VISION中的模型 | 支持视觉能力 |
+
+### 5.2.3 模型路由模式
+
+根据 `MODEL_ROUTING_MODE` 配置：
+
+| 模式 | 说明 | 使用场景 |
+|------|------|----------|
+| **ladder** (默认) | 强到弱阶梯路由 | 优先使用最强模型，失败降级 |
+| **strong_first** | 始终使用最强模型 | 关键任务 |
+| **rr** | 轮询 | 负载均衡 |
+
+**故障自动重排队**: 当模型节流/认证失败时，自动重试下一级模型（最多2次）
+
+---
+
+## 5.3 来自02_architecture/的核心内容
+
+### 5.3.1 模型升级策略
 
 #### 升级路径（从低到高）
 

@@ -193,7 +193,7 @@ L9_state_layer:
 
 ## 9.6 本章小结
 
-### 9.2.4 记忆治理策略
+### 9.6.1 记忆治理策略
 
 #### 写入权限矩阵
 
@@ -232,9 +232,9 @@ content:
   - 常用知识片段
 ```
 
-### 9.2.5 记忆写入策略
+### 9.6.2 记忆写入策略
 
-### 9.2.6 任务状态字段
+### 9.6.3 任务状态字段
 
 # Task State Fields
 
@@ -353,7 +353,7 @@ This document enumerates common task object fields used by PromptOS/SCC, their m
 3. **弃用而非删除**: 当存在不确定性时，将旧声明标记为已弃用，添加带有生效日期和理由的新声明
 4. **升级未解决冲突**: 升级到curator角色进行审查
 
-### 9.6.1 核心概念
+### 9.6.4 核心概念
 
 | 概念 | 说明 |
 |------|------|
@@ -364,7 +364,7 @@ This document enumerates common task object fields used by PromptOS/SCC, their m
 | 记忆治理 | 写入权限、TTL、分层存储管理 |
 | 记忆写入策略 | 短期/长期记忆管理、冲突解决 |
 
-### 9.6.2 依赖关系
+### 9.6.5 依赖关系
 
 ```
 L9 状态与记忆层
