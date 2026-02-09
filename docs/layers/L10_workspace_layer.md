@@ -99,7 +99,117 @@ catalog: "docs/ssot/02_architecture/project_catalog.json"
 
 ---
 
-## 10.3 核心功能与脚本
+## 10.3 本地部署与开发环境
+
+### 10.3.1 系统要求
+
+| 组件 | 最低要求 | 推荐配置 |
+|------|----------|----------|
+| **操作系统** | Windows 10 / Linux / macOS | Windows 11 / Ubuntu 22.04 |
+| **Python** | 3.10 | 3.12 |
+| **Node.js** | 18.x | 20.x |
+| **内存** | 8GB | 16GB+ |
+| **磁盘** | 10GB 可用空间 | SSD 50GB+ |
+| **网络** | 可访问互联网 | 稳定宽带 |
+
+### 10.3.2 快速开始
+
+#### 1. 克隆仓库
+
+```bash
+git clone https://github.com/Micheleww/scc2.git
+cd scc2
+```
+
+#### 2. 安装Python依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 3. 配置环境变量
+
+创建 `.env` 文件：
+
+```bash
+# 必需配置
+SCC_WORKSPACE_ROOT=C:/scc
+SCC_MODEL_DEFAULT=kimi-k2.5
+
+# API密钥（根据使用的模型配置）
+OPENAI_API_KEY=your_key_here
+MOONSHOT_API_KEY=your_key_here
+
+# 可选配置
+SCC_LOG_LEVEL=INFO
+SCC_MAX_WORKERS=4
+```
+
+#### 4. 初始化工作空间
+
+```bash
+python tools/scc/ops/workspace_init.py \
+  --workspace-id scc-top \
+  --projects-dir projects/ \
+  --inputs-dir docs/INPUTS/
+```
+
+#### 5. 验证安装
+
+```bash
+python tools/scc/ops/workspace_validator.py \
+  --id scc-top \
+  --check-all
+```
+
+### 10.3.3 本地网关启动
+
+SCC使用本地网关（端口18788）进行任务调度：
+
+```bash
+# 启动网关
+python tools/oc-scc-local/src/gateway.mjs
+
+# 或使用npm
+npm run gateway
+
+# 验证网关运行
+curl http://127.0.0.1:18788/health
+```
+
+### 10.3.4 开发工作流
+
+```
+1. 创建工作分支
+   git checkout -b feature/my-feature
+
+2. 配置任务
+   编辑 docs/INPUTS/tasks/my_task.yaml
+
+3. 运行任务
+   python tools/scc/ops/task_runner.py \
+     --task-file docs/INPUTS/tasks/my_task.yaml
+
+4. 验证结果
+   python tools/scc/gates/run_all_gates.py
+
+5. 提交变更
+   git add .
+   git commit -m "feat: add my feature"
+```
+
+### 10.3.5 常见问题
+
+| 问题 | 原因 | 解决方案 |
+|------|------|----------|
+| 网关启动失败 | 端口18788被占用 | 修改 `runtime.env` 中的端口配置 |
+| 模型调用失败 | API密钥未配置 | 检查 `.env` 文件中的API密钥 |
+| 权限错误 | 文件权限不足 | 以管理员身份运行或修改文件夹权限 |
+| 依赖缺失 | 未安装requirements | 运行 `pip install -r requirements.txt` |
+
+---
+
+## 10.4 核心功能与脚本
 
 | 功能 | 说明 | 脚本/工具 | 命令示例 |
 |------|------|-----------|----------|

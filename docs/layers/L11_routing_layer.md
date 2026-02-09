@@ -196,7 +196,93 @@ Tier 3 (Free): glm-4.7, kimi-k2.5, deepseek
 
 ---
 
-## 11.3 核心功能与脚本
+## 11.3 多Agent并行编排模式
+
+### 11.3.1 编排架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    编排控制器 (Orchestrator)                   │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │ 任务分解器   │  │ 状态协调器   │  │ 结果聚合器   │          │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
+└─────────┼────────────────┼────────────────┼────────────────┘
+          │                │                │
+          ▼                ▼                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Agent工作池                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ Agent #1 │ │ Agent #2 │ │ Agent #3 │ │ Agent #N │       │
+│  │ designer │ │ executor │ │ verifier │ │ auditor  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 11.3.2 并行模式
+
+| 模式 | 说明 | 适用场景 | 协作方式 |
+|------|------|----------|----------|
+| **Map-Reduce** | 大任务分解为子任务并行执行，结果汇总 | 大规模代码重构、批量处理 | 分解→并行执行→聚合 |
+| **Pipeline** | 任务按阶段顺序流经不同Agent | CI/CD流程、文档生成 | Agent #1输出→Agent #2输入 |
+| **Competitive** | 多个Agent同时解决同一问题，择优采纳 | 复杂算法设计、架构决策 | 并行尝试→评估选择最佳 |
+| **Hierarchical** | 父Agent协调多个子Agent | 大型项目规划、系统设计 | 父任务→子任务分配→结果整合 |
+| **Peer-to-Peer** | 同级Agent相互协作 | 代码审查、结对编程 | 双向通信、共同决策 |
+
+### 11.3.3 状态协调机制
+
+```yaml
+orchestration_state:
+  # 全局状态
+  global_state:
+    task_id: "TASK-001"
+    status: "in_progress"  # pending/active/completed/failed
+    progress: 0.75
+    
+  # Agent状态
+  agent_states:
+    agent_1:
+      role: "designer"
+      status: "completed"
+      output: "design_doc_v1.md"
+    agent_2:
+      role: "executor"
+      status: "active"
+      current_step: "implement_auth"
+    agent_3:
+      role: "verifier"
+      status: "pending"
+      dependencies: ["agent_2"]
+  
+  # 协调规则
+  coordination_rules:
+    - when: "agent_2.status == completed"
+      then: "activate agent_3"
+    - when: "any_agent.status == failed"
+      then: "trigger_retry_or_escalation"
+```
+
+### 11.3.4 消息传递协议
+
+| 消息类型 | 方向 | 内容 | 示例 |
+|----------|------|------|------|
+| **TASK_ASSIGN** | Orchestrator→Agent | 任务分配 | `{task_id, role, inputs, constraints}` |
+| **STATUS_UPDATE** | Agent→Orchestrator | 状态更新 | `{agent_id, status, progress, output}` |
+| **RESULT_DELIVER** | Agent→Orchestrator | 结果交付 | `{agent_id, artifacts, evidence}` |
+| **QUERY_REQUEST** | Agent→Agent | 查询请求 | `{from, to, query_type, params}` |
+| **SYNC_EVENT** | Orchestrator→All | 同步事件 | `{event_type, affected_agents, new_state}` |
+
+### 11.3.5 冲突解决策略
+
+当多个Agent产生冲突时：
+
+1. **证据优先**: 有充分证据支持的方案优先
+2. **角色权威**: 专业角色（如security auditor）优先
+3. **时间戳**: 最新方案优先（适用于迭代改进）
+4. **人工仲裁**: 复杂冲突升级到人工决策
+
+---
+
+## 11.4 核心功能与脚本
 
 | 功能 | 说明 | 脚本/工具 | 命令示例 |
 |------|------|-----------|----------|
