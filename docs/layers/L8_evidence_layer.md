@@ -94,17 +94,16 @@ verdict:
 
 本节定义SCC PromptOS agents和executor使用的标准**输入/输出数据格式**。
 
-The IO layer exists to make tasks:
-
-- machine-validated (schema-first)
-- reproducible (evidence + logs)
-- auditable (explicit scope via pins)
+IO层的设计目标：
+- **机器可验证**（schema-first）
+- **可复现**（证据 + 日志）
+- **可审计**（通过pins明确范围）
 
 ---
 
-## 1) Task Input Schema
+### 1) 任务输入Schema（Task Input）
 
-### Canonical JSON shape
+#### 标准JSON结构
 
 ```json
 {
@@ -124,28 +123,28 @@ The IO layer exists to make tasks:
 }
 ```
 
-### Field semantics
+#### 字段说明
 
-- `task_id` (required): Stable UUID for correlating all artifacts.
-- `goal` (required): What the agent should accomplish (human readable).
-- `role` (required): Execution policy profile (e.g., "executor", "reviewer").
-- `pins` (required): Scope guardrails.
-  - `allowed_paths`: The only paths the agent may read/write.
-  - `forbidden_paths`: Paths explicitly disallowed even if they match `allowed_paths`.
-- `files` (optional): A hint list of expected file touches; used for preflight and review.
-- `context` (optional): Structured helper data.
-  - `map`: A precomputed repo map (when available).
-  - `docs`: Links/IDs to internal docs or prior decisions.
-  - `history`: Prior attempts, failures, or important constraints.
+- `task_id`（必需）: 稳定UUID，用于关联所有产物
+- `goal`（必需）: Agent需要完成的任务（自然语言）
+- `role`（必需）: 执行策略配置文件（如"executor"、"reviewer"）
+- `pins`（必需）: 范围护栏
+  - `allowed_paths`: Agent可读写的唯一路径列表
+  - `forbidden_paths`: 即使匹配allowed_paths也明确禁止的路径
+- `files`（可选）: 预期文件触碰列表，用于预检和审查
+- `context`（可选）: 结构化辅助数据
+  - `map`: 预计算的仓库结构图
+  - `docs`: 内部文档链接/ID
+  - `history`: 历史尝试、失败记录
 
-### Validation rules (recommended)
+#### 验证规则
 
-- `task_id` MUST be a UUID string.
-- `pins.allowed_paths` MUST be non-empty.
-- No path MAY appear in both `allowed_paths` and `forbidden_paths`.
-- If `files` is present, every entry SHOULD be within `pins.allowed_paths`.
+- `task_id` 必须是UUID字符串
+- `pins.allowed_paths` 不得为空
+- 同一路径不得同时出现在 `allowed_paths` 和 `forbidden_paths` 中
+- 如果提供了 `files`，每项都应在 `pins.allowed_paths` 范围内
 
-### Example
+#### 示例
 
 ```json
 {
@@ -171,11 +170,11 @@ The IO layer exists to make tasks:
 
 ---
 
-## 2) Task Output Schema (`submit.json`)
+### 2) 任务输出Schema（submit.json）
 
-The executor MUST emit a `submit.json` that can be validated without reading free-form text.
+执行器必须输出一个 `submit.json`，可在不读取自由文本的情况下进行验证。
 
-### Canonical JSON shape
+#### 标准JSON结构
 
 ```json
 {
@@ -202,38 +201,38 @@ The executor MUST emit a `submit.json` that can be validated without reading fre
 }
 ```
 
-### Field semantics
+#### 字段说明
 
-- `schema_version` (required): Output contract identifier. MUST be `scc.submit.v1`.
-- `task_id` (required): Must match the input `task_id`.
-- `status` (required):
-  - `DONE`: Work completed successfully.
-  - `NEED_INPUT`: Blocked; requires user/system input to proceed.
-  - `FAILED`: Attempt completed but unsuccessful.
-- `reason_code` (optional): Machine-actionable failure reason (see `fail_codes.md`).
-- `changed_files` / `new_files` (required): Paths changed/created **within the allowed scope**.
-- `tests` (required): What was executed and the outcome.
-  - `commands`: A list of commands (strings) intended to be runnable by the gateway.
-  - `passed`: Boolean test verdict.
-  - `summary`: Human readable summary.
-- `artifacts` (required): Paths to evidence files produced for this task.
-- `exit_code` (required): Integer exit code representing overall executor status.
-- `needs_input` (required): List of concrete questions/requests when `status=NEED_INPUT`.
+- `schema_version`（必需）: 输出契约标识符，必须是 `scc.submit.v1`
+- `task_id`（必需）: 必须与输入的 `task_id` 一致
+- `status`（必需）:
+  - `DONE`: 工作成功完成
+  - `NEED_INPUT`: 被阻塞，需要用户/系统输入
+  - `FAILED`: 尝试完成但未成功
+- `reason_code`（可选）: 机器可执行的失败原因（参见失败代码目录）
+- `changed_files` / `new_files`（必需）: 在允许范围内变更/创建的路径
+- `tests`（必需）: 执行了什么测试及其结果
+  - `commands`: 可由网关运行的命令列表
+  - `passed`: 布尔测试结果
+  - `summary`: 人类可读摘要
+- `artifacts`（必需）: 该任务产生的证据文件路径
+- `exit_code`（必需）: 整数退出码
+- `needs_input`（必需）: `status=NEED_INPUT` 时的具体问题/请求列表
 
-### Validation rules (recommended)
+#### 验证规则
 
-- `status=DONE` implies `exit_code=0`.
-- If `tests.passed=false`, `status` SHOULD be `FAILED` and `reason_code` SHOULD be `CI_FAILED`.
-- Every path in `changed_files` and `new_files` MUST be under `pins.allowed_paths` and not under `pins.forbidden_paths`.
-- All `artifacts.*` paths MUST exist and be readable by the gateway.
+- `status=DONE` 意味着 `exit_code=0`
+- 如果 `tests.passed=false`，`status` 应为 `FAILED`，`reason_code` 应为 `CI_FAILED`
+- `changed_files` 和 `new_files` 中的每个路径必须在 `pins.allowed_paths` 范围内
+- 所有 `artifacts.*` 路径必须存在且可被网关读取
 
 ---
 
-## 3) Verdict Schema (system evaluation result)
+### 3) 裁决Schema（Verdict）
 
-After the gateway validates artifacts and policies, it may produce a *verdict object*.
+网关验证产物和策略后，会产生一个 *裁决对象*。
 
-### Canonical JSON shape
+#### 标准JSON结构
 
 ```json
 {
@@ -262,10 +261,10 @@ After the gateway validates artifacts and policies, it may produce a *verdict ob
 }
 ```
 
-### Notes
+#### 说明
 
-- `reason_code` SHOULD map to a code in `docs/prompt_os/io/fail_codes.md`.
-- `checks` allows dashboards to show *what failed* without parsing free text.
+- `reason_code` 应映射到 `docs/prompt_os/io/fail_codes.md` 中的代码
+- `checks` 允许仪表板在不解析自由文本的情况下展示 *什么失败了*
 
 
 
@@ -284,21 +283,21 @@ After the gateway validates artifacts and policies, it may produce a *verdict ob
 
 ---
 
-## 1) Evidence Types
+#### 1) 证据类型
 
-The following evidence items are standard.
+以下证据项目为标准配置：
 
-- `patch.diff`: A git-style unified diff representing the repo change.
-- `selftest.log`: Full log of self-tests executed (or the test plan if tests are deferred to gateway policy).
-- `report.md`: Human-readable execution report (rationale, decisions, changed files).
-- `submit.json`: Machine-readable submission object as defined in `schemas.md`.
-- `screenshots/` (optional): Any screenshot evidence; only if relevant and allowed.
+- `patch.diff`: Git风格的统一diff，表示仓库变更
+- `selftest.log`: 自测执行完整日志（或延迟到网关策略时的测试计划）
+- `report.md`: 人类可读的执行报告（依据、决策、变更文件）
+- `submit.json`: 机器可读的提交对象（定义见上方Schema）
+- `screenshots/`（可选）: 截图证据，仅在相关且允许时使用
 
 ---
 
-## 2) Evidence Directory Structure
+#### 2) 证据目录结构
 
-Recommended structure (task-scoped directory):
+推荐结构（按任务隔离）：
 
 ```
 artifacts/
@@ -312,63 +311,54 @@ artifacts/
 └── submit.json
 ```
 
-Notes:
-
-- Keeping a copy of `patch.diff` at both `artifacts/patch.diff` and `artifacts/evidence/patch.diff` makes it easy for tools that expect either location.
-- `pre_state.json` and `post_state.json` SHOULD capture minimal state needed to compare before/after (e.g., file list, sizes, hashes).
-
----
-
-## 3) Evidence Retention Policy
-
-Retention SHOULD balance auditability with storage cost.
-
-Recommended baseline:
-
-- Keep task evidence for **30 days** for routine tasks.
-- Keep evidence for **90–180 days** for high-impact releases, security changes, or incident response.
-- Allow **manual pinning** of evidence for long-term retention when required by compliance.
-
-Deletion policy:
-
-- Expired evidence MAY be deleted automatically.
-- Deletion MUST preserve privacy constraints (e.g., redact secrets before long-term retention).
+说明：
+- 在 `artifacts/patch.diff` 和 `artifacts/evidence/patch.diff` 两处保留副本，方便不同工具读取
+- `pre_state.json` 和 `post_state.json` 应捕获最小状态用于前后对比（文件列表、大小、哈希）
 
 ---
 
-## 4) Evidence Validation Rules
+#### 3) 证据保留策略
 
-The gateway (or a local preflight) SHOULD validate evidence using the rules below.
+保留策略需平衡可审计性与存储成本：
 
-### `patch.diff`
+- 常规任务证据保留 **30天**
+- 高影响发布、安全变更、事件响应保留 **90-180天**
+- 合规要求时允许**手动固定**长期保留
 
-- MUST be parseable as a unified diff.
-- SHOULD include all repo changes reflected in `changed_files` and `new_files`.
-- MUST NOT include changes outside pinned scope.
+删除策略：
+- 过期证据可自动删除
+- 删除前必须遵守隐私约束（如编辑密钥后再长期保留）
 
-### `selftest.log`
+---
 
-- MUST be present.
-- MUST include the exact commands intended/executed.
-- MUST end with a terminal line like: `EXIT_CODE=<int>`.
-- SHOULD include timestamps and working directory context.
+#### 4) 证据验证规则
 
-### `report.md`
+网关（或本地预检）应按以下规则验证证据：
 
-- MUST be present.
-- MUST list: goal summary, key decisions, and changed/new files.
-- SHOULD call out any deviations (e.g., tests deferred to gateway).
+**`patch.diff`**:
+- 必须可解析为统一diff格式
+- 应包含 `changed_files` 和 `new_files` 中的所有仓库变更
+- 不得包含pins范围外的变更
 
-### `submit.json`
+**`selftest.log`**:
+- 必须存在
+- 必须包含精确的执行命令
+- 必须以终端行结束：`EXIT_CODE=<int>`
+- 应包含时间戳和工作目录上下文
 
-- MUST validate against the Task Output Schema in `schemas.md`.
-- `changed_files` and `new_files` MUST match actual repo diff scope.
-- `tests.commands` MUST be an array of strings; each string SHOULD be runnable by the gateway.
+**`report.md`**:
+- 必须存在
+- 必须列出：目标摘要、关键决策、变更/新增文件
+- 应注明任何偏差（如测试延迟到网关执行）
 
-### `screenshots/` (optional)
+**`submit.json`**:
+- 必须通过任务输出Schema验证
+- `changed_files` 和 `new_files` 必须与实际仓库diff范围一致
+- `tests.commands` 必须是字符串数组，每项应可由网关运行
 
-- MUST contain only task-relevant images.
-- MUST avoid secrets/credentials.
+**`screenshots/`**（可选）:
+- 只能包含与任务相关的图片
+- 不得包含密钥/凭据
 
 
 

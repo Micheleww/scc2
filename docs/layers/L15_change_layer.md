@@ -93,6 +93,70 @@ PATCH: 向后兼容的问题修复
    - 准备回滚方案
 ```
 
+### 15.2.4 ADR工作流（Architecture Decision Records）
+
+```
+1. 提出ADR
+   - 创建 docs/CANONICAL/ADR/ADR-NNN-title.md
+   - 使用标准模板: 上下文→决策→后果→状态
+
+2. ADR状态流转
+   PROPOSED → ACCEPTED → SUPERSEDED | DEPRECATED
+
+3. ADR命名规范
+   ADR-001-use-ulid-for-oid.md
+   ADR-002-postgres-as-oid-authority.md
+
+4. ADR审核
+   - chief_designer或team_lead审核
+   - 需要至少1个利益相关方确认
+
+5. ADR变更
+   - 已接受的ADR不修改，只能通过新ADR取代
+   - 被取代的ADR标记为 SUPERSEDED，链接到新ADR
+```
+
+### 15.2.5 Git分支策略
+
+```
+main（主干）
+  │
+  ├── feature/<task-id>-<desc>     功能分支（从main拉出）
+  ├── fix/<task-id>-<desc>         修复分支
+  ├── hotfix/<task-id>-<desc>      紧急修复（直接合入main）
+  └── release/v<major>.<minor>     发布分支（冻结后打tag）
+
+规则:
+- 所有变更必须通过PR合入main
+- PR必须通过CI门检查
+- 紧急修复（hotfix）可绕过部分CI门，但必须事后补齐
+- 分支命名必须包含task_id以便追踪
+```
+
+### 15.2.6 紧急变更（Hotfix）流程
+
+```
+1. 识别紧急问题
+   - 生产环境阻塞性问题
+   - 安全漏洞
+   - 数据损坏风险
+
+2. 创建Hotfix
+   - 从main创建 hotfix/<task-id>-<desc> 分支
+   - 修复范围必须最小化
+   - 必须包含回归测试
+
+3. 快速审核
+   - 至少1人代码审查
+   - 必须通过G1(ContractGate) + G3(SecretsGate) + G9(SchemaGate)
+   - 可跳过其他CI门（但必须在24h内补齐）
+
+4. 合入与部署
+   - 合入main并打tag（如 v1.2.1）
+   - 记录hotfix原因和影响范围
+   - 24h内补齐完整CI门检查
+```
+
 ---
 
 ## 15.3 核心功能与脚本
@@ -188,6 +252,9 @@ L15_change_layer:
 | SemVer | 语义化版本控制 |
 | 发布流程 | 准备→验证→发布→验证 |
 | 回滚策略 | 失败发布的快速回滚 |
+| ADR | 架构决策记录，PROPOSED→ACCEPTED→SUPERSEDED |
+| Git分支 | feature/fix/hotfix/release分支模型 |
+| Hotfix | 紧急变更流程，可跳过部分CI门但24h补齐 |
 
 ### 15.6.2 关键规则
 
@@ -195,6 +262,9 @@ L15_change_layer:
 2. **版本规范**: 使用SemVer格式
 3. **发布检查**: 发布前必须通过所有CI门
 4. **回滚准备**: 每个发布必须有回滚方案
+5. **ADR不可变**: 已接受的ADR只能被取代，不能修改
+6. **分支命名**: 必须包含task_id
+7. **Hotfix补齐**: 紧急变更24h内必须补齐完整CI门
 
 ### 15.6.3 依赖关系
 
