@@ -73,6 +73,8 @@ L7是SCC架构的**工具管理层**，为全系统提供：
 
 ### 7.2.2 技能守卫（Skill Call Guard）
 
+> **完整技能定义**: 详见 [L4 提示词层 - 技能规范](./L4_prompt_layer.md#422-技能规范skillspec)
+
 #### 门禁规则
 
 ```
@@ -81,17 +83,6 @@ L7是SCC架构的**工具管理层**，为全系统提供：
 - 任何任务达到SUBMIT必须通过适用的guard(s)
 - 技能/工具使用必须通过工件和/或结构化日志可审计
 ```
-
-#### 最小技能集（v0.1.0）
-
-| 技能 | 说明 | 使用角色 |
-|------|------|----------|
-| `SHELL_READONLY` | 检查仓库（rg/cat/ls）；无写入 | router, auditor |
-| `SHELL_WRITE` | 在允许的workspace roots内写入 | executor |
-| `PATCH_APPLY` | 应用代码/文档补丁 | executor |
-| `SELFTEST` | 运行验收命令/测试 | verifier |
-| `DOCFLOW_AUDIT` | 运行docflow审计并在artifacts下写报告 | auditor |
-| `REVIEW_JOB` | 生成progress + feedback + metrics | auditor, factory_manager |
 
 ---
 

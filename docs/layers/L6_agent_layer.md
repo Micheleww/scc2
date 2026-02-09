@@ -173,20 +173,17 @@ L6_agent_layer:
 | DLQ | 死信队列，存放无法自动处理的任务 |
 | 重试策略 | ≤3次，每次必须有新证据 |
 | Agent协作 | 通过标准化交接模板进行 |
+| Executor Atomic | Executor必须pins-first，缺pins直接失败 |
 
-### 6.2.4 执行器规范（Executor Atomic Only）
-
-#### 硬约束（Fail-Closed）
+### 6.6.2 Executor硬约束
 
 - **Executor MUST be pins-first**: 只能读取 pins allowlist 内的路径
-- **缺少 pins 必须失败**: 如果 pins 缺失/不足，任务必须以 `PINS_INSUFFICIENT` 失败
-- **禁止自由扫描**: 不允许"让我先看看代码结构"之类的仓库级扫描
+- **缺少 pins 必须失败**: 任务必须以 `PINS_INSUFFICIENT` 失败
+- **禁止自由扫描**: 不允许仓库级扫描
 - **禁止直接读取 SSOT**: SSOT 仅供控制平面角色使用
-- **保持工作空间整洁**: 不得在 `artifacts/<task_id>/` 外遗留脚本/文件
+- **保持工作空间整洁**: 不得在 `artifacts/<task_id>/` 外遗留文件
 
-#### 必需输出（每个任务）
-
-Executor 输出必须包含以下四行（机器可解析）：
+#### Executor必需输出
 
 ```text
 REPORT: <one-line outcome>
@@ -195,17 +192,12 @@ EVIDENCE: <paths or 'none'>
 SUBMIT: {"status":"DONE|NEED_INPUT|FAILED","reason_code":"...","touched_files":[...],"tests_run":[...]}
 ```
 
-**注意**：
 - `SUBMIT` 必须是严格的 JSON
 - `touched_files` 必须包含补丁/diff 更改的所有文件
-- `tests_run` 对于产生补丁的角色（engineer/integrator/qa/doc/...）必须包含至少一条非 `task_selftest` 的命令
+- `tests_run` 必须包含至少一条非 `task_selftest` 的命令
+- 入口点: `POST /executor/jobs/atomic`
 
-#### 入口点
-
-- `POST /executor/jobs/atomic` - 原子任务执行
-- 相关控制平面 + 门禁列表见 `docs/NAVIGATION.md`
-
-### 6.6.2 依赖关系
+### 6.6.3 依赖关系
 
 ```
 L6 Agent层
@@ -217,65 +209,6 @@ L6 Agent层
     ├─ 提供证据给 → L8 证据层
     └─ 提供状态给 → L11 调度层
 ```
-
-### 6.2.4 角色规范（RoleSpec - 来自SSOT）
-
-**路由合同**: 输入任务描述 + 可选元数据 → 输出唯一的 `role_id` + `reason` + 可选 `required_skills[]`
-
-**最小角色集（v0.1.0）**:
-
-| 角色 | 职责 | 禁止行为 |
-|------|------|----------|
-| `router` | 分配角色和执行模式 | 不得编辑代码/文档 |
-| `planner` | 仅生成合同/计划 | 不得执行或编辑 |
-| `chief_designer` | 生成架构蓝图/ADR草案 | 不得分发执行 |
-| `team_lead` | 拆分为任务图/合同，分发团队 | 监督并停止卡住运行 |
-| `executor` | 在允许范围内进行更改 | 必须生成证据路径 |
-| `verifier` | 运行验收 | 必须输出裁决产物，fail-closed |
-| `auditor` | 检查不变量（SSOT入口点、门禁、证据） | 不得编辑 |
-| `secretary` | 将原始聊天总结为派生笔记 | 不得直接更改规范 |
-| `factory_manager` | 优先排序、批准合同、分发 | 不得直接执行更改 |
-
-**门禁规则**: 任何达到SUBMIT的任务必须通过适用的guard
-
-### 6.2.5 Capability Catalog（来自SSOT）
-
-**目标**: 枚举SCC agents可以调用或扩展的最小能力集
-
-**最小能力（v0.1.0）**:
-
-| 能力 | 描述 |
-|------|------|
-| `CAP_DOCFLOW_AUDIT` | 运行文档流审计 → 在`artifacts/scc_state/`下生成报告 |
-| `CAP_RAW_TO_TASKTREE` | 从WebGPT导出生成`docs/DERIVED/task_tree.json` |
-| `CAP_REVIEW_JOB` | 写入进度 + 反馈（raw-b）+ 指标 |
-| `CAP_CODEX_DELEGATION` | 通过`/executor/codex/run`分发并行CodexCLI父任务 |
-| `CAP_TASKCODE_GUARD` | 通过`tools/ci/skill_call_guard.py`验证TaskCode三元组 |
-
-### 6.2.6 角色详情（来自SSOT）
-
-**Executor（执行器）**:
-- **使命**: 在scope_allow内做最小必要改动，产出可验证证据
-- **非目标**: 不扩范围；不改入口；不碰未allowlisted文件
-- **输入**: Contract (task_id + scope_allow + acceptance)
-- **输出**: Workspace diff/patch, Evidence paths
-
-**Factory Manager（工厂经理）**:
-- **使命**: 排产与门禁：把Blueprint/Goal Brief编译为Epic/Capability队列与优先级
-- **非目标**: 不直接改代码；不直接在执行层跑修复
-- **输入**: Blueprint/ADR, Goal Brief, PROGRESS/metrics
-- **输出**: Epic/Capability Order, Dispatch plan
-
-**Auditor（审计员）**:
-- **使命**: 执行CI/selftest证据验证(exit_code==0)并记录gaps供跟进
-- **非目标**: 不修代码；不改合同（只报告问题与建议）
-
-**Verifier（验证器）**:
-- **使命**: 只执行acceptance，产出verdict（pass/fail + fail_class）与证据
-- **非目标**: 不改代码/文档（除了写报告/证据）
-
----
-
 
 ---
 

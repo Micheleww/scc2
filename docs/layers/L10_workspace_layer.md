@@ -218,46 +218,6 @@ L10 工作空间层
     └─ 提供环境给 → L7 工具层
 ```
 
-### 10.2.5 WorkspaceSpec（来自SSOT）
-
-**目标**: 定义SCC使用的最小工作空间不变量
-
-**最小不变量**:
-- `workspace_id`: `scc-top`
-- 仓库根包含 `docs/START_HERE.md` (唯一入口)
-- SSOT主干在 `docs/ssot/` 下
-- 输入在 `docs/INPUTS/` 下
-- 派生（可再生）输出在 `docs/DERIVED/` 下
-- 证据/输出在 `artifacts/` 和 `evidence/` 下（首选append-only）
-
-**多项目工作空间**:
-- 每个合同必须声明 `project_id`
-- 分发必须从项目目录派生 `allowed_globs[]`，然后进一步按 `contract.scope_allow` 缩小
-
-### 10.2.6 Project Group（来自SSOT）
-
-**目标**: 定义SCC的"工作区(workspace) + 项目组(project group) + 项目(projects)"最小结构
-
-**Workspace身份**:
-- `workspace_id`: `scc-top`
-- `workspace_root`: `<REPO_ROOT>`
-
-**项目组**:
-- `project_group_id`: `scc-top-products`
-- 项目列表:
-  - `quantsys` — 量化金融（现有主工程）
-  - `yme` — YME连锁餐饮（产物项目）
-  - `math_modeling` — 数模竞赛（产物项目）
-
-**规范项目目录**:
-- 权威机器索引: `docs/ssot/02_architecture/project_catalog.json`
-- 每个合同必须声明其 `project_id`（来自catalog）
-- 每个执行器parent必须使用该项目allowlist roots生成 `allowed_globs[]`
-- 若无法确定 `project_id`，必须STOP并回到S2补齐归类信息
-
----
-
-
 ---
 
 **导航**: [← L9](./L9_state_layer.md) | [↑ 返回导航](../START_HERE.md) | [→ L11](./L11_routing_layer.md)
