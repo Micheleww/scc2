@@ -1,18 +1,14 @@
 import os
 import pathlib
 
+from tools.scc.lib.utils import load_json, norm_rel
 from tools.scc.validators.contract_validator import (
-    load_json,
     validate_pins_result_v1,
     validate_preflight_v1,
     validate_replay_bundle_v1,
     validate_retry_plan_v1,
     validate_submit_v1,
 )
-
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
 
 
 def _read_last_line(path: pathlib.Path) -> str:

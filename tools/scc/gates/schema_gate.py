@@ -1,14 +1,7 @@
-import json
 import pathlib
 
+from tools.scc.lib.utils import load_json, norm_rel
 from tools.scc.validators.contract_validator import validate_release_record_v1
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
-
-
-def _load_json(path: pathlib.Path):
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _require_keys(obj: dict, keys: list[str], ctx: str) -> list[str]:

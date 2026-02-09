@@ -4,9 +4,7 @@ import os
 import pathlib
 from typing import Any
 
-
-def _norm_rel(p: str) -> str:
-    return str(p or "").replace("\\", "/").lstrip("./")
+from tools.scc.lib.utils import norm_rel
 
 
 def _load_json(path: pathlib.Path) -> Any:

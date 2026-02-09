@@ -3,9 +3,7 @@ import json
 import pathlib
 from datetime import datetime, timezone
 
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
+from tools.scc.lib.utils import norm_rel
 
 
 def _load_json(path: pathlib.Path):

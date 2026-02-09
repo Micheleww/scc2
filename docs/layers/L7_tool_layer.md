@@ -133,9 +133,7 @@ L7是SCC架构的**工具管理层**，为全系统提供：
 |------|------|----------|
 | `top_validator.ps1/py` | Top/SSOT最小闭环校验 | `powershell -File tools/scc/ops/top_validator.ps1` |
 
-### 7.2.4 工具目录详情
-
-### 7.2.5 工具使用策略
+### 7.2.4 工具使用策略
 
 # Tool Usage Policy
 
@@ -197,7 +195,7 @@ Risk level controls the required gating before a tool call.
   - Result (success/failure)
   - Files changed (if any)
 
-### 7.2.6 API规则
+### 7.2.5 API规则
 
 #### 速率限制
 - 强制执行每个密钥和每个角色的限制（每分钟请求数和每分钟token数）
@@ -234,7 +232,7 @@ Risk level controls the required gating before a tool call.
   - 使用约束提示请求更正的响应，或
   - 触发回退
 
-### 7.2.7 数据规则
+### 7.2.6 数据规则
 
 #### 数据分类
 
