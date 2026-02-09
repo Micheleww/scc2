@@ -121,6 +121,20 @@ catalog: "docs/ssot/02_architecture/project_catalog.json"
 | `ssot/03_agent_playbook/exec_context/pins.example.json` | Pins示例 | 示例数据 |
 | `ssot/03_agent_playbook/exec_context/map.example.json` | 模块索引 | 给Designer/Planner生成pins |
 
+#### Pins JSON规范
+
+```yaml
+执行器只消费 Pins JSON + 最小切片，禁止自由读仓：
+  pins:
+    - 结构规范: exec_context/pins.schema.json
+    - 示例: exec_context/pins.example.json
+    - 模块索引: exec_context/map.example.json（给Designer/Planner生成pins）
+  
+  禁止:
+    - 执行器不得自由读取仓库文件
+    - 所有必需上下文必须通过Pins JSON提供
+```
+
 #### 事实源定义
 
 ```
@@ -129,6 +143,8 @@ catalog: "docs/ssot/02_architecture/project_catalog.json"
 - artifacts/：运行产物与证据（SQLite/jsonl/logs/状态文件）
 - evidence/：审计证据（append-only）
 ```
+2. 每个执行器parent必须使用该项目allowlist roots生成 `allowed_globs[]`（scope gate）
+3. 若无法确定 `project_id`，必须STOP并回到S2补齐归类信息，不得猜测
 
 ### 1.2.3 降级规则（强制）
 
@@ -312,7 +328,7 @@ roles/executor.json@v2.1.0#def456
 
 ---
 
-## 1.5 脚本使用示例
+## 1.4 脚本使用示例
 
 ```bash
 # 1. 验证SSOT拓扑完整性（CI门）
@@ -414,6 +430,9 @@ L1 代码层（顶层治理）
     ├─ 提供SSOT权威链给 → L3文档层, L17本体层
     └─ 提供治理协议给 → L13安全层, L15变更层
 ```
+
+---
+
 
 ---
 
