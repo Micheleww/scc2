@@ -109,7 +109,9 @@ catalog: "docs/ssot/02_architecture/project_catalog.json"
 
 1. 每个契约必须声明其 `project_id`（来自catalog）
 
-### 10.2.2 Executor JSON Context（降低读文件成本）
+### 1.2.6 Executor JSON Context（降低读文件成本）
+
+> **详见**: [L6 Agent层 - Executor规范](./L6_agent_layer.md#621-执行状态机)
 
 #### 核心文件
 
@@ -428,27 +430,6 @@ L1 代码层（顶层治理）
     ├─ 提供SSOT权威链给 → L3文档层, L17本体层
     └─ 提供治理协议给 → L13安全层, L15变更层
 ```
-
-### 1.2.5 SCC_TOP宪法（来自SSOT）
-
-**North Star**: SCC是一个完全自动化的代码工厂，由文档流驱动：
-目标接收 → 任务派生 → 合同 → 执行+验证 → 审查 → 合成规范 → 反馈到原始输入
-
-**闭环阶段（S1..S7）**:
-- S1 原始输入
-- S2 任务派生
-- S3 合同
-- S4 执行 + 验证
-- S5 审查 / 审计
-- S6 合成规范
-- S7 反馈到原始输入
-
-**SSOT权威链**:
-- `docs/START_HERE.md`
-- `docs/ssot/00_index.md`
-- `docs/ssot/_registry.json`
-
-**降级规则**: 如果TOP任何部分超过80行或~800字符，必须将完整内容移动到适当的叶文档，并在TOP中用1句话摘要+链接替换
 
 ---
 
