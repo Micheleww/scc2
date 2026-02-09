@@ -128,6 +128,90 @@ Handoff templates: docs/ssot/03_agent_playbook/handoff_templates/index.md (Progr
 | `DOCFLOW_AUDIT` | 运行docflow审计并在artifacts下写报告 | auditor |
 | `REVIEW_JOB` | 生成progress + feedback + metrics | auditor, factory_manager |
 
+#### 完整Skills目录（51个技能）
+
+根据 `skills/registry.json`，SCC包含以下技能：
+
+**核心开发技能**:
+| 技能ID | 所属角色 | 说明 |
+|--------|----------|------|
+| `implementation` | engineer | 代码实现 |
+| `patch_only` | engineer | 仅补丁修改 |
+| `patch.apply_minimal` | executor | 最小化补丁应用 |
+| `glue_code` | integrator | 胶水代码编写 |
+| `interface_spec` | designer | 接口规范定义 |
+| `min_diff` | integrator | 最小差异实现 |
+| `acceptance_criteria` | designer | 验收标准定义 |
+
+**任务管理技能**:
+| 技能ID | 所属角色 | 说明 |
+|--------|----------|------|
+| `task_decomposition` | designer | 任务分解 |
+| `taskgraph.compile` | planner | 任务图编译 |
+| `taskgraph.atomicize` | split | 任务原子化 |
+| `dispatch_planning` | factory_manager | 调度规划 |
+| `queue_orchestration` | factory_manager | 队列编排 |
+| `queue.partition` | factory_manager | 队列分区 |
+| `routing.fallback` | factory_manager | 路由回退 |
+| `retry.plan` | retry_orchestrator | 重试计划 |
+
+**质量保障技能**:
+| 技能ID | 所属角色 | 说明 |
+|--------|----------|------|
+| `tests.run_allowed` | executor | 运行允许的测试 |
+| `smoke_tests` | qa | 冒烟测试 |
+| `triage` | qa | 问题分类 |
+| `evidence_check` | auditor | 证据检查 |
+| `evidence.verify_triplet` | audit | 证据三元组验证 |
+| `failure_triad` | auditor | 失败三元分析 |
+| `log_review` | auditor | 日志审查 |
+| `gap_analysis` | status_review | 差距分析 |
+| `status_review` | status_review | 状态审查 |
+| `status.summarize_events` | status_review | 事件汇总 |
+| `risk.assess` | planner | 风险评估 |
+| `bottleneck_analysis` | factory_manager | 瓶颈分析 |
+
+**CI/CD技能**:
+| 技能ID | 所属角色 | 说明 |
+|--------|----------|------|
+| `ci.fix_build` | ci_fixup | CI构建修复 |
+| `ci.reproduce` | ci_fixup | CI问题复现 |
+| `preflight.run` | preflight_gate | 预检运行 |
+| `preflight.requirements_infer` | split | 需求推断 |
+
+**数据与映射技能**:
+| 技能ID | 所属角色 | 说明 |
+|--------|----------|------|
+| `map.build` | map_curator | 映射构建 |
+| `map.sqlite.build` | map_curator | SQLite映射构建 |
+| `map.query` | pins | 映射查询 |
+| `pins_only` | pinser | Pins专用操作 |
+| `pins.build_minimal` | pins | 最小Pins构建 |
+| `scope_minimization` | pinser | 范围最小化 |
+| `navigation` | doc | 导航文档 |
+
+**治理与文档技能**:
+| 技能ID | 所属角色 | 说明 |
+|--------|----------|------|
+| `adr.write_6line` | doc_adr_scribe | ADR六行写法 |
+| `ssot.update_index` | ssot_curator | SSOT索引更新 |
+| `ssot.sync_apply` | ssot_curator | SSOT同步应用 |
+| `playbook.publish` | playbook_publisher | 手册发布 |
+| `runbooks` | doc | 运行手册 |
+| `lessons.mine` | lessons_miner | 经验挖掘 |
+
+**发布与评估技能**:
+| 技能ID | 所属角色 | 说明 |
+|--------|----------|------|
+| `pr.bundle_create` | release_integrator | PR包创建 |
+| `replay.run_smoke` | eval_curator | 冒烟重放 |
+| `eval.curate_manifest` | eval_curator | 评估清单管理 |
+| `events.backfill` | auditor | 事件回填 |
+| `stability.control` | stability_controller | 稳定性控制 |
+| `policy.check_scope` | audit | 策略范围检查 |
+
+> **完整注册表**: `skills/registry.json` 包含所有51个技能的定义和归属
+
 #### 证据规则（规范）
 
 ```
