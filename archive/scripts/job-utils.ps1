@@ -70,3 +70,9 @@ function Get-JobList {
             status = $_.status
             model = $_.model
             prompt = ($_.prompt.Substring(0, [Math]::Min(70, $_.prompt.Length)))
+        }
+    } | Format-Table -AutoSize
+}
+
+# Export functions
+Export-ModuleMember -Function Get-AllJobs, Get-JobStatus, Watch-Jobs, Watch-Job, Get-JobCount, Get-JobDump, Get-JobList

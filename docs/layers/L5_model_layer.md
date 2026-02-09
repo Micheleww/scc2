@@ -69,7 +69,7 @@ L5是SCC架构的**模型管理层**，为全系统提供：
 | 免费/低成本任务 | kimi-k2.5-free | OPENCODE_MODEL默认 |
 | 视觉任务 | MODEL_POOL_VISION中的模型 | 支持视觉能力 |
 
-### 5.2.3 模型路由模式
+### 5.2.4 模型路由模式
 
 根据 `MODEL_ROUTING_MODE` 配置：
 
@@ -206,7 +206,7 @@ L5 模型层
     └─ 提供成本数据给 → L12 成本层
 ```
 
-### 5.2.4 模型路由策略（来自 MODEL_ROUTING）
+### 5.2.3 模型路由策略（来自 MODEL_ROUTING）
 
 **Strong -> Weak Ladder 路由**
 
