@@ -1,23 +1,18 @@
 #!/usr/bin/env node
 /**
- * Parent Inbox Watcher
+ * Parent Inbox Watcher - Standalone Version
  * 监听 parent_inbox.jsonl，自动分解父任务并提交到 Jobs Store
- * 
- * 位置: L6_agent_layer/orchestrators/parent_inbox_watcher.mjs
- * 职责:
- * 1. 轮询 parent_inbox.jsonl 文件
- * 2. 识别 pending 状态的父任务
- * 3. 调用分解器将父任务拆分为子任务
- * 4. 将子任务提交到 Jobs Store
  */
 
 import fs from "node:fs"
 import path from "node:path"
 import process from "node:process"
-import { createLogger } from "../../L16_observability_layer/logging/logger.mjs"
-import { readJson, writeJson } from "../../L9_state_layer/state_stores/state_store.mjs"
 
-const log = createLogger({ component: "scc.parent_inbox_watcher" })
+// 简单的日志函数
+function log(level, message) {
+  const timestamp = new Date().toISOString()
+  console.log(`[${timestamp}] [${level.toUpperCase()}] ${message}`)
+}
 
 // 配置
 const PARENT_INBOX_FILE = process.env.PARENT_INBOX_FILE || "/app/artifacts/scc_state/parent_inbox.jsonl"
@@ -44,12 +39,12 @@ function readParentInbox() {
         const data = JSON.parse(line)
         return { ...data, _index: index, _raw: line }
       } catch (e) {
-        log.error(`Failed to parse line ${index}: ${e.message}`)
+        log("error", `Failed to parse line ${index}: ${e.message}`)
         return null
       }
     }).filter(Boolean)
   } catch (e) {
-    log.error(`Failed to read parent inbox: ${e.message}`)
+    log("error", `Failed to read parent inbox: ${e.message}`)
     return []
   }
 }
@@ -70,24 +65,22 @@ function updateParentStatus(index, newStatus, metadata = {}) {
         key.startsWith("_") ? undefined : val
       ))
       fs.writeFileSync(PARENT_INBOX_FILE, lines.join("\n") + "\n", "utf-8")
-      log.info(`Updated parent task ${index} status to ${newStatus}`)
+      log("info", `Updated parent task ${index} status to ${newStatus}`)
       return true
     }
     return false
   } catch (e) {
-    log.error(`Failed to update parent status: ${e.message}`)
+    log("error", `Failed to update parent status: ${e.message}`)
     return false
   }
 }
 
 /**
  * 将父任务分解为子任务
- * 使用简单的启发式分解策略
  */
 async function decomposeParentTask(parentTask) {
-  log.info(`Decomposing parent task: ${parentTask.description || parentTask.title || "unnamed"}`)
+  log("info", `Decomposing parent task: ${parentTask.description || parentTask.title || "unnamed"}`)
   
-  // 基于父任务描述生成子任务
   const subtasks = []
   
   // 策略1: 如果父任务有明确的步骤，按步骤分解
@@ -139,8 +132,38 @@ async function decomposeParentTask(parentTask) {
     })
   }
   
-  log.info(`Decomposed into ${subtasks.length} subtasks`)
+  log("info", `Decomposed into ${subtasks.length} subtasks`)
   return subtasks
+}
+
+/**
+ * 直接写入 Jobs 文件
+ */
+function submitJobDirectly(job) {
+  try {
+    let state = { jobs: {}, updatedAt: Date.now() }
+    if (fs.existsSync(JOBS_FILE)) {
+      const content = fs.readFileSync(JOBS_FILE, "utf-8")
+      state = JSON.parse(content)
+    }
+    
+    state.jobs = state.jobs || {}
+    state.jobs[job.id] = {
+      ...job,
+      status: "pending",
+      prompt: `Task: ${job.title}\nGoal: ${job.goal}\nFiles: ${job.files?.join(", ") || "none"}`,
+      systemPrompt: `You are a ${job.role} agent. Execute the task following best practices.`,
+      createdAt: Date.now()
+    }
+    state.updatedAt = Date.now()
+    
+    fs.writeFileSync(JOBS_FILE, JSON.stringify(state, null, 2), "utf-8")
+    log("info", `Directly wrote job ${job.id} to ${JOBS_FILE}`)
+    return { ok: true, job: state.jobs[job.id] }
+  } catch (e) {
+    log("error", `Failed to write job directly: ${e.message}`)
+    return { ok: false, error: e.message }
+  }
 }
 
 /**
@@ -176,40 +199,12 @@ async function submitJobToStore(job) {
     }
     
     const result = await response.json()
-    log.info(`Submitted job ${job.id} to store: ${result.ok}`)
+    log("info", `Submitted job ${job.id} to store: ${result.ok}`)
     return result
   } catch (e) {
-    log.error(`Failed to submit job ${job.id}: ${e.message}`)
+    log("error", `Failed to submit job ${job.id} via API: ${e.message}`)
     // Fallback: 直接写入 jobs 文件
     return submitJobDirectly(job)
-  }
-}
-
-/**
- * 直接写入 Jobs 文件 (fallback)
- */
-function submitJobDirectly(job) {
-  try {
-    let state = { jobs: {}, updatedAt: Date.now() }
-    if (fs.existsSync(JOBS_FILE)) {
-      const content = fs.readFileSync(JOBS_FILE, "utf-8")
-      state = JSON.parse(content)
-    }
-    
-    state.jobs = state.jobs || {}
-    state.jobs[job.id] = {
-      ...job,
-      status: "pending",
-      createdAt: Date.now()
-    }
-    state.updatedAt = Date.now()
-    
-    fs.writeFileSync(JOBS_FILE, JSON.stringify(state, null, 2), "utf-8")
-    log.info(`Directly wrote job ${job.id} to ${JOBS_FILE}`)
-    return { ok: true, job: state.jobs[job.id] }
-  } catch (e) {
-    log.error(`Failed to write job directly: ${e.message}`)
-    return { ok: false, error: e.message }
   }
 }
 
@@ -218,7 +213,7 @@ function submitJobDirectly(job) {
  */
 async function autoRunJob(jobId) {
   try {
-    log.info(`Auto-running job ${jobId}`)
+    log("info", `Auto-running job ${jobId}`)
     const response = await fetch(`${GATEWAY_URL}/executor/jobs/${jobId}/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -231,10 +226,10 @@ async function autoRunJob(jobId) {
     }
     
     const result = await response.json()
-    log.info(`Job ${jobId} started: ${result.ok}`)
+    log("info", `Job ${jobId} started: ${result.ok}`)
     return result
   } catch (e) {
-    log.error(`Failed to auto-run job ${jobId}: ${e.message}`)
+    log("error", `Failed to auto-run job ${jobId}: ${e.message}`)
     return { ok: false, error: e.message }
   }
 }
@@ -270,11 +265,11 @@ async function processParentTask(parentTask) {
       submittedJobs
     })
     
-    log.info(`Parent task ${index} processed successfully with ${submittedJobs.length} jobs`)
+    log("info", `Parent task ${index} processed successfully with ${submittedJobs.length} jobs`)
     return { ok: true, subtaskCount: subtasks.length, jobs: submittedJobs }
     
   } catch (e) {
-    log.error(`Failed to process parent task ${index}: ${e.message}`)
+    log("error", `Failed to process parent task ${index}: ${e.message}`)
     updateParentStatus(index, "failed", { error: e.message })
     return { ok: false, error: e.message }
   }
@@ -296,7 +291,7 @@ async function poll() {
     )
     
     if (pendingTasks.length > 0) {
-      log.info(`Found ${pendingTasks.length} pending parent tasks`)
+      log("info", `Found ${pendingTasks.length} pending parent tasks`)
       
       for (const task of pendingTasks) {
         await processParentTask(task)
@@ -304,7 +299,7 @@ async function poll() {
       }
     }
   } catch (e) {
-    log.error(`Poll error: ${e.message}`)
+    log("error", `Poll error: ${e.message}`)
   } finally {
     isRunning = false
   }
@@ -314,13 +309,13 @@ async function poll() {
  * 启动 watcher
  */
 function start() {
-  log.info("==================================")
-  log.info("Parent Inbox Watcher Started")
-  log.info(`Inbox file: ${PARENT_INBOX_FILE}`)
-  log.info(`Jobs file: ${JOBS_FILE}`)
-  log.info(`Gateway URL: ${GATEWAY_URL}`)
-  log.info(`Poll interval: ${POLL_INTERVAL_MS}ms`)
-  log.info("==================================")
+  log("info", "==================================")
+  log("info", "Parent Inbox Watcher Started")
+  log("info", `Inbox file: ${PARENT_INBOX_FILE}`)
+  log("info", `Jobs file: ${JOBS_FILE}`)
+  log("info", `Gateway URL: ${GATEWAY_URL}`)
+  log("info", `Poll interval: ${POLL_INTERVAL_MS}ms`)
+  log("info", "==================================")
   
   // 立即执行一次
   poll()
@@ -330,13 +325,13 @@ function start() {
   
   // 优雅退出
   process.on("SIGINT", () => {
-    log.info("Shutting down...")
+    log("info", "Shutting down...")
     clearInterval(interval)
     process.exit(0)
   })
   
   process.on("SIGTERM", () => {
-    log.info("Shutting down...")
+    log("info", "Shutting down...")
     clearInterval(interval)
     process.exit(0)
   })
