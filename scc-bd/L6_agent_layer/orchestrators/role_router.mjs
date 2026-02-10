@@ -19,20 +19,20 @@ import process from "node:process"
 const ROLE_INBOX_DIR = process.env.ROLE_INBOX_DIR || "/app/artifacts/role_inbox"
 const JOBS_FILE = process.env.JOBS_FILE || "/app/artifacts/executor_logs/exec_state.json"
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || "3000")
-const OPENCODE_CLI = process.env.OPENCODE_CLI_PATH || "opencodecli"
+const OLTCLI = process.env.OLTCLI_PATH || "node /app/scc-bd/L6_execution_layer/oltcli.mjs"
 
 // Role 到执行器的映射
 const ROLE_EXECUTOR_MAP = {
-  "executor": "opencodecli",
-  "engineer": "trae",
-  "planner": "opencodecli",
-  "split": "opencodecli",
-  "auditor": "opencodecli",
-  "qa": "opencodecli",
-  "doc": "opencodecli",
-  "architect": "opencodecli",
-  "integrator": "opencodecli",
-  "workspace_janitor": "opencodecli"
+  "executor": "oltcli",
+  "engineer": "oltcli",
+  "planner": "oltcli",
+  "split": "oltcli",
+  "auditor": "oltcli",
+  "qa": "oltcli",
+  "doc": "oltcli",
+  "architect": "oltcli",
+  "integrator": "oltcli",
+  "workspace_janitor": "oltcli"
 }
 
 // 简单的日志函数
@@ -153,46 +153,46 @@ function selectRole(task) {
 }
 
 /**
- * 构建 OpenCode CLI 参数
+ * 构建 oltcli 参数
  */
-function buildOpenCodeArgs(task, role) {
-  const args = [
-    "run",
-    "--model", task.model || "opencode/kimi-k2.5-free",
-    "--role", role,
-    "--message", task.prompt || task.goal || task.title
-  ]
+function buildOltcliArgs(task, role) {
+  const args = []
   
-  // 如果有 system prompt，添加到环境变量
+  // oltcli 通过环境变量接收任务信息
+  process.env.SCC_TASK_PROMPT = task.prompt || task.goal || task.title
+  process.env.SCC_TASK_ROLE = role
+  process.env.SCC_TASK_JOB_ID = task.jobId
+  
   if (task.systemPrompt) {
     process.env.SCC_SYSTEM_PROMPT = task.systemPrompt
   }
   
-  // 如果有工作目录
-  if (task.context?.workingDir) {
-    args.push("--cwd", task.context.workingDir)
+  if (task.model) {
+    process.env.SCC_TASK_MODEL = task.model
   }
   
   return args
 }
 
 /**
- * 执行 OpenCode CLI
+ * 执行 oltcli
  */
-async function executeWithOpenCode(task, role) {
+async function executeWithOltcli(task, role) {
   return new Promise((resolve, reject) => {
-    const args = buildOpenCodeArgs(task, role)
+    const args = buildOltcliArgs(task, role)
     
-    log("info", `Executing OpenCode CLI for job ${task.jobId}`)
-    log("info", `Command: ${OPENCODE_CLI} ${args.join(" ")}`)
+    log("info", `Executing oltcli for job ${task.jobId}`)
+    log("info", `Command: ${OLTCLI}`)
     
     const startTime = Date.now()
     let stdout = ""
     let stderr = ""
     
-    const child = spawn(OPENCODE_CLI, args, {
+    // 使用 shell 执行 oltcli
+    const child = spawn(OLTCLI, args, {
       env: { ...process.env, SCC_ROLE: role, SCC_JOB_ID: task.jobId },
-      timeout: 300000 // 5分钟超时
+      timeout: 300000, // 5分钟超时
+      shell: true
     })
     
     child.stdout.on("data", (data) => {
@@ -231,7 +231,7 @@ async function executeWithOpenCode(task, role) {
     })
     
     child.on("error", (err) => {
-      log("error", `Failed to spawn OpenCode CLI: ${err.message}`)
+      log("error", `Failed to spawn oltcli: ${err.message}`)
       reject(err)
     })
   })
@@ -297,9 +297,9 @@ async function processRoleTask(task) {
     // 3. 执行
     let result
     try {
-      result = await executeWithOpenCode(task, selectedRole)
+      result = await executeWithOltcli(task, selectedRole)
     } catch (e) {
-      log("warn", `OpenCode CLI failed, trying fallback: ${e.message}`)
+      log("warn", `oltcli failed, trying fallback: ${e.message}`)
       result = await executeWithFallback(task, selectedRole)
     }
     
@@ -410,7 +410,7 @@ function start() {
   log("info", "Role Router Started")
   log("info", `Role Inbox Dir: ${ROLE_INBOX_DIR}`)
   log("info", `Jobs File: ${JOBS_FILE}`)
-  log("info", `OpenCode CLI: ${OPENCODE_CLI}`)
+  log("info", `OLTCLI: ${OLTCLI}`)
   log("info", `Poll Interval: ${POLL_INTERVAL_MS}ms`)
   log("info", "==================================")
   log("info", "")
