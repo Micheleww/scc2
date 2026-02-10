@@ -6,11 +6,10 @@ import json
 import pathlib
 import sys
 
-_REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
+from tools.scc.lib.utils import load_json
 from tools.scc.validators.contract_validator import validate_release_record_v1
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 
 
 def _load(path: pathlib.Path):
@@ -22,7 +21,7 @@ def main() -> int:
     ap.add_argument("--path", required=True, help="Path to releases/<id>/release.json")
     args = ap.parse_args()
 
-    p = (_REPO_ROOT / str(args.path).replace("\\", "/").lstrip("./")).resolve()
+    p = (REPO_ROOT / str(args.path).replace("\\", "/").lstrip("./")).resolve()
     if not p.exists():
         print(f"FAIL: missing {p}")
         return 2

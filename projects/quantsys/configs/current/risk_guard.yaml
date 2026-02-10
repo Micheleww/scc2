@@ -1,0 +1,10 @@
+# Runtime Guard Configuration
+# Authority: see law/QCC-README.md
+
+# Enable runtime guard for order operations
+# Default: true for live/paper environments, false for backtest
+enabled: true
+
+# Guard strict mode: if true, any operation without verdict will be blocked
+# Default: true
+strict_mode: true

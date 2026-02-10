@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A2A Task Status Update",
+  "description": "Schema for A2A task status updates",
+  "type": "object",
+  "required": ["message_type", "task_id", "task_code", "status", "timestamp"],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "enum": ["status"],
+      "description": "Type of message (must be 'status')"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Unique identifier for the task (UUID format)",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "task_code": {
+      "type": "string",
+      "description": "Task code following naming convention",
+      "pattern": "^[A-Z0-9-]+__[0-9]{8}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "done", "failed", "cancelled"],
+      "description": "Current task status"
+    },
+    "progress": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Task progress percentage (0-100)"
+    },
+    "message": {
+      "type": "string",
+      "description": "Status message or description"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "additionalProperties": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Status update timestamp (ISO 8601 format)"
+    }
+  },
+  "additionalProperties": false
+}

@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
+from tools.scc.lib.utils import norm_rel as _norm_rel
+
 
 @dataclass
 class ApplyResult:
@@ -15,19 +17,6 @@ class ApplyResult:
 
 
 _HUNK_RE = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
-
-
-def _norm_rel(p: str) -> Optional[str]:
-    s = str(p or "").strip().replace("\\", "/").lstrip("./")
-    if not s or s == "/dev/null":
-        return None
-    if ".." in s.split("/"):
-        return None
-    if re.match(r"^[a-zA-Z]:/", s):
-        return None
-    if s.startswith("/"):
-        return None
-    return s
 
 
 def _read_lines(path: pathlib.Path) -> List[str]:

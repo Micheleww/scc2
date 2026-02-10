@@ -1,0 +1,253 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A2A MVP Protocol Schema",
+  "description": "Combined schema for A2A MVP protocol messages",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/create_task"
+    },
+    {
+      "$ref": "#/definitions/status_task"
+    },
+    {
+      "$ref": "#/definitions/result_task"
+    }
+  ],
+  "definitions": {
+    "create_task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "A2A Create Task Request",
+      "description": "Schema for A2A task creation requests",
+      "type": "object",
+      "required": ["message_type", "task_code", "type", "owner", "timestamp"],
+      "properties": {
+        "message_type": {
+          "type": "string",
+          "enum": ["create"],
+          "description": "Type of message (must be 'create')"
+        },
+        "task_id": {
+          "type": "string",
+          "description": "Unique identifier for the task (UUID format)",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "task_code": {
+          "type": "string",
+          "description": "Task code following naming convention",
+          "pattern": "^[A-Z0-9-]+__[0-9]{8}$"
+        },
+        "type": {
+          "type": "string",
+          "description": "Task type/category",
+          "minLength": 1
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "default": "medium",
+          "description": "Task priority"
+        },
+        "owner": {
+          "type": "string",
+          "description": "Task owner/requestor",
+          "minLength": 1
+        },
+        "goal": {
+          "type": "string",
+          "description": "Task goal/objective",
+          "minLength": 1
+        },
+        "params": {
+          "type": "object",
+          "description": "Task-specific parameters",
+          "additionalProperties": true
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata",
+          "additionalProperties": true
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Task creation timestamp (ISO 8601 format)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "status_task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "A2A Task Status Update",
+      "description": "Schema for A2A task status updates",
+      "type": "object",
+      "required": ["message_type", "task_id", "task_code", "status", "timestamp"],
+      "properties": {
+        "message_type": {
+          "type": "string",
+          "enum": ["status"],
+          "description": "Type of message (must be 'status')"
+        },
+        "task_id": {
+          "type": "string",
+          "description": "Unique identifier for the task (UUID format)",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "task_code": {
+          "type": "string",
+          "description": "Task code following naming convention",
+          "pattern": "^[A-Z0-9-]+__[0-9]{8}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "done", "failed", "cancelled"],
+          "description": "Current task status"
+        },
+        "progress": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Task progress percentage (0-100)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Status message or description"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata",
+          "additionalProperties": true
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Status update timestamp (ISO 8601 format)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "result_task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "A2A Task Result",
+      "description": "Schema for A2A task results (only allows pointer+hash, no embedded large text or sensitive info)",
+      "type": "object",
+      "required": ["message_type", "task_id", "task_code", "status", "timestamp", "result"],
+      "properties": {
+        "message_type": {
+          "type": "string",
+          "enum": ["result"],
+          "description": "Type of message (must be 'result')"
+        },
+        "task_id": {
+          "type": "string",
+          "description": "Unique identifier for the task (UUID format)",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "task_code": {
+          "type": "string",
+          "description": "Task code following naming convention",
+          "pattern": "^[A-Z0-9-]+__[0-9]{8}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["done", "failed", "cancelled"],
+          "description": "Final task status"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Result timestamp (ISO 8601 format)"
+        },
+        "result": {
+          "type": "object",
+          "description": "Task result containing only pointers and hashes",
+          "required": ["files"],
+          "properties": {
+            "files": {
+              "type": "array",
+              "description": "List of result files (pointers + hashes)",
+              "items": {
+                "type": "object",
+                "required": ["path", "hash"],
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "Relative path to the result file",
+                    "pattern": "^[a-zA-Z0-9-_./]+$"
+                  },
+                  "hash": {
+                    "type": "string",
+                    "description": "File hash (SHA-256 format)",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "File type/category"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "description": "File size in bytes",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              },
+              "minItems": 1
+            },
+            "metadata": {
+              "type": "object",
+              "description": "Additional result metadata (only small text values allowed)",
+              "properties": {
+                "summary": {
+                  "type": "string",
+                  "description": "Brief result summary",
+                  "maxLength": 500
+                },
+                "metrics": {
+                  "type": "object",
+                  "description": "Result metrics",
+                  "additionalProperties": {
+                    "type": ["string", "number", "boolean"],
+                    "maxLength": 100
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "error": {
+          "type": "object",
+          "description": "Error information if task failed",
+          "required": ["code", "message"],
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Error code"
+            },
+            "message": {
+              "type": "string",
+              "description": "Error message",
+              "maxLength": 1000
+            },
+            "details": {
+              "type": "object",
+              "description": "Additional error details",
+              "additionalProperties": {
+                "type": ["string", "number", "boolean"],
+                "maxLength": 100
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        { "properties": { "status": { "const": "done" } }, "required": ["result"], "not": { "required": ["error"] } },
+        { "properties": { "status": { "const": "failed" } }, "required": ["error"], "not": { "required": ["result"] } },
+        { "properties": { "status": { "const": "cancelled" } }, "not": { "required": ["result", "error"] } }
+      ]
+    }
+  }
+}

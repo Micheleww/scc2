@@ -40,7 +40,7 @@ def _extract_files_from_patch(patch_text: str) -> List[str]:
             p = m.group(1).strip()
             if p == "/dev/null":
                 continue
-            rel = _norm_rel(p)
+            rel = norm_rel(p)
             if rel and rel not in seen:
                 seen.add(rel)
                 files.append(rel)
@@ -113,7 +113,7 @@ def main() -> int:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "title": title,
         "body": body,
-        "patch_path": _norm_rel(str(patch_path.relative_to(repo))) if patch_path.is_relative_to(repo) else patch_path.as_posix(),
+        "patch_path": norm_rel(str(patch_path.relative_to(repo))) if patch_path.is_relative_to(repo) else patch_path.as_posix(),
         "files": files,
         "labels": labels,
         "source": {"kind": "patch", "patch_bytes": len(patch_text.encode("utf-8"))},
@@ -139,7 +139,7 @@ def main() -> int:
                 _write_json(out_path, bundle)
                 print(
                     json.dumps(
-                        {"ok": False, "task_id": task_id, "error": "git_worktree_dirty", "bundle": _norm_rel(str(out_path.relative_to(repo)))},
+                        {"ok": False, "task_id": task_id, "error": "git_worktree_dirty", "bundle": norm_rel(str(out_path.relative_to(repo)))},
                         ensure_ascii=False,
                     )
                 )
@@ -152,7 +152,7 @@ def main() -> int:
                 bundle["git"] = {"applied": False, "error": "git_checkout_failed", "stderr": r1.stderr}
                 git_errors.append("git_checkout_failed")
             else:
-                r2 = _run_git(repo, ["apply", "--whitespace=nowarn", _norm_rel(str(patch_path.relative_to(repo)))])
+                r2 = _run_git(repo, ["apply", "--whitespace=nowarn", norm_rel(str(patch_path.relative_to(repo)))])
                 if r2.returncode != 0:
                     bundle["git"] = {"applied": False, "error": "git_apply_failed", "stderr": r2.stderr}
                     git_errors.append("git_apply_failed")
@@ -199,7 +199,7 @@ def main() -> int:
                 _run_git(repo, ["checkout", starting_branch])
 
     _write_json(out_path, bundle)
-    print(json.dumps({"ok": True, "task_id": task_id, "bundle": _norm_rel(str(out_path.relative_to(repo))) if out_path.is_relative_to(repo) else out_path.as_posix()}, ensure_ascii=False))
+    print(json.dumps({"ok": True, "task_id": task_id, "bundle": norm_rel(str(out_path.relative_to(repo))) if out_path.is_relative_to(repo) else out_path.as_posix()}, ensure_ascii=False))
     return 0 if not git_errors else 4
 
 

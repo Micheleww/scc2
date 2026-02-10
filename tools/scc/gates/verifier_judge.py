@@ -6,10 +6,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 
-def _norm_rel(p: str) -> str:
-    return str(p or "").replace("\\", "/").lstrip("./")
-
-
 def _gate_failures(gate_rows: List[Dict[str, Any]]) -> List[str]:
     out: List[str] = []
     for r in gate_rows:

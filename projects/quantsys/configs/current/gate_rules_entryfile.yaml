@@ -1,0 +1,36 @@
+# 入口文件侦测门禁规则
+# TaskCode: GATE-NO-NEW-ENTRYFILE-v0.2__20260115
+
+# 入口文件侦测配置
+entry_file_scan:
+  enabled: true
+  # 允许的入口文件列表（只列路径，不复制法源）
+  allowlist:
+    # 总入口
+    - "README.md"
+    # ARCH索引
+    - "docs/ARCH/00_index.md"
+    # TRAE规则
+    - ".trae/"
+    # 法源指针
+    - "law/QCC-README.md"
+    # 项目导航
+    - "docs/ARCH/project_navigation__v0.1.0__DRAFT__20260115.md"
+  # 入口文件特征模式（使用glob风格的路径匹配）
+  entry_patterns:
+    # 顶层索引文件
+    - "**/docs/*/00_index.md"
+    - "**/00_index.md"
+    # 项目导航变体（任意版本号）
+    - "**/docs/ARCH/project_navigation__v*.md"
+    # 项目导航（无版本号变体）
+    - "**/docs/ARCH/project_navigation.md"
+    # 导航相关文件
+    - "**/*navigation*.md"
+    - "**/*Navigation*.md"
+    - "**/*NAV*.md"
+    # 索引相关文件
+    - "**/*index*.md"
+    - "**/*INDEX*.md"
+    # 架构文档索引
+    - "**/docs/ARCH/quantsys_arch_audit_index*.md"

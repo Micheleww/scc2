@@ -1,15 +1,4 @@
-import json
-import pathlib
-from typing import Any
-
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
-
-
-def load_json(path: pathlib.Path) -> Any:
-    # Windows PowerShell may write UTF-8 with BOM; accept it.
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+from tools.scc.lib.utils import load_json, norm_rel
 
 
 def _type_name(x: Any) -> str:

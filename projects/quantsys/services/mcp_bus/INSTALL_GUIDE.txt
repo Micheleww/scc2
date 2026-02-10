@@ -1,0 +1,78 @@
+========================================
+  MCP Server Installation Guide
+========================================
+
+QUICK START (Easiest Method):
+
+1. Find file: INSTALL.bat
+2. Right-click the file
+3. Select "Run as administrator"
+4. Wait for installation to complete
+
+That's it!
+
+========================================
+  Installation Methods
+========================================
+
+Method 1: Complete Installation (Recommended)
+
+File: INSTALL.bat
+- Right-click -> "Run as administrator"
+- Creates desktop shortcut
+- Sets up autostart
+- Checks and installs dependencies
+
+Method 2: Desktop Shortcut Only
+
+File: SHORTCUT_ONLY.bat
+- Double-click (no admin needed)
+- Only creates desktop shortcut
+- Does not set up autostart
+
+Method 3: PowerShell (Manual)
+
+1. Press Win+X
+2. Select "Windows PowerShell (Admin)" or "Terminal (Admin)"
+3. Run:
+   cd d:\quantsys\tools\mcp_bus
+   powershell -ExecutionPolicy Bypass -File install_all.ps1
+
+========================================
+  After Installation
+========================================
+
+Start Server:
+  Double-click desktop shortcut "MCP服务器（托盘图标）.lnk"
+
+Check Status:
+  Check system tray icon (bottom-right corner)
+
+Tray Icon Colors:
+  [Green]  Server running normally
+  [Yellow] Some services abnormal
+  [Red]    Server unreachable
+  [Gray]   Starting or status unknown
+
+Access Features:
+  Right-click tray icon -> Select function
+
+Stop Server:
+  Right-click tray icon -> Select "Exit"
+
+========================================
+  Troubleshooting
+========================================
+
+If "Run as administrator" option is missing:
+  Hold Shift key, then right-click INSTALL.bat
+
+If installation fails:
+  Run SHORTCUT_ONLY.bat first (does not need admin)
+  Then manually set up autostart if needed
+
+If shortcut is not created:
+  Check desktop folder: C:\Users\YourUsername\Desktop
+  Or run SHORTCUT_ONLY.bat again
+
+========================================

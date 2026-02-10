@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ATA Task Protocol v1",
+  "type": "object",
+  "required": [
+    "task_code",
+    "owner_role",
+    "area",
+    "priority",
+    "goal",
+    "capsule",
+    "how_to_repro",
+    "expected",
+    "evidence_requirements"
+  ],
+  "properties": {
+    "task_code": {
+      "type": "string",
+      "pattern": "^[A-Z0-9-]+__[0-9]{8}$"
+    },
+    "owner_role": { "type": "string" },
+    "area": { "type": "string" },
+    "priority": { "type": "integer", "minimum": 0, "maximum": 3 },
+    "goal": { "type": "string" },
+    "capsule": { "type": "string" },
+    "how_to_repro": { "type": "string" },
+    "expected": { "type": "string" },
+    "actual": { "type": "string" },
+    "evidence_requirements": { "type": "string" },
+    "scope_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "metadata": { "type": "object", "additionalProperties": true },
+    "deadline": { "type": ["string", "null"] },
+    "owner": { "type": ["string", "null"] },
+    "task_type": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

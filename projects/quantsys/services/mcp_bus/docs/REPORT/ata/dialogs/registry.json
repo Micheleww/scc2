@@ -1,0 +1,35 @@
+{
+  "dialogs": {
+    "Cursor-Dialog-1": {
+      "dialog_id": "Cursor-Dialog-1",
+      "agent_type": "Cursor",
+      "dialog_name": null,
+      "registered_at": "2026-01-26T08:50:20.719856",
+      "caller": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10"
+    },
+    "Cursor-Dialog-2": {
+      "dialog_id": "Cursor-Dialog-2",
+      "agent_type": "Cursor",
+      "dialog_name": null,
+      "registered_at": "2026-01-26T08:50:20.749928",
+      "caller": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10"
+    },
+    "Cursor-Dialog-3": {
+      "dialog_id": "Cursor-Dialog-3",
+      "agent_type": "Cursor",
+      "dialog_name": "UI-TARS-Verify-Sender",
+      "registered_at": "2026-01-26T08:50:34.536441",
+      "caller": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10"
+    },
+    "Cursor-Dialog-4": {
+      "dialog_id": "Cursor-Dialog-4",
+      "agent_type": "Cursor",
+      "dialog_name": "UI-TARS-Verify-Receiver",
+      "registered_at": "2026-01-26T08:50:34.565457",
+      "caller": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10"
+    }
+  },
+  "next_id": {
+    "Cursor": 5
+  }
+}

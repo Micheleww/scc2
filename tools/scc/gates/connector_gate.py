@@ -1,9 +1,6 @@
-import json
 import pathlib
 
-
-def _load_json(path: pathlib.Path):
-    return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
+from tools.scc.lib.utils import load_json as _load_json
 
 
 def run(repo: pathlib.Path) -> list[str]:

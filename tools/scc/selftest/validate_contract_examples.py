@@ -4,9 +4,7 @@ import pathlib
 import sys
 from typing import Any
 
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+from tools.scc.lib.utils import load_json as _load_json
 
 
 def _json_pointer_get(doc: Any, pointer: str) -> Any:
@@ -201,7 +199,7 @@ def main() -> int:
         ("contracts/playbook/playbook.schema.json", "contracts/examples/playbook.example.json"),
         ("contracts/playbook/playbooks_registry.schema.json", "playbooks/registry.json"),
         ("contracts/eval/eval_manifest.schema.json", "contracts/examples/eval_manifest.example.json"),
-        ("contracts/factory_policy/factory_policy.schema.json", "factory_policy.json"),
+        ("contracts/factory_policy/factory_policy.schema.json", "config/factory_policy.json"),
         ("contracts/eval/eval_manifest.schema.json", "eval/eval_manifest.json"),
         ("contracts/release/release_record.schema.json", "contracts/examples/release_record.example.json"),
         # G6 Schema tightening: child_task and submit with maxItems/maxLength constraints

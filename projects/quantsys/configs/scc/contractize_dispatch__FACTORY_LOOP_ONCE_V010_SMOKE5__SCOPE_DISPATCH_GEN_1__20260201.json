@@ -1,0 +1,38 @@
+{
+  "schema_version": "v0.1.0",
+  "generated_by": "tools/scc/ops/dispatch_from_task_tree.py",
+  "generated_utc": "2026-02-01T20:26:13.072432Z",
+  "max_outstanding": 1,
+  "timeout_s": 1800,
+  "defaults": {
+    "model": "gpt-5.2"
+  },
+  "batches": [
+    {
+      "name": "contract_scope_harden_v0_1_0",
+      "parents": {
+        "parents": [
+          {
+            "id": "SCOPE_697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "title": "Contract scope harden: 697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "description": "TASK: CONTRACT_SCOPE_HARDEN\n\ntask_id: 697a1500-1e34-8321-ae0f-23f6314f1716_0002\ncontract_ref: docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json\n\nGoal:\n- Harden this contract so it becomes executable: fill scope_allow + acceptance + stop_condition + commands_hint.\n\nRules (mandatory):\n- You MUST ONLY edit the allowlisted contract file.\n- Do NOT search the repo. Do NOT open other files unless absolutely necessary.\n- Keep changes minimal and deterministic.\n- Acceptance must be executable commands; verifier judges only by acceptance outcomes.\n\nMinimum required fields to ensure:\n- goal / scope_allow / constraints / acceptance.checks[] / stop_condition / commands_hint / inputs_ref / outputs_expected\n\nTask label / hint: WebGPT user message 0002\n",
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json"
+            ],
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json",
+              "docs/DERIVED/secretary/GOAL_BRIEF__LATEST.md"
+            ],
+            "context_max_files": 1,
+            "context_max_total_chars": 12000,
+            "context_head_lines": 120,
+            "context_tail_lines": 80,
+            "require_changes": true
+          }
+        ]
+      }
+    }
+  ]
+}

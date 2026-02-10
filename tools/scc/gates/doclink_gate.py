@@ -1,9 +1,7 @@
 import pathlib
 import re
 
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
+from tools.scc.lib.utils import norm_rel as _norm_rel
 
 
 def _extract_touched_from_patch(repo: pathlib.Path, submit: dict) -> list[str]:
@@ -47,7 +45,7 @@ def _extract_touched_from_patch(repo: pathlib.Path, submit: dict) -> list[str]:
             # looks like "C:/..." or "C:\\..."
             if pp_norm.lower().startswith(root.lower() + "/"):
                 pp_norm = pp_norm[len(root) + 1 :]
-        out.append(_norm_rel(pp_norm))
+        out.append(norm_rel(pp_norm))
     # de-dup, preserve order
     seen = set()
     deduped: list[str] = []
@@ -87,15 +85,15 @@ def _adr_is_valid(text: str) -> bool:
 
 def run(repo: pathlib.Path, submit: dict) -> list[str]:
     errors: list[str] = []
-    changed = [_norm_rel(x) for x in (submit.get("changed_files") or [])]
-    new_files = [_norm_rel(x) for x in (submit.get("new_files") or [])]
+    changed = [norm_rel(x) for x in (submit.get("changed_files") or [])]
+    new_files = [norm_rel(x) for x in (submit.get("new_files") or [])]
     touched = changed + new_files + _extract_touched_from_patch(repo, submit)
 
     triggers = False
     for p in touched:
         if p.startswith(("contracts/", "roles/", "skills/", "eval/")):
             triggers = True
-        if p == "factory_policy.json":
+        if p == "config/factory_policy.json":
             triggers = True
         if pathlib.PurePosixPath(p).name in _DEP_FILES:
             triggers = True

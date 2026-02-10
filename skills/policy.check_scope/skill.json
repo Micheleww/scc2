@@ -2,7 +2,7 @@
   "schema_version": "scc.skill.v1",
   "skill_id": "policy.check_scope",
   "version": "1.0.0",
-  "owner_role": "audit",
+  "owner_role": "auditor",
   "summary": "Enforce write scope allow/deny paths and emit POLICY_VIOLATION on breach.",
   "applies_to": { "task_class": ["*"] },
   "contracts": {

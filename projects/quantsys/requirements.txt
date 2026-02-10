@@ -1,0 +1,27 @@
+# Core dependencies
+pyyaml>=6.0
+requests>=2.28.0
+pandas>=1.5.0
+numpy>=1.23.0
+
+# Web framework
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# Database
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+
+# Data validation
+pydantic>=2.0.0
+
+# HTTP client
+httpx>=0.24.0
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2023.0
+
+# Development
+pytest>=7.4.0
+pytest-asyncio>=0.21.0

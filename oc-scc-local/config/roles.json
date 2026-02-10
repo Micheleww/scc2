@@ -12,7 +12,7 @@
       ]
     },
     "auditor": {
-      "skills": ["log_review", "evidence_check", "failure_triad"],
+      "skills": ["log_review", "evidence_check", "failure_triad", "evidence.verify_triplet", "policy.check_scope", "events.backfill"],
       "rules": [
         "Role: AUDITOR.",
         "Inspect logs and on-disk evidence. Report findings + concrete next actions.",

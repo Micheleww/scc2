@@ -1,0 +1,112 @@
+# QCC Gatekeeper Import Rules
+# TaskCode: QCC-GK-R03
+# 不可削弱的最小边界规则（fail-closed）
+# 目录名映射表（见报告）
+
+# 允许规则（优先级高于拒绝规则）
+allow_rules:
+  - from_prefix: "contracts"
+    import_prefix: ""
+    id: "A01"
+    reason: "允许从 contracts 模块导入任何内容"
+
+# 拒绝规则（不可削弱的最小边界）
+# 目录名映射：
+# - strategy -> user_data/strategies
+# - factors -> src/quantsys/factors
+# - execution -> src/quantsys/execution
+# - risk -> src/quantsys/risk
+# - tools -> tools
+# - contracts -> docs/contracts
+
+deny_rules:
+  # strategy 不得 import execution / risk / broker 的实现层
+  # broker 功能集成在 execution/** 中
+  - from_prefix: "user_data/strategies"
+    import_prefix: "execution"
+    id: "D01"
+    reason: "策略层禁止直接访问执行层"
+  - from_prefix: "user_data/strategies"
+    import_prefix: "risk"
+    id: "D02"
+    reason: "策略层禁止直接访问风险层"
+  
+  # factors 不得触达 risk / execution（仅可输出到 contracts 结构）
+  - from_prefix: "src/quantsys/factors"
+    import_prefix: "risk"
+    id: "D03"
+    reason: "因子层禁止直接访问风险层"
+  - from_prefix: "src/quantsys/factors"
+    import_prefix: "execution"
+    id: "D04"
+    reason: "因子层禁止直接访问执行层"
+  
+  # tools 不得直达 execution/broker（除非明确允许的 facade）
+  - from_prefix: "tools"
+    import_prefix: "execution"
+    id: "D05"
+    reason: "工具层禁止直接访问执行层"
+  - from_prefix: "tools"
+    import_prefix: "risk"
+    id: "D06"
+    reason: "工具层禁止直接访问风险层"
+
+  # R08 强化：明确禁止 broker 相关依赖（broker 功能集成在 execution/**）
+  - from_prefix: "user_data/strategies"
+    import_prefix: "execution/order_execution"
+    id: "D07"
+    reason: "策略层禁止直接访问 broker 执行实现"
+  - from_prefix: "user_data/strategies"
+    import_prefix: "execution/live_execution_manager"
+    id: "D08"
+    reason: "策略层禁止直接访问 broker 执行管理器"
+  - from_prefix: "src/quantsys/factors"
+    import_prefix: "execution/order_execution"
+    id: "D09"
+    reason: "因子层禁止直接访问 broker 执行实现"
+  - from_prefix: "src/quantsys/factors"
+    import_prefix: "execution/live_execution_manager"
+    id: "D10"
+    reason: "因子层禁止直接访问 broker 执行管理器"
+  
+  # Experiments Isolation Rules - TaskCode: HARDEN-EXPERIMENTS-ISOLATION-v0.1
+  # 主包不得 import experiments
+  - from_prefix: "src"
+    import_prefix: "experiments"
+    id: "D11"
+    reason: "主包禁止导入实验代码"
+  - from_prefix: "user_data"
+    import_prefix: "experiments"
+    id: "D12"
+    reason: "用户数据目录禁止导入实验代码"
+  
+  # Experiments 不得 import 禁止清单（使用标准化前缀）
+  - from_prefix: "experiments"
+    import_prefix: "backtest"
+    id: "D13"
+    reason: "实验代码禁止访问回测模块"
+  - from_prefix: "experiments"
+    import_prefix: "execution"
+    id: "D14"
+    reason: "实验代码禁止访问执行模块"
+  - from_prefix: "experiments"
+    import_prefix: "factor"
+    id: "D15"
+    reason: "实验代码禁止访问因子模块"
+  - from_prefix: "experiments"
+    import_prefix: "factors"
+    id: "D16"
+    reason: "实验代码禁止访问因子注册表"
+  - from_prefix: "experiments"
+    import_prefix: "risk"
+    id: "D17"
+    reason: "实验代码禁止访问风险模块"
+  - from_prefix: "experiments"
+    import_prefix: "strategy"
+    id: "D18"
+    reason: "实验代码禁止访问策略模块"
+  - from_prefix: "experiments"
+    import_prefix: "live_gate"
+    id: "D19"
+    reason: "实验代码禁止访问实盘门控"
+

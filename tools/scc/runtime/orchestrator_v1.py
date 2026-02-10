@@ -11,16 +11,14 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+from tools.scc.lib.utils import load_json
+
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
 
 
 def _write_json(path: pathlib.Path, obj: Any) -> None:
@@ -35,7 +33,7 @@ def _append_jsonl(path: pathlib.Path, row: Dict[str, Any]) -> None:
 
 
 def _factory_policy() -> Dict[str, Any]:
-    fp = REPO_ROOT / "factory_policy.json"
+    fp = REPO_ROOT / "config" / "factory_policy.json"
     if not fp.exists():
         return {}
     try:

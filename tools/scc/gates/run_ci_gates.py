@@ -6,6 +6,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from subprocess import run
 
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
+
 from tools.scc.gates import (
     connector_gate,
     context_pack_gate,
@@ -352,9 +354,9 @@ def main() -> int:
         # Prefer resolving relative to CWD (backwards compatible), but fall back to the
         # repository root so this gate can run from arbitrary working directories.
         cwd_candidate = pathlib.Path.cwd() / submit_path
-        submit_path = cwd_candidate if cwd_candidate.exists() else _REPO_ROOT / submit_path
+        submit_path = cwd_candidate if cwd_candidate.exists() else REPO_ROOT / submit_path
 
-    repo = _REPO_ROOT
+    repo = REPO_ROOT
 
     submit = load_submit(submit_path)
     if not submit:

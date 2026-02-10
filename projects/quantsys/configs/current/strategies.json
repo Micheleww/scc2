@@ -1,0 +1,31 @@
+{
+  "strategies": [
+    {
+      "id": "strategy_1",
+      "name": "示例策略1",
+      "description": "这是一个示例策略，用于演示策略库功能",
+      "factors": ["factor_1", "factor_2"],
+      "status": "active",
+      "created": "2024-01-01T00:00:00Z",
+      "category": "趋势跟踪"
+    },
+    {
+      "id": "strategy_2",
+      "name": "示例策略2",
+      "description": "这是另一个示例策略",
+      "factors": ["factor_3", "factor_4"],
+      "status": "inactive",
+      "created": "2024-01-02T00:00:00Z",
+      "category": "均值回归"
+    },
+    {
+      "id": "strategy_3",
+      "name": "示例策略3",
+      "description": "这是第三个示例策略",
+      "factors": ["factor_5"],
+      "status": "active",
+      "created": "2024-01-03T00:00:00Z",
+      "category": "套利策略"
+    }
+  ]
+}

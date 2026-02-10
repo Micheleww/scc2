@@ -1,0 +1,114 @@
+# QCC Gatekeeper Law Pointer Scan Rules
+# TaskCode: GATE-LAW-ANTICOPY-TUNE-v0.2
+# 反复制（不接触 law 正文）策略调整版
+# 主要变更：
+# 1. 增加允许模式（指针引用、短句引用）
+# 2. 调整阈值，提高大段复制命中率
+# 3. 新增长文本片段检测规则
+
+# 允许模式（指针引用）- 降低误报
+allow_patterns:
+  - "law/QCC-README\\.md"  # 允许引用 QCC-README 指针
+  - "law/QUANT.*\\.txt"    # 允许引用宪法文件指针
+  - "docs/REPORT.*\\.md"   # 允许引用报告文件
+  - "see law/.*"           # 允许 "see law/xxx" 形式引用
+  - "ref: law/"            # 允许 "ref: law/xxx" 形式引用
+  - "[①-⑨]"               # 允许使用圆圈数字符号（常见于引用列表）
+  - "^\\s*[•·]\\s*"        # 允许短句前导符（1-2个字符）
+  - "^\\s*[「【(]\""       # 允许常见引用括号开头（1-2个字符）
+
+# 拒绝规则（反复制）
+# 规则编号格式：QCC-S-RULE-XX / QCC-E-RULE-XX / QCC-A-RULE-XX
+# 这些编号属于法源结构标记，复制进实现层风险高
+deny_rules:
+  # 规则编号检测 - 保持阈值3，避免短句误报
+  - pattern: "QCC-S-RULE-[0-9]{2}"  # 策略规则编号
+    id: "D01"
+    reason: "禁止在代码中复制策略规则编号段落"
+    threshold: 3
+  - pattern: "QCC-E-RULE-[0-9]{2}"  # 执行规则编号
+    id: "D02"
+    reason: "禁止在代码中复制执行规则编号段落"
+    threshold: 3
+  - pattern: "QCC-A-RULE-[0-9]{2}"  # 架构规则编号
+    id: "D03"
+    reason: "禁止在代码中复制架构规则编号段落"
+    threshold: 3
+
+  # 宪法段落样式检测 - 提高阈值，避免正常引用误报
+  - pattern: "第[0-9]+条"
+    id: "D04"
+    reason: "禁止出现超长宪法段落引用块"
+    threshold: 3  # 从1调整为3，允许偶尔引用
+
+  # 新增：大段文本复制检测（核心改进）
+  # 检测连续超过50个字符的法源风格文本块
+  - pattern: "[。；：？！」「【】]{2,}"  # 连续标点符号
+    id: "D05"
+    reason: "检测到大段法源风格文本块"
+    threshold: 2
+    min_length: 50  # 最小文本块长度（新增）
+
+  # 新增：特定法源术语检测
+  - pattern: "RULE-/ENF-|RULE-/RULE-"  # 规则强制标记
+    id: "D06"
+    reason: "禁止复制法源强制规则标记"
+    threshold: 1
+
+  # 新增：长连续中文文本块检测（60字符以上，无标点中断）
+  # NOTE: 限定为中文字符序列，避免把英文/数字长行误判为“复制法源文本”。
+  - pattern: "[\\u4e00-\\u9fff]{60,}"
+    id: "D07"
+    reason: "检测到超长连续中文文本块，可能为大段复制"
+    threshold: 1
+    context_lines: 3  # 额外输出上下文行数（新增）
+
+# 回归测试配置
+regression_tests:
+  # PASS 案例：允许的引用形式
+  pass_cases:
+    - name: "short_pointer_reference"
+      description: "短指针引用示例"
+      content: |
+        # 引用法源指针
+        请参考 law/QCC-README.md 中的规则说明。
+        具体实施见 ref: law/QUANT宪法典.txt。
+    - name: "short_quote_with_symbol"
+      description: "带符号的短句引用示例"
+      content: |
+        # 引用列表
+        ① 遵守 QCC-S-RULE-01
+        ② 遵守 QCC-E-RULE-02
+        • 这是普通列表项
+        · 另一个列表项
+    - name: "normal_text_with_occasional_reference"
+      description: "正常文本中偶有引用示例"
+      content: |
+        # 开发规范
+        本项目遵循量化交易开发规范。
+        详见 QCC-A-RULE-01 的架构要求。
+        其他内容按常规流程处理。
+
+  # FAIL 案例：禁止的复制形式
+  fail_cases:
+    - name: "large_text_block"
+      description: "大段法源文本复制示例"
+      content: |
+        # 法源规则
+        QCC-S-RULE-01 规定策略层必须遵守以下原则：
+        QCC-S-RULE-02 规定策略层必须遵守以下原则：
+        QCC-S-RULE-03 规定策略层必须遵守以下原则：
+        第壹佰条 宪法规定公民的基本权利和义务
+        第壹佰零壹条 宪法规定公民的基本权利和义务
+        第壹佰零贰条 宪法规定公民的基本权利和义务
+        RULE-/ENF-001 强制执行标记内容
+        RULE-/RULE-002 规则标记内容
+    - name: "consecutive_references"
+      description: "连续规则编号引用示例"
+      content: |
+        # 规则引用
+        实施 QCC-S-RULE-01 策略规则要求
+        实施 QCC-S-RULE-02 策略规则要求
+        实施 QCC-S-RULE-03 策略规则要求
+        实施 QCC-E-RULE-01 执行规则要求
+        实施 QCC-E-RULE-02 执行规则要求

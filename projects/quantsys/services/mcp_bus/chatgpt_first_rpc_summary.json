@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-01-17T15:51:03.025567",
+  "is_batch": false,
+  "session_id": null,
+  "session_token": null,
+  "items": [
+    {
+      "method": "tools/call",
+      "id_type": "str",
+      "params_top_keys": [
+        "name",
+        "arguments"
+      ]
+    }
+  ]
+}

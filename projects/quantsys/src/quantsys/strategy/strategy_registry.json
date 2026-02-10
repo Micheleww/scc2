@@ -1,0 +1,62 @@
+{
+  "defaults": {
+    "version": "1.0.0",
+    "description": "",
+    "dependencies": [],
+    "factors": [],
+    "frequency": "1d",
+    "window": "20",
+    "entry_rules": {},
+    "exit_rules": {},
+    "risk_management": {
+      "position_size": 0.1,
+      "stop_loss": 0.05,
+      "take_profit": 0.1,
+      "leverage": 1
+    },
+    "order_config": {
+      "order_type": "market",
+      "slippage": 0.001
+    },
+    "params_schema": {},
+    "availability": true,
+    "output_type": "target_position"
+  },
+  "strategies": {
+    "test1": {
+      "name": "测试策略1",
+      "version": "1.0.0",
+      "type": "trend",
+      "description": "一个简单的测试策略",
+      "dependencies": [],
+      "factors": [],
+      "frequency": "5m",
+      "window": "20",
+      "entry_rules": {
+        "type": "trend_following",
+        "parameters": {
+          "threshold": 0.01
+        }
+      },
+      "exit_rules": {
+        "type": "trailing_stop",
+        "parameters": {
+          "trailing_stop_percent": 5
+        }
+      },
+      "risk_management": {
+        "position_size": 0.1,
+        "stop_loss": 0.05,
+        "take_profit": 0.1,
+        "leverage": 1
+      },
+      "order_config": {
+        "order_type": "market",
+        "slippage": 0.001
+      },
+      "params_schema": {},
+      "availability": true,
+      "output_type": "target_position"
+    }
+  }
+}

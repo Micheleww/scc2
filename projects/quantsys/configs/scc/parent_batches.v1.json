@@ -1,0 +1,168 @@
+{
+  "version": "scc_parent_batches_v1",
+  "name": "parent_batches.v1",
+  "max_outstanding": 3,
+  "batches": [
+    {
+      "name": "ssot_autonomy_v0_1_0",
+      "parents": {
+        "parents": [
+          {
+            "id": "CANONICAL_SET_V010",
+            "description": "TASK: CANONICAL_SET_V010\n\nGoal: Create/refresh canonical truth docs and link from SSOT.\n\nAllowed file changes:\n- Update: docs/START_HERE.md\n- Create: docs/CANONICAL/**\n- Update: docs/CANONICAL/**\n- Update: docs/ssot/02_architecture/**\n",
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "docs/START_HERE.md",
+              "docs/ssot/02_architecture/canonical_truth.md"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "docs/START_HERE.md",
+              "docs/CANONICAL/**",
+              "docs/ssot/02_architecture/**"
+            ]
+          },
+          {
+            "id": "CONTRACT_SPEC_V010",
+            "description": "TASK: CONTRACT_SPEC_V010\n\nGoal: Make contract spec machine-executable (schema + examples).\n\nAllowed file changes:\n- Update: docs/ssot/04_contracts/**\n- Create: contracts/scc_task_contract.schema.json\n- Update: contracts/scc_task_contract.schema.json\n- Create: contracts/examples/**\n- Update: contracts/examples/**\n",
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "docs/ssot/04_contracts/contract_min_spec.md",
+              "contracts/scc_task_contract.schema.json"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "docs/ssot/04_contracts/**",
+              "contracts/scc_task_contract.schema.json",
+              "contracts/examples/**"
+            ]
+          },
+          {
+            "id": "VERDICT_IO_V010",
+            "description": "TASK: VERDICT_IO_V010\n\nGoal: Standardize executor/verifier outputs; enforce fail-closed on missing verdict.\n\nAllowed file changes:\n- Update: tools/scc/task_runner.py\n- Update: tools/scc/task_queue.py\n- Update: docs/ssot/05_runbooks/**\n",
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "tools/scc/task_runner.py",
+              "tools/scc/task_queue.py",
+              "docs/ssot/05_runbooks/execution_verification_interfaces.md"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/scc/task_runner.py",
+              "tools/scc/task_queue.py",
+              "docs/ssot/05_runbooks/**"
+            ]
+          },
+          {
+            "id": "RAW_TASKTREE_V010",
+            "description": "TASK: RAW_TASKTREE_V010\n\nGoal: Generate minimal raw→task tree artifact and generator.\n\nAllowed file changes:\n- Update: tools/scc/raw_to_task_tree.py\n- Create: docs/DERIVED/task_tree.json\n- Update: docs/DERIVED/task_tree.json\n- Update: docs/ssot/04_contracts/task_tree.md\n- Update: docs/INPUTS/WEBGPT/**\n",
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "tools/scc/raw_to_task_tree.py",
+              "docs/ssot/04_contracts/task_tree.md"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/scc/raw_to_task_tree.py",
+              "docs/DERIVED/task_tree.json",
+              "docs/ssot/04_contracts/task_tree.md",
+              "docs/INPUTS/WEBGPT/**"
+            ]
+          },
+          {
+            "id": "REVIEW_JOB_V010",
+            "description": "TASK: REVIEW_JOB_V010\n\nGoal: Implement review job and persist progress + raw-b feedback.\n\nAllowed file changes:\n- Update: tools/scc/review_job.py\n- Update: tools/scc/review_job.ps1\n- Update: docs/ssot/05_runbooks/**\n- Update: docs/CANONICAL/PROGRESS.md\n- Create: docs/INPUTS/raw-b/**\n- Update: docs/INPUTS/raw-b/**\n",
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "tools/scc/review_job.py",
+              "docs/ssot/05_runbooks/review_progress.md",
+              "docs/ssot/05_runbooks/metrics_spec.md"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/scc/review_job.py",
+              "tools/scc/review_job.ps1",
+              "docs/ssot/05_runbooks/**",
+              "docs/CANONICAL/PROGRESS.md",
+              "docs/INPUTS/raw-b/**"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dispatch_template_docs",
+      "parents": {
+        "parents": [
+          {
+            "id": "DOC_TASK_1",
+            "description": "TEMPLATE: documentation task #1\n\nAllowed file changes:\n- Update: docs/ssot/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["docs/ssot/**"]
+          },
+          {
+            "id": "DOC_TASK_2",
+            "description": "TEMPLATE: documentation task #2\n\nAllowed file changes:\n- Update: docs/ssot/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["docs/ssot/**"]
+          },
+          {
+            "id": "DOC_TASK_3",
+            "description": "TEMPLATE: documentation task #3\n\nAllowed file changes:\n- Update: docs/ssot/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["docs/ssot/**"]
+          },
+          {
+            "id": "DOC_TASK_4",
+            "description": "TEMPLATE: documentation task #4\n\nAllowed file changes:\n- Update: docs/ssot/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["docs/ssot/**"]
+          },
+          {
+            "id": "DOC_TASK_5",
+            "description": "TEMPLATE: documentation task #5\n\nAllowed file changes:\n- Update: docs/ssot/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["docs/ssot/**"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dispatch_template_code",
+      "parents": {
+        "parents": [
+          {
+            "id": "CODE_TASK_1",
+            "description": "TEMPLATE: code task #1\n\nAllowed file changes:\n- Update: src/**\n- Update: tools/**\n- Update: tests/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["src/**", "tools/**", "tests/**"]
+          },
+          {
+            "id": "CODE_TASK_2",
+            "description": "TEMPLATE: code task #2\n\nAllowed file changes:\n- Update: src/**\n- Update: tools/**\n- Update: tests/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["src/**", "tools/**", "tests/**"]
+          },
+          {
+            "id": "CODE_TASK_3",
+            "description": "TEMPLATE: code task #3\n\nAllowed file changes:\n- Update: src/**\n- Update: tools/**\n- Update: tests/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["src/**", "tools/**", "tests/**"]
+          },
+          {
+            "id": "CODE_TASK_4",
+            "description": "TEMPLATE: code task #4\n\nAllowed file changes:\n- Update: src/**\n- Update: tools/**\n- Update: tests/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["src/**", "tools/**", "tests/**"]
+          },
+          {
+            "id": "CODE_TASK_5",
+            "description": "TEMPLATE: code task #5\n\nAllowed file changes:\n- Update: src/**\n- Update: tools/**\n- Update: tests/**\n",
+            "isolate_worktree": true,
+            "allowed_globs": ["src/**", "tools/**", "tests/**"]
+          }
+        ]
+      }
+    }
+  ]
+}

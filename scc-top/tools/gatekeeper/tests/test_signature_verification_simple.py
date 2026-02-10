@@ -11,8 +11,11 @@ import shutil
 # 添加项目根目录到Python路径
 import sys
 import tempfile
+from pathlib import Path
 
-sys.path.insert(0, "d:/quantsys")
+# 从当前文件位置推断项目根目录
+repo_root = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(repo_root))
 
 # 导入需要测试的函数
 from tools.gatekeeper.fast_gate import verify_signatures

@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  mcp:
+    build: .
+    container_name: mcp-server
+    restart: always
+    environment:
+      - REPO_ROOT=/app
+      - MCP_BUS_HOST=0.0.0.0
+      - MCP_BUS_PORT=8000
+      - AUTH_MODE=none
+    volumes:
+      - ./config:/app/config
+      - ./docs:/app/docs
+      - ./logs:/app/logs
+    ports:
+      - "18080:8000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18788/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - mcp-network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - mcp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - mcp-network
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  mcp-network:
+    driver: bridge

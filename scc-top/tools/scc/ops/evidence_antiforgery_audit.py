@@ -53,12 +53,14 @@ def _has(s: str, needle: str) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Evidence anti-forgery audit (deterministic).")
-    ap.add_argument("--repo", default=r"C:\scc", help="Repo umbrella root (default: C:\\scc)")
-    ap.add_argument("--gateway", default=r"C:\scc\oc-scc-local\src\gateway.mjs")
-    ap.add_argument("--gateway_top", default=r"C:\scc\scc-top\tools\oc-scc-local\src\gateway.mjs")
-    ap.add_argument("--selftest", default=r"C:\scc\scc-top\tools\scc\ops\task_selftest.py")
-    ap.add_argument("--runtime_env", default=r"C:\scc\oc-scc-local\config\runtime.env")
-    ap.add_argument("--out_dir", default=r"C:\scc\scc-top\docs\REPORT\control_plane")
+    # 获取仓库根目录（从环境变量或推断）
+    default_repo = os.getenv("SCC_REPO_ROOT") or str(Path(__file__).resolve().parents[4])
+    ap.add_argument("--repo", default=default_repo, help="Repo umbrella root")
+    ap.add_argument("--gateway", default=os.path.join(default_repo, "oc-scc-local", "src", "gateway.mjs"))
+    ap.add_argument("--gateway_top", default=os.path.join(default_repo, "scc-top", "tools", "oc-scc-local", "src", "gateway.mjs"))
+    ap.add_argument("--selftest", default=os.path.join(default_repo, "scc-top", "tools", "scc", "ops", "ask_selftest.py"))
+    ap.add_argument("--runtime_env", default=os.path.join(default_repo, "oc-scc-local", "config", "runtime.env"))
+    ap.add_argument("--out_dir", default=os.path.join(default_repo, "scc-top", "docs", "REPORT", "control_plane"))
     ap.add_argument("--version", default="V010")
     args = ap.parse_args()
 

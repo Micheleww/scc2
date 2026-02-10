@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-# Allow running as a script: `python tools/scc/models/cli.py ...`
-# (Module mode remains preferred: `python -m tools.scc.models.cli ...`.)
-if __package__ in {None, ""}:
-    import sys
-    from pathlib import Path
-
-    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-
 import argparse
 import json
 import os

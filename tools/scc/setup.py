@@ -11,4 +11,9 @@ setup(
         "requests",
     ],
     python_requires=">=3.10",
+    entry_points={
+        "console_scripts": [
+            "sccctl=tools.scc.cli:main",
+        ],
+    },
 )

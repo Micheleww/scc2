@@ -104,7 +104,51 @@ def _load_json(path: pathlib.Path):
 
 ---
 
-### 2.2 PowerShell脚本重复
+### 2.2 SQLite查询模块重复（新发现）
+
+**问题描述**: 两个文件几乎完全相同，只是函数名和 main() 逻辑有差异
+
+- **文件1**: `tools/scc/map/map_query_sqlite_v1.py`
+- **文件2**: `tools/scc/map/map_query_sqlite_batch_v1.py`
+
+**重复代码片段**:
+```python
+# 两个文件都有完全相同的辅助函数
+def _default_repo_root() -> str:
+    return str(pathlib.Path(__file__).resolve().parents[3])
+
+def _connect(path: pathlib.Path) -> sqlite3.Connection:
+    return sqlite3.connect(str(path))
+
+def _score(kind: str) -> float:
+    if kind == "key_symbol":
+        return 3.0
+    if kind == "entry_point":
+        return 2.0
+    # ... 完全相同的评分逻辑
+```
+
+**修复建议**: 将公共函数提取到共享模块 `tools/scc/map/common.py`
+
+---
+
+### 2.3 测试辅助函数重复
+
+- **文件**: `scc-top/tools/gatekeeper/tests/test_signature_verification_simple.py` 和 `scc-top/tools/gatekeeper/tests/test_signature_verifier.py`
+
+**重复代码**:
+```python
+def calculate_file_hash(file_path):
+    """计算文件的SHA256哈希值"""
+    with open(file_path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+```
+
+**修复建议**: 将辅助函数提取到 `tests/common.py` 或 `test_utils.py`
+
+---
+
+### 2.4 PowerShell脚本重复
 
 **worker-codex.ps1 vs worker-opencodecli.ps1**:
 
@@ -126,7 +170,7 @@ $Base = if ($env:SCC_GATEWAY_URL) { $env:SCC_GATEWAY_URL } else { "http://127.0.
 
 ---
 
-### 2.3 Python运行时逻辑重复
+### 2.5 Python运行时逻辑重复
 
 **`orchestrator_v1.py` 和 `run_child_task.py`**:
 
@@ -181,6 +225,16 @@ from tools.scc.gates import (
 1. 使用 `# noqa: E402` 抑制导入顺序警告
 2. 说明包结构本身有问题
 3. 导致测试困难、命名空间冲突
+
+**发现 100+ 处 sys.path 修改**，这是一个严重的架构问题。
+
+**主要受影响文件**:
+| 文件路径 | 出现次数 |
+|---------|---------|
+| `projects/quantsys/services/mcp_bus/server/main.py` | 5 |
+| `scc-top/tools/unified_server/services/service_wrappers.py` | 2 |
+| `scc-top/tools/unified_server/exchange_server_integration.py` | 2 |
+| `scc-top/tools/unified_server/mcp_bus_integration.py` | 3 |
 
 ---
 
@@ -237,9 +291,40 @@ from tools.scc.gates import (
 
 ---
 
-## 4. 配置文件分散和重复
+## 4. 硬编码路径问题（新发现）
 
-### 4.1 package.json 重复
+### 4.1 硬编码的绝对路径
+
+**文件**: `scc-top/tools/scc/ops/evidence_antiforgery_audit.py` 第56行
+```python
+ap.add_argument("--repo", default=r"C:\scc", help="Repo umbrella root (default: C:\\scc)")
+```
+
+**修复建议**: 
+```python
+import os
+default_repo = os.getenv("SCC_REPO_ROOT", os.getcwd())
+ap.add_argument("--repo", default=default_repo, help="Repo umbrella root")
+```
+
+---
+
+### 4.2 硬编码的 Windows 路径
+
+**文件**: `scc-top/tools/gatekeeper/tests/test_signature_verification_simple.py` 第15行
+**文件**: `scc-top/tools/gatekeeper/tests/test_signature_verifier.py` 第16行
+
+```python
+sys.path.insert(0, "d:/quantsys")
+```
+
+**修复建议**: 使用相对路径或环境变量
+
+---
+
+## 5. 配置文件分散和重复
+
+### 5.1 package.json 重复
 
 | 文件 | scripts数量 | 差异 |
 |------|-------------|------|
@@ -269,7 +354,7 @@ from tools.scc.gates import (
 
 ---
 
-### 4.2 requirements.txt 重复
+### 5.2 requirements.txt 重复
 
 | 文件路径 | 内容 |
 |----------|------|
@@ -281,7 +366,7 @@ from tools.scc.gates import (
 
 ---
 
-### 4.3 角色配置文件版本不一致
+### 5.3 角色配置文件版本不一致
 
 **`oc-scc-local/config/roles.json`** (167行):
 - 17个角色定义
@@ -304,7 +389,21 @@ from tools.scc.gates import (
 
 ---
 
-### 4.4 factory_policy.json 位置问题
+### 5.4 重复配置文件（新发现）
+
+**完全相同的配置文件**:
+- **文件1**: `projects/quantsys/services/mcp_bus/config/config.example.json`
+- **文件2**: `scc-top/tools/mcp_bus/config/config.example.json`
+
+**内容**: 两个文件完全相同 (34行 JSON 配置)
+
+**修复建议**: 
+- 删除其中一个，使用符号链接
+- 或将配置提取到共享位置，两个项目引用同一文件
+
+---
+
+### 5.5 factory_policy.json 位置问题
 
 文件: `factory_policy.json` (根目录)
 
@@ -315,9 +414,9 @@ from tools.scc.gates import (
 
 ---
 
-## 5. 脚本文件组织问题
+## 6. 脚本文件组织问题
 
-### 5.1 PowerShell脚本分布混乱
+### 6.1 PowerShell脚本分布混乱
 
 | 目录 | 脚本数量 | 用途 |
 |------|----------|------|
@@ -340,7 +439,7 @@ poll_jobs.ps1, count_jobs.ps1, dump_jobs.ps1
 
 ---
 
-### 5.2 Node.js脚本命名不一致
+### 6.2 Node.js脚本命名不一致
 
 **命名规范混用**:
 
@@ -355,7 +454,7 @@ poll_jobs.ps1, count_jobs.ps1, dump_jobs.ps1
 
 ---
 
-### 5.3 Python脚本缺乏统一入口
+### 6.3 Python脚本缺乏统一入口
 
 **tools/scc/ 结构**:
 ```
@@ -376,9 +475,94 @@ tools/scc/
 
 ---
 
-## 6. 版本碎片化问题
+## 7. 大型文件问题（新发现）
 
-### 6.1 Schema版本重复
+### 7.1 超大型文件列表
+
+| 文件路径 | 行数 | 风险等级 |
+|---------|------|---------|
+| `projects/quantsys/services/mcp_bus/server/main.py` | **7,269** | 极高 |
+| `scc-top/tools/unified_server/core/app_factory.py` | **4,855** | 极高 |
+| `scc-top/tools/scc/orchestrators/cc_like.py` | 估计 800+ | 高 |
+| `scc-top/tools/scc/orchestrators/fullagent_loop.py` | 估计 600+ | 高 |
+
+### 7.2 主要问题
+
+**文件**: `projects/quantsys/services/mcp_bus/server/main.py` (7,269 行)
+- 包含多个 TODO 注释
+- 混合了业务逻辑、API 端点、工具函数
+- 难以维护和测试
+
+**修复建议**:
+1. 按功能拆分为多个模块:
+   - `routes/` - API 路由
+   - `services/` - 业务逻辑
+   - `models/` - 数据模型
+   - `tools/` - 工具函数
+
+---
+
+## 8. TODO/FIXME 注释（新发现）
+
+### 8.1 高频 TODO 文件
+
+**文件**: `projects/quantsys/services/mcp_bus/server/main.py`
+
+发现 **40+** 个 TODO 注释，包括:
+
+```python
+# TODO: Implement actual performance attribution logic
+# TODO: Implement actual VaR calculation
+# TODO: Implement actual CVaR calculation
+# TODO: Implement actual strategy optimization logic
+# TODO: 从存储中读取组合列表
+# TODO: 实现再平衡逻辑
+# TODO: 从配置或历史记录获取初始资金
+# TODO: 实现按策略或品种分解盈亏
+# TODO: 实现盈亏归因分析
+# TODO: 实现风险归因分析
+# TODO: 实现因子暴露分析
+# TODO: 实现成本分析
+# TODO: 实现VaR计算
+# TODO: 实现CVaR计算
+# TODO: 实现压力测试逻辑
+# TODO: 实现策略参数优化逻辑
+# TODO: 实现因子参数优化逻辑
+```
+
+**修复建议**: 
+- 创建 GitHub Issues 或任务追踪
+- 按优先级分类处理
+- 对于占位符实现，添加更明确的文档说明
+
+---
+
+## 9. 未使用的导入（新发现）
+
+### 9.1 已发现的未使用导入
+
+**文件**: `tools/scc/ops/eval_replay.py`
+```python
+from typing import Any, Dict, List  # List 和 Dict 可能未完全使用
+```
+
+**文件**: `tools/scc/map/map_query_sqlite_batch_v1.py`
+```python
+from typing import Any, Dict, List, Tuple  # Tuple 未使用
+```
+
+**文件**: `tools/scc/map/map_query_sqlite_v1.py`
+```python
+from typing import Any, Dict, List, Tuple  # Tuple 和 Any 未使用
+```
+
+**修复建议**: 使用 `flake8` 或 `pylint` 自动检测并清理未使用的导入
+
+---
+
+## 10. 版本碎片化问题
+
+### 10.1 Schema版本重复
 
 **pins_result 两个版本**:
 - `contracts/pins/pins_result.schema.json` (v1)
@@ -386,7 +570,9 @@ tools/scc/
 
 **分析**: 代码需要同时处理两个版本，增加复杂性。
 
-### 6.2 脚本版本迭代遗留
+---
+
+### 10.2 脚本版本迭代遗留
 
 **create_opencode_shortcut 三个版本**:
 - `create_opencode_shortcut.ps1`
@@ -399,41 +585,76 @@ tools/scc/
 
 ---
 
-## 7. 具体问题清单
+## 11. 其他问题（新发现）
 
-### 7.1 高优先级（立即修复）
+### 11.1 混合语言注释
 
-| 序号 | 问题 | 文件/位置 | 影响 |
-|------|------|-----------|------|
-| 1 | 嵌套代码库重复 | `scc-top/_docker_ctx_scc/` | 维护困难，体积膨胀 |
-| 2 | 工具函数重复 | 8个文件有 `_norm_rel()` | 违反DRY原则 |
-| 3 | sys.path动态修改 | `run_child_task.py`, `run_ci_gates.py` | 不良实践，测试困难 |
-| 4 | 角色配置版本不一致 | `roles.json` 两个版本 | 行为不一致风险 |
-| 5 | 根目录临时脚本堆积 | 根目录 ~15个ps1文件 | 混乱，难以维护 |
+**文件**: `scc-top/tools/unified_server/core/app_factory.py`
 
-### 7.2 中优先级（计划修复）
+文件开头有乱码注释 (可能是编码问题):
+```python
+"""
+搴旂敤宸ュ巶妯″潡
+...
+"""
+```
 
-| 序号 | 问题 | 文件/位置 | 影响 |
-|------|------|-----------|------|
-| 6 | PowerShell脚本重复 | `worker-*.ps1` | 应该抽象通用逻辑 |
-| 7 | 命名规范不一致 | 多处 `-` vs `_` | 可读性下降 |
-| 8 | Python缺乏统一入口 | `tools/scc/` | 使用不便 |
-| 9 | package.json重复 | 两个版本 | 维护成本 |
-| 10 | requirements.txt重复 | 3个副本 | 维护成本 |
-
-### 7.3 低优先级（可选优化）
-
-| 序号 | 问题 | 文件/位置 | 影响 |
-|------|------|-----------|------|
-| 11 | 跨语言调用混乱 | Python/Node.js互相调用 | 调试困难 |
-| 12 | factory_policy.json位置 | 根目录 | 不符合配置规范 |
-| 13 | Schema版本重复 | pins_result v1/v2 | 代码复杂度 |
+**修复建议**: 统一使用 UTF-8 编码，修复乱码注释
 
 ---
 
-## 8. 附录：重复代码详细对比
+### 11.2 已存在的自检工具
 
-### 8.1 `_norm_rel()` 函数对比
+发现项目已有自检工具:
+- `tools/scc/selftest/selfcheck_no_hardcoded_paths.py` - 检测硬编码路径
+- `tools/scc/selftest/selfcheck_no_shell_true.py` - 检测 shell=True
+
+但这些工具本身也需要改进，例如硬编码路径检测工具只检测特定模式，未覆盖所有情况。
+
+---
+
+## 12. 具体问题清单
+
+### 12.1 高优先级（立即修复）
+
+| 序号 | 问题 | 文件/位置 | 影响 | 状态 |
+|------|------|-----------|------|------|
+| 1 | 嵌套代码库重复 | `scc-top/_docker_ctx_scc/` | 维护困难，体积膨胀 | ✅ 已删除 |
+| 2 | 工具函数重复 | 8个文件有 `_norm_rel()` | 违反DRY原则 | ✅ 已提取到共享库 |
+| 3 | sys.path动态修改 | `run_child_task.py`, `run_ci_gates.py` 等100+处 | 不良实践，测试困难 | ⚠️ 部分修复 |
+| 4 | 角色配置版本不一致 | `roles.json` 两个版本 | 行为不一致风险 | ✅ 已删除重复 |
+| 5 | 根目录临时脚本堆积 | 根目录 ~15个ps1文件 | 混乱，难以维护 | ⏳ 待处理 |
+| 6 | 超大型文件 | `main.py` 7269行, `app_factory.py` 4855行 | 维护困难 | ⚠️ 部分拆分 |
+| 7 | 硬编码路径 | 多处 `C:cc`, `d:/quantsys` | 可移植性差 | ✅ 已修复 |
+
+### 12.2 中优先级（计划修复）
+
+| 序号 | 问题 | 文件/位置 | 影响 | 状态 |
+|------|------|-----------|------|------|
+| 8 | PowerShell脚本重复 | `worker-*.ps1` | 应该抽象通用逻辑 | ⏳ 待处理 |
+| 9 | SQLite查询模块重复 | `map_query_sqlite_*.py` | 代码重复 | ✅ 已提取公共函数 |
+| 10 | 命名规范不一致 | 多处 `-` vs `_` | 可读性下降 | ⏳ 待处理 |
+| 11 | Python缺乏统一入口 | `tools/scc/` | 使用不便 | ✅ 已创建 cli.py |
+| 12 | package.json重复 | 两个版本 | 维护成本 | ✅ 确认合理（包装器） |
+| 13 | requirements.txt重复 | 3个副本 | 维护成本 | ✅ 确认合理（不同依赖） |
+| 14 | 重复配置文件 | `config.example.json` | 维护成本 | ✅ 已删除重复 |
+
+### 12.3 低优先级（可选优化）
+
+| 序号 | 问题 | 文件/位置 | 影响 |
+|------|------|-----------|------|
+| 15 | 跨语言调用混乱 | Python/Node.js互相调用 | 调试困难 |
+| 16 | factory_policy.json位置 | 根目录 | 不符合配置规范 |
+| 17 | Schema版本重复 | pins_result v1/v2 | 代码复杂度 |
+| 18 | TODO注释清理 | 40+个TODO | 技术债务 |
+| 19 | 未使用的导入 | 多处 | 代码整洁 |
+| 20 | 乱码注释 | `app_factory.py` | 可读性 |
+
+---
+
+## 13. 附录：重复代码详细对比
+
+### 13.1 `_norm_rel()` 函数对比
 
 ```python
 # tools/scc/gates/schema_gate.py
@@ -455,7 +676,7 @@ def _norm_rel(p: str) -> str:
 
 ---
 
-### 8.2 `_load_json()` 函数对比
+### 13.2 `_load_json()` 函数对比
 
 ```python
 # tools/scc/gates/schema_gate.py
@@ -473,17 +694,19 @@ def _load_json(path: pathlib.Path):
 
 ---
 
-## 9. 总结
+## 14. 总结与建议优先级
 
-### 9.1 核心问题
+### 14.1 核心问题
 
 1. **架构债务严重**: 3层嵌套代码副本，维护成本极高
 2. **违反DRY原则**: 工具函数重复定义8次以上
-3. **包结构缺陷**: 必须使用sys.path hack才能导入
+3. **包结构缺陷**: 必须使用sys.path hack才能导入（100+处）
 4. **配置碎片化**: 同一配置多个版本，内容不一致
 5. **根目录失控**: 临时脚本没有清理机制
+6. **超大型文件**: 7000+行的Python文件难以维护
+7. **硬编码路径**: 多处Windows绝对路径
 
-### 9.2 风险等级
+### 14.2 风险等级
 
 | 风险 | 等级 | 说明 |
 |------|------|------|
@@ -492,14 +715,28 @@ def _load_json(path: pathlib.Path):
 | 引入bug | 🟡 中 | 重复代码更新遗漏 |
 | 新人 onboarding | 🔴 高 | 目录结构混乱 |
 | 构建失败 | 🟡 中 | Docker上下文可能用错版本 |
+| 可移植性 | 🔴 高 | 硬编码Windows路径 |
 
-### 9.3 建议优先级
+### 14.3 建议优先级
 
-1. **立即**: 清理根目录临时脚本，创建共享工具库
-2. **短期**: 统一配置文件，消除重复版本
-3. **中期**: 重构包结构，消除sys.path hack
-4. **长期**: 清理嵌套代码库，建立正确的依赖关系
+| 优先级 | 问题类型 | 影响 | 修复复杂度 |
+|-------|---------|------|-----------|
+| P0 | sys.path hack (100+处) | 高 | 中 |
+| P0 | 超大型文件 (7000+行) | 极高 | 高 |
+| P0 | 硬编码路径 | 中 | 低 |
+| P1 | 重复代码模式 | 中 | 低 |
+| P1 | SQLite查询模块重复 | 中 | 低 |
+| P1 | 重复配置文件 | 低 | 低 |
+| P2 | 未使用的导入 | 低 | 低 |
+| P2 | TODO 注释清理 | 中 | 中 |
+| P3 | 乱码注释修复 | 低 | 低 |
+
+**建议立即处理的问题**:
+1. 统一项目结构，消除 `sys.path` 修改
+2. 拆分 `main.py` 和 `app_factory.py` 为更小的模块
+3. 修复硬编码的 Windows 路径
+4. 清理未使用的导入
 
 ---
 
-*报告结束*
+*报告结束 - 2026-02-09*

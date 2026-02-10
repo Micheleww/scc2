@@ -1,0 +1,78 @@
+{
+  "version": "v0.1.0",
+  "name": "oid_taskmodel_batches__v0.1.0__20260201",
+  "max_outstanding": 4,
+  "batches": [
+    {
+      "name": "oid_taskmodel_v0_1_0",
+      "parents": {
+        "parents": [
+          {
+            "id": "OID_API_V010",
+            "title": "OID Generator API + Postgres object_index",
+            "description": "TASK: OID_API_V010\n\nGoal:\n- Implement SCC OID Generator (single issuance) using ULID.\n- Implement Postgres authoritative registry (object_index) with tables `objects` and `oid_events`.\n- Expose HTTP endpoints (source of truth):\n  - POST /scc/oid/new\n  - POST /scc/oid/migrate\n\nConstraints:\n- Postgres is source of truth; do not add JSONL/SQLite as authority.\n- If DB is unreachable, endpoints must fail-closed with clear error (do not silently issue without registry).\n\nAcceptance:\n- `POST /scc/oid/new` inserts into Postgres and returns {oid, issued}.\n- `POST /scc/oid/migrate` updates record and appends `oid_events`.\n- Moves/renames keep same oid.\n\nAllowed file changes:\n- Update: tools/unified_server/core/app_factory.py\n- Create: tools/scc/oid/**\n- Update: tools/scc/oid/**\n- Create: tools/scc/oid_registry.py\n- Update: tools/scc/oid_registry.py\n- Update: docs/ssot/01_conventions/OID_SPEC__v0.1.0.md\n",
+            "require_changes": true,
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "tools/unified_server/core/app_factory.py",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/unified_server/core/app_factory.py",
+              "tools/scc/oid/**",
+              "tools/scc/oid_registry.py",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md"
+            ]
+          },
+          {
+            "id": "OID_VALIDATOR_V010",
+            "title": "oid_validator CLI (fail-closed)",
+            "description": "TASK: OID_VALIDATOR_V010\n\nGoal:\n- Implement `oid_validator` that enforces SCC_TOP + OID_SPEC v0.1.0.\n- It must validate mandatory inline OID trees and match against Postgres registry.\n\nChecks (minimum):\n1) Mandatory trees MUST have inline frontmatter with `oid`.\n2) Inline `oid` must exist in Postgres objects table.\n3) Postgres path must match file path for file objects.\n4) Inline primary_unit/tags/layer/status must match Postgres (Postgres authority).\n5) primary_unit must be valid token (parse UNIT_REGISTRY md).\n6) Detect duplicate active paths.\nOutputs:\n- Markdown report to `artifacts/scc_state/oid_validator/oid_validator__*.md`\n- Exit code 0/1 (fail blocks).\n\nAllowed file changes:\n- Create: tools/scc/ops/oid_validator.py\n- Create: tools/scc/ops/oid_validator.ps1\n- Update: docs/ssot/01_conventions/OID_SPEC__v0.1.0.md\n- Update: docs/START_HERE.md\n",
+            "require_changes": true,
+            "embed_allowlisted_files": true,
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/scc/ops/oid_validator.py",
+              "tools/scc/ops/oid_validator.ps1",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md",
+              "docs/START_HERE.md"
+            ]
+          },
+          {
+            "id": "OID_GATE_WIREUP_V010",
+            "title": "Wire oid_validator into CI/verdict gate",
+            "description": "TASK: OID_GATE_WIREUP_V010\n\nGoal:\n- Integrate `oid_validator` into the existing selftest/verdict pipeline so it runs fail-closed.\n\nConstraints:\n- Do not add a new top-level entrypoint doc.\n- Keep integration minimal: call validator as part of existing gate commands.\n\nAcceptance:\n- There is a deterministic command in repo that runs the validator as part of verdict/selftest.\n- Failure exit blocks (non-zero).\n\nAllowed file changes:\n- Update: tools/unified_gate.py\n- Update: tools/unified_gate_selftest.py\n- Update: tools/ci/**\n- Update: docs/ssot/01_conventions/OID_SPEC__v0.1.0.md\n- Update: docs/ssot/05_runbooks/**\n",
+            "require_changes": true,
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "tools/unified_gate.py",
+              "tools/unified_gate_selftest.py"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/unified_gate.py",
+              "tools/unified_gate_selftest.py",
+              "tools/ci/**",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md",
+              "docs/ssot/05_runbooks/**"
+            ]
+          },
+          {
+            "id": "TASKMODEL_HARDEN_V010",
+            "title": "Harden task_model + derived task tree fields",
+            "description": "TASK: TASKMODEL_HARDEN_V010\n\nGoal:\n- Make Task Model a machine-usable single mouth:\n  - task_id generation + idempotency\n  - minimal state model (queued/started/produced/verified/done/dlq)\n  - required completion fields (contract_ref, touched_oids[], evidence_oids[], verdict)\n- Update raw→task_tree generator to emit these fields.\n\nAcceptance:\n- Running `python tools/scc/raw_to_task_tree.py` produces `docs/DERIVED/task_tree.json` with task_id + required fields present (even if null/empty).\n- SSOT doc clearly defines the rules without long templates.\n\nAllowed file changes:\n- Update: docs/ssot/04_contracts/task_model.md\n- Update: tools/scc/raw_to_task_tree.py\n- Update: docs/DERIVED/task_tree.json\n",
+            "require_changes": true,
+            "embed_allowlisted_files": true,
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "docs/ssot/04_contracts/task_model.md",
+              "tools/scc/raw_to_task_tree.py",
+              "docs/DERIVED/task_tree.json"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

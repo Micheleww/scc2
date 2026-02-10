@@ -1,0 +1,57 @@
+{
+  "cloud_settings": {
+    "host": "13.229.100.10",
+    "port": 22,
+    "username": "ubuntu",
+    "deploy_path": "/home/ubuntu/freqtrade",
+    "python_path": "/usr/bin/python3",
+    "connection_timeout": 30,
+    "retry_attempts": 3
+  },
+  "sync_settings": {
+    "auto_deploy": true,
+    "backup_before_deploy": true,
+    "verify_deployment": true,
+    "monitor_interval": 60,
+    "max_concurrent_uploads": 3
+  },
+  "strategies": {
+    "production_list": [
+      "test1"
+    ],
+    "test_mode": false,
+    "dry_run": true,
+    "max_strategies_per_package": 10
+  },
+  "monitoring": {
+    "enable_health_check": true,
+    "enable_performance_monitor": true,
+    "enable_log_monitoring": true,
+    "alert_threshold": {
+      "cpu": 80,
+      "memory": 85,
+      "disk": 90,
+      "network_latency": 1000
+    },
+    "log_retention_days": 7
+  },
+  "security": {
+    "enable_encryption": true,
+    "verify_checksums": true,
+    "allowed_ips": ["127.0.0.1"],
+    "ssh_key_path": "C:/Users/Nwe-1/Desktop/aws_key.pem"
+  },
+  "backup": {
+    "enabled": true,
+    "backup_interval": "daily",
+    "retention_count": 7,
+    "backup_location": "/home/ubuntu/freqtrade/backups"
+  },
+  "notifications": {
+    "enabled": true,
+    "channels": ["webhook"],
+    "success_notify": true,
+    "failure_notify": true,
+    "webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=72cc0f5e-3935-429e-a5b9-9c81f9be6c22"
+  }
+}

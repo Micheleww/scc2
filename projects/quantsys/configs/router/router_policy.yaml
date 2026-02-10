@@ -1,0 +1,127 @@
+version: v0.1.0
+
+# Router policy is a hard gate for routing + budget + evidence requirements.
+# Tests in `tests/test_router_policy_enforcement.py` and `tests/test_fail_code_action_policy.py`
+# expect this file to exist at `configs/router/router_policy.yaml`.
+
+subtask_type_to_role:
+  implementation:
+    role: IMPLEMENTER
+  planning:
+    role: PLANNER
+  qa:
+    role: QA
+  gate:
+    role: GATEKEEPER
+
+role_limits:
+  IMPLEMENTER:
+    max_files: 50
+    max_diff_lines: 800
+  PLANNER:
+    max_files: 100
+    max_diff_lines: 400
+  QA:
+    max_files: 100
+    max_diff_lines: 200
+  GATEKEEPER:
+    max_files: 200
+    max_diff_lines: 2000
+
+# Fail-code to action policy (used by IfcliRunner).
+fail_code_action_policy:
+  "429":
+    action: retry
+    reason: Rate limited
+    max_attempts: 3
+    retry_delay: 120
+  INFRA_CONNECTIVITY:
+    action: retry
+    reason: Connectivity issue
+    max_attempts: 3
+    retry_delay: 120
+  INFRA_RATE_LIMIT:
+    action: retry
+    reason: Rate limited
+    max_attempts: 3
+    retry_delay: 120
+  INFRA_TIMEOUT:
+    action: retry
+    reason: Timeout
+    max_attempts: 2
+    retry_delay: 120
+  CODE_SYNTAX_ERROR:
+    action: create_fix_task
+    reason: Fix syntax and retry
+    max_attempts: 1
+  CODE_RUNTIME_ERROR:
+    action: create_fix_task
+    reason: Fix runtime error and retry
+    max_attempts: 1
+  TEST_ASSERTION_FAILED:
+    action: create_fix_task
+    reason: Fix test failure
+    max_attempts: 1
+  DATA_VALIDATION_ERROR:
+    action: dlq
+    reason: Input/data invalid
+    max_attempts: 1
+  "1001":
+    action: rollback
+    reason: Known flaky test / rollback required
+    max_attempts: 1
+  SLO_DLQ_LEN:
+    action: manual_intervention
+    reason: DLQ length SLO violated
+    max_attempts: 1
+  SLO_SECRETS_SCAN:
+    action: dlq
+    reason: Secrets scan violation (hard stop)
+    max_attempts: 1
+
+flaky_task_isolation:
+  enabled: true
+  detection:
+    max_retries_before_flaky: 2
+    failure_pattern_window: 3600
+    consecutive_failure_threshold: 3
+    failure_rate_threshold: 0.7
+  isolation:
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout: 600
+      half_open_max_attempts: 2
+    quarantine:
+      enabled: true
+      duration_seconds: 1800
+      max_quarantine_count: 3
+
+escalation_rules:
+  max_retries_exceeded:
+    action: escalate_to_gatekeeper
+  timeout_exceeded:
+    action: escalate_to_gatekeeper
+  resource_exhausted:
+    action: escalate_to_gatekeeper
+  flaky_task_detected:
+    action: isolate_and_escalate
+  circuit_breaker_open:
+    action: isolate_and_escalate
+
+fallback_policy:
+  default_role: GATEKEEPER
+  default_action: dlq
+  error_message: "No valid routing path found"
+
+evidence_validation:
+  required_artifacts:
+    - selftest.log
+    - artifacts/ata.json
+    - artifacts/verdict.json
+  required_logs:
+    - stdout.log
+    - stderr.log
+  validation_strategy:
+    type: fail_closed
+    strict: true

@@ -1,0 +1,70 @@
+{
+  "schema_version": "v0.1.0",
+  "generated_by": "tools/scc/ops/dispatch_execute_from_task_tree.py",
+  "max_outstanding": 3,
+  "timeout_s": 1800,
+  "batches": [
+    {
+      "name": "execute_from_task_tree_v0_1_0",
+      "parents": {
+        "parents": [
+          {
+            "id": "EXEC_697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "title": "Execute contract: 697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "description": "TASK: CONTRACT_EXECUTE\n\ntask_id: 697a1500-1e34-8321-ae0f-23f6314f1716_0002\ncontract_ref: docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json\n\nGoal:\n- Implement the contract goal by editing only within contract.scope_allow.\n- Run contract.acceptance.checks and ensure they PASS.\n\nRules (mandatory):\n- MUST stay within allowlisted paths (scope_allow).\n- MUST follow SSOT: read `docs/START_HERE.md` then `docs/ssot/registry.json` when unsure.\n- MUST NOT create a second docs entrypoint.\n- If acceptance cannot be run deterministically, STOP and report (do not guess).\n\nOutputs (mandatory):\n- Patch must apply cleanly; acceptance must pass.\n",
+            "role_id": "executor",
+            "skills_required": [
+              "SHELL_READONLY",
+              "SHELL_WRITE",
+              "PATCH_APPLY",
+              "SELFTEST"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "Allowlisted scope (fail-closed): write ONLY docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json; read ONLY inputs_ref.paths plus docs/DERIVED/task_tree.json plus files required by tools/ci/mvm-verdict.py; write evidence ONLY docs/REPORT/control_plane/artifacts/697a1500-1e34-8321-ae0f-23f6314f1716_0002/*; no network; stop if any out-of-scope access is required."
+            ],
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json",
+              "docs/START_HERE.md",
+              "docs/ssot/registry.json",
+              "docs/DERIVED/secretary/GOAL_BRIEF__LATEST.md"
+            ],
+            "context_max_files": 6,
+            "context_max_total_chars": 30000,
+            "context_head_lines": 100,
+            "context_tail_lines": 60,
+            "require_changes": true
+          },
+          {
+            "id": "VERIFY_697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "title": "Verify contract acceptance: 697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "description": "TASK: CONTRACT_VERIFY\n\ntask_id: 697a1500-1e34-8321-ae0f-23f6314f1716_0002\ncontract_ref: docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json\n\nGoal:\n- Run contract.acceptance.checks exactly and report pass/fail with evidence.\n\nRules (mandatory):\n- Do NOT edit code.\n- If checks are not executable, STOP and report.\n",
+            "role_id": "verifier",
+            "skills_required": [
+              "SHELL_READONLY",
+              "SELFTEST"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [],
+            "embed_allowlisted_files": false,
+            "embed_paths": [
+              "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json",
+              "docs/START_HERE.md",
+              "docs/ssot/registry.json",
+              "docs/DERIVED/secretary/GOAL_BRIEF__LATEST.md"
+            ],
+            "context_max_files": 6,
+            "context_max_total_chars": 22000,
+            "context_head_lines": 80,
+            "context_tail_lines": 50,
+            "require_changes": false
+          }
+        ]
+      }
+    }
+  ],
+  "defaults": {
+    "model": "gpt-5.2"
+  }
+}

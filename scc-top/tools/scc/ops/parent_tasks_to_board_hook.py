@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -72,8 +73,9 @@ def _has_parent_task(board_tasks: List[Dict[str, Any]], parent_task_id: str) -> 
 
 
 def main() -> int:
+    default_repo_root = Path(__file__).resolve().parents[4]
     ap = argparse.ArgumentParser(description="Hook: sync parent_tasks -> board")
-    ap.add_argument("--parents", default=r"C:\scc\scc-top\docs\TASKS\backlog\parent_tasks.json")
+    ap.add_argument("--parents", default=os.environ.get("PARENTS_PATH") or str(default_repo_root / "scc-top" / "docs" / "TASKS" / "backlog" / "parent_tasks.json"))
     ap.add_argument("--base", default="http://127.0.0.1:18788")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--split", action="store_true")

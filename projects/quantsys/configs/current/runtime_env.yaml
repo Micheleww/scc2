@@ -1,0 +1,17 @@
+# Runtime Environment Configuration
+# Authority: see law/QCC-README.md
+
+# Environment type: live, paper, backtest
+# Required field - system will fail to start if missing
+env: paper
+
+# Live account identifier (optional, used for live environment detection)
+# If set to non-empty value, system will enforce risk_guard.enabled=true
+live_account_id: ""
+
+# Real broker flag (optional, used for live environment detection)
+# If set to true, system will enforce risk_guard.enabled=true
+real_broker: false
+
+# Session ID (auto-generated on startup, do not modify manually)
+session_id: ""

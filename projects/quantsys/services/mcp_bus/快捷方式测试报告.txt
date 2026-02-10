@@ -1,0 +1,37 @@
+========================================
+桌面快捷方式测试报告
+========================================
+
+测试时间: 2026-01-20 03:10:54
+快捷方式路径: C:\Users\Nwe-1\Desktop\启动MCP服务器.lnk
+
+1. 快捷方式文件检查
+   ✅ 快捷方式文件存在
+
+2. 快捷方式配置
+   目标程序: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+   参数: -NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File "d:\quantsys\快速启动本地MCP.ps1"
+   工作目录: d:\quantsys
+   描述: 启动MCP服务器（普通模式）
+
+3. 目标程序检查
+   ✅ 目标程序存在: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+
+4. 脚本路径检查
+   ❌ 无法提取脚本路径
+   完整参数: -NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File "d:\quantsys\快速启动本地MCP.ps1"
+
+5. 工作目录检查
+   ✅ 工作目录存在: d:\quantsys
+
+6. 执行测试
+   构建的命令: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File "d:\quantsys\快速启动本地MCP.ps1"
+   ❌ 无法执行测试（脚本路径无效）
+
+7. 服务器状态检查
+   ❌ 服务器未运行或无法访问
+   错误: The request was canceled due to the configured HttpClient.Timeout of 2 seconds elapsing.
+
+========================================
+测试完成
+========================================

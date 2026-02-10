@@ -8,6 +8,8 @@ import pathlib
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+from tools.scc.lib.utils import load_json
+
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 EXEC_LOG_DIR = REPO_ROOT / "artifacts" / "executor_logs"
@@ -19,10 +21,6 @@ def _now() -> datetime:
 
 def _iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat()
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
 
 
 def _write_json(path: pathlib.Path, obj: Any) -> None:

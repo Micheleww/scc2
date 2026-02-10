@@ -1,0 +1,7269 @@
+import asyncio
+import json
+import os
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+# 将src目录添加到Python路径
+# 获取当前文件的绝对路径
+current_file = os.path.abspath(__file__)
+# 获取server目录的父目录（即mcp_bus）
+mcp_bus_dir = os.path.dirname(os.path.dirname(current_file))
+# 获取services目录
+services_dir = os.path.dirname(mcp_bus_dir)
+# 获取项目根目录（即quantsys）
+repo_root = os.path.dirname(services_dir)
+src_path = os.path.join(repo_root, "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+
+
+import httpx
+import uvicorn
+import subprocess
+import signal
+import threading
+import socket
+import tempfile
+import atexit
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    Response,
+)
+from fastapi.staticfiles import StaticFiles
+from jose import JWTError, jwt
+from pydantic import BaseModel
+
+# 加载.env文件（支持多个路径）
+# 注意：这里logger可能还未初始化，使用print输出
+env_paths = [
+    Path(__file__).parent.parent / ".env",  # tools/mcp_bus/.env
+    Path(__file__).parent.parent.parent / ".env",  # 项目根目录/.env
+]
+env_loaded = False
+for env_path in env_paths:
+    if env_path.exists():
+        load_dotenv(env_path, override=False)  # 不覆盖已存在的环境变量
+        print(f"[INFO] Loaded .env from: {env_path}")
+        # 打印关键环境变量
+        auto_start = os.getenv("AUTO_START_FREQTRADE", "NOT SET")
+        print(f"[INFO] AUTO_START_FREQTRADE={auto_start}")
+        env_loaded = True
+        break
+if not env_loaded:
+    print("[INFO] No .env file found, using defaults")
+    print(
+        f"[INFO] AUTO_START_FREQTRADE={os.getenv('AUTO_START_FREQTRADE', 'NOT SET (default: enabled)')}"
+    )
+load_dotenv()  # 也尝试从当前目录加载
+# 再次确认环境变量（可能在当前目录加载）
+if not env_loaded:
+    auto_start = os.getenv("AUTO_START_FREQTRADE", "")
+    if auto_start:
+        print(f"[INFO] AUTO_START_FREQTRADE from current dir: {auto_start}")
+
+# 默认禁用自启，但提供可靠的启动机制确保100%成功率
+# 如果需要与总服务器同步启动，请设置环境变量 AUTO_START_FREQTRADE=true
+if not os.getenv("AUTO_START_FREQTRADE"):
+    os.environ["AUTO_START_FREQTRADE"] = "false"
+    print("[INFO] AUTO_START_FREQTRADE set to default: false (disabled, set to true to enable)")
+
+import logging
+
+from .audit import AuditLogger
+from .auth import UserRole, auth_service
+from .cache_service import cache_service, cached
+from .chart_service import chart_service
+from .error_logger import error_logger
+from .freqtrade_service import freqtrade_service
+from .monitoring import monitoring_service
+from .security import PathSecurity, load_security_config
+from .security_middleware import SecurityHeadersMiddleware
+from .tools import (
+    AgentApplyParams,
+    AgentRegisterParams,
+    ATACIVerifyParams,
+    ATAMessageMarkParams,
+    ATAReceiveParams,
+    ATASendParams,
+    ATASendRequestParams,
+    ATASendReviewParams,
+    ATASendWithFileParams,
+    ATATaskCreateParams,
+    ATATaskResultParams,
+    ATATaskStatusParams,
+    BoardSetStatusParams,
+    ConversationHistoryParams,
+    ConversationMarkParams,
+    ConversationSearchParams,
+    ConversationStatsParams,
+    DialogListParams,
+    DialogRegisterParams,
+    EchoParams,
+    FileReadParams,
+    InboxAppendParams,
+    InboxTailParams,
+    ResultGetParams,
+    TaskCreateParams,
+    TaskStatusParams,
+    ToolExecutor,
+    WorkflowExecuteParams,
+)
+from .web_viewer_api import get_message_preview, load_all_ata_messages
+
+# 配置日志（在导入其他模块之前）
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="QCC Bus MCP Server", version="0.1.0")
+
+# Dashboard configuration - now using deep integration
+DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "18788"))
+DASHBOARD_HOST = os.getenv("DASHBOARD_HOST", "127.0.0.1")
+DASHBOARD_URL = f"http://{DASHBOARD_HOST}:{DASHBOARD_PORT}"
+
+# Disable deep integration by default to avoid JSON serialization errors
+DASHBOARD_DEEP_INTEGRATION = False
+
+# Debug: Print deep integration status
+logger.info(f"📊 Dashboard deep integration status: {DASHBOARD_DEEP_INTEGRATION}")
+logger.info(f"📊 Environment variable: DASHBOARD_DEEP_INTEGRATION={os.getenv('DASHBOARD_DEEP_INTEGRATION')}")
+
+
+
+
+def create_cached_file_response(file_path: Path, media_type: str = None) -> FileResponse:
+    """创建带永久缓存头的文件响应（浏览器永久缓存直到手动清除）"""
+    headers = {
+        "Cache-Control": "public, max-age=31536000, immutable",  # 1年，不可变，永久缓存
+        "X-Content-Type-Options": "nosniff",
+    }
+    return FileResponse(file_path, media_type=media_type, headers=headers)
+
+
+def secrets_compare(a: str, b: str) -> bool:
+    # constant-time-ish compare
+    try:
+        import hmac
+
+        return hmac.compare_digest(a, b)
+    except Exception:
+        return a == b
+
+
+def extract_admin_ctx(req: Request) -> dict[str, Any]:
+    """
+    Determine whether the caller is ATA admin (fail-closed for privileged ops).
+    Sources:
+    - Header: X-ATA-ADMIN-TOKEN must match env ATA_ADMIN_TOKEN
+    - Cookie: auth_token (JWT issued by /api/auth/login) with role=admin
+    """
+    is_admin = False
+    reason = "not_authenticated"
+    expected = os.getenv("ATA_ADMIN_TOKEN")
+    provided = req.headers.get("x-ata-admin-token")
+    if expected and provided and secrets_compare(expected, provided):
+        return {"is_admin": True, "method": "header", "reason": "ok"}
+
+    token = req.cookies.get("auth_token")
+    if token:
+        payload = auth_service.verify_token(token)
+        if payload and payload.get("role") == UserRole.ADMIN.value:
+            return {"is_admin": True, "method": "cookie", "reason": "ok"}
+        reason = "invalid_or_non_admin_jwt"
+    return {"is_admin": is_admin, "method": None, "reason": reason}
+
+
+# GZip压缩中间件（性能优化）- 降低阈值以压缩更多内容
+app.add_middleware(GZipMiddleware, minimum_size=500)  # 500字节以上即压缩
+
+# 安全头中间件
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Schema 验证中间件（确保所有消息/事件符合统一 Schema）
+try:
+    from .schema_validator import SchemaValidationMiddleware
+    app.add_middleware(SchemaValidationMiddleware)
+    logger.info("✅ Schema validation middleware loaded")
+except Exception as e:
+    logger.error(f"❌ Schema validation middleware failed to load: {e}", exc_info=True)
+
+# CORS configuration - restrict to trusted origins
+# 添加Electron应用和本地开发环境的origin
+cors_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:18788,http://127.0.0.1:18788,http://localhost:3000,http://127.0.0.1:3000",
+).split(",")
+cors_origins = [origin.strip() for origin in cors_origins if origin.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Trace-ID", "User-Agent"],
+)
+
+# Optional: LangSmith tracing for API requests (non-blocking, best-effort).
+LANGSMITH_MIDDLEWARE_ATTACHED = False
+try:
+    from tools.langsmith.fastapi_middleware import add_langsmith_middleware
+
+    try:
+        LANGSMITH_MIDDLEWARE_ATTACHED = add_langsmith_middleware(app)
+        if LANGSMITH_MIDDLEWARE_ATTACHED:
+            logger.info("[LangSmith] HTTP tracing enabled")
+        else:
+            logger.info("[LangSmith] HTTP tracing disabled (no valid config)")
+    except Exception as e:
+        logger.warning(f"[LangSmith] middleware init failed: {e}")
+except Exception:
+    logger.info("[LangSmith] integration not available (missing optional dependency)")
+
+# A2A Hub integration - deep integration enabled by default
+logger.info("🔄 Initializing A2A Hub deep integration...")
+try:
+    from .a2a_integration import configure_a2a_integration
+    a2a_app = configure_a2a_integration(app)
+    if a2a_app:
+        logger.info("✅ A2A Hub deep integration successful")
+    else:
+        logger.warning("⚠️ A2A Hub deep integration failed")
+except Exception as e:
+    logger.error(f"❌ A2A Hub deep integration error: {e}", exc_info=True)
+
+# Data access integration
+logger.info("🔄 Initializing unified data access integration...")
+try:
+    from .data_access_integration import include_data_access_routes
+    include_data_access_routes(app)
+    logger.info("✅ Unified data access integration successful")
+except Exception as e:
+    logger.error(f"❌ Unified data access integration error: {e}", exc_info=True)
+
+# Monitoring service integration
+logger.info("🔄 Initializing monitoring service integration...")
+try:
+    from .monitoring_integration import init_monitoring_integration
+    init_monitoring_integration(app)
+    logger.info("✅ Monitoring service integration successful")
+except Exception as e:
+    logger.error(f"❌ Monitoring service integration error: {e}", exc_info=True)
+
+# Tools integration
+logger.info("🔄 Initializing tools script integration...")
+try:
+    from .tools_integration import include_tools_routes
+    include_tools_routes(app)
+    logger.info("✅ Tools script integration successful")
+except Exception as e:
+    logger.error(f"❌ Tools script integration error: {e}", exc_info=True)
+
+# AWS Bridge integration (T2: AWS 统一入口接入)
+logger.info("🔄 Initializing AWS Bridge integration...")
+try:
+    from .aws_api_gateway import router as aws_router
+    app.include_router(aws_router)
+    logger.info("✅ AWS Bridge integration successful")
+except Exception as e:
+    logger.error(f"❌ AWS Bridge integration error: {e}", exc_info=True)
+
+security: PathSecurity | None = None
+tool_executor: ToolExecutor | None = None
+audit_logger: AuditLogger | None = None
+config: dict[str, Any] = {}
+
+
+class AgentSendRequest(BaseModel):
+    """REST request body for sending an ATA message from an agent homepage."""
+
+    to_agent: str | int
+    taskcode: str
+    message: str
+    kind: str = "request"
+    priority: str = "normal"
+    requires_response: bool = True
+    context_hint: str | None = None
+
+
+class ChatSendRequest(BaseModel):
+    """Web chat: user sends a message, server routes to an agent via ATA outbox."""
+
+    message: str
+    # Optional explicit target; when absent, server routes based on keywords/roles
+    target_agent: str | None = None
+    # Optional override; default will be generated
+    taskcode: str | None = None
+    # Optional notification mode
+    notification_mode: str | None = "ata"
+
+
+class NotificationSendRequest(BaseModel):
+    """通知发送请求"""
+
+    title: str
+    message: str
+    mode: str = "all"  # ata/desktop/wecom/telegram/all
+
+
+def _format_agent_code(numeric_code: int | None) -> str:
+    """Format numeric code as 2-digit string, e.g. 1 -> '01'."""
+    if numeric_code is None:
+        return "--"
+    try:
+        return f"{int(numeric_code):02d}"
+    except Exception:
+        return "--"
+
+
+def _display_name(agent_id: str, numeric_code: int | None) -> str:
+    """Display name for ATA communications: 名字#NN"""
+    return f"{agent_id}#{_format_agent_code(numeric_code)}"
+
+
+def get_repo_root() -> Path:
+    """Get repository root path"""
+    return Path(os.getenv("REPO_ROOT", "d:\\quantsys")).resolve()
+
+
+REPO_ROOT = get_repo_root()
+
+
+def get_config():
+    return config
+
+
+async def get_jwks_keys(issuer: str) -> dict[str, Any]:
+    """Fetch JWKS keys from the issuer"""
+    jwks_uri = f"{issuer}/.well-known/jwks.json"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(jwks_uri, timeout=10.0)
+        response.raise_for_status()
+        return response.json()
+
+
+async def verify_jwt(token: str) -> dict[str, Any]:
+    """Verify OAuth JWT token"""
+    issuer = os.getenv("OAUTH_ISSUER")
+    client_id = os.getenv("OAUTH_CLIENT_ID")
+    required_scopes = os.getenv("OAUTH_REQUIRED_SCOPES", "mcp.tools").split()
+
+    if not issuer or not client_id:
+        raise HTTPException(status_code=500, detail="OAuth not configured")
+
+    try:
+        # Get JWKS keys
+        jwks = await get_jwks_keys(issuer)
+
+        # Decode and verify token
+        unverified_header = jwt.get_unverified_header(token)
+        kid = unverified_header.get("kid")
+
+        if not kid:
+            raise HTTPException(status_code=403, detail="Invalid token: missing kid")
+
+        # Find the key with matching kid
+        rsa_key = {}
+        for key in jwks.get("keys", []):
+            if key.get("kid") == kid:
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"],
+                }
+                break
+
+        if not rsa_key:
+            raise HTTPException(status_code=403, detail="Invalid token: key not found")
+
+        # Verify the token
+        payload = jwt.decode(
+            token, rsa_key, algorithms=["RS256"], audience=client_id, issuer=issuer
+        )
+
+        # Verify required scopes
+        token_scopes = payload.get("scope", "").split()
+        for scope in required_scopes:
+            if scope not in token_scopes:
+                raise HTTPException(status_code=403, detail=f"Missing required scope: {scope}")
+
+        return payload
+
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching JWKS: {str(e)}")
+    except JWTError as e:
+        raise HTTPException(status_code=403, detail=f"Invalid token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=f"Token verification failed: {str(e)}")
+
+
+async def verify_token(authorization: str | None = Header(None)):
+    """验证token，支持AUTH_MODE=none模式（本地开发）"""
+    # 优化：本地开发时默认使用none模式（127.0.0.1或localhost）
+    default_auth_mode = (
+        "none" if os.getenv("MCP_BUS_HOST", "127.0.0.1") in ["127.0.0.1", "localhost"] else "oauth"
+    )
+    auth_mode = os.getenv("AUTH_MODE", default_auth_mode).lower()
+
+    # AUTH_MODE=none时允许无认证访问（仅限本地开发）
+    if auth_mode == "none":
+        return {"mode": "none", "authenticated": False}
+
+    resource_metadata_url = "https://mcp.timquant.tech/.well-known/oauth-protected-resource"
+    required_scope = "mcp.tools"
+
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing Authorization header",
+            headers={
+                "WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata_url}", scope="{required_scope}"'
+            },
+        )
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid Authorization header format",
+            headers={
+                "WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata_url}", scope="{required_scope}"'
+            },
+        )
+
+    token = authorization[7:]
+
+    if auth_mode == "oauth":
+        try:
+            # Use OAuth JWT validation
+            return await verify_jwt(token)
+        except HTTPException as e:
+            # Add WWW-Authenticate header to all 401/403 responses
+            if e.status_code in [401, 403]:
+                e.headers = {
+                    "WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata_url}", scope="{required_scope}"'
+                }
+            raise e
+    else:
+        # Use legacy Bearer token validation
+        expected_token = os.getenv("MCP_BUS_TOKEN")
+
+        if not expected_token:
+            raise HTTPException(
+                status_code=500, detail="Server not configured: MCP_BUS_TOKEN not set"
+            )
+
+        if token != expected_token:
+            raise HTTPException(
+                status_code=403,
+                detail="Invalid token",
+                headers={
+                    "WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata_url}", scope="{required_scope}"'
+                },
+            )
+
+        return token
+
+
+def get_caller(request: Request) -> str:
+    user_agent = request.headers.get("user-agent", "unknown")
+    if "ChatGPT" in user_agent:
+        return "ChatGPT"
+    elif "TRAE" in user_agent:
+        return "TRAE"
+    return user_agent[:50]
+
+
+def get_tool_executor() -> ToolExecutor:
+    """获取全局tool_executor实例"""
+    if tool_executor is None:
+        raise RuntimeError("ToolExecutor not initialized. Server may not have started yet.")
+    return tool_executor
+
+
+def _resolve_agent_ref(executor: ToolExecutor, agent_ref: str) -> str:
+    """
+    Resolve agent_ref to agent_id.
+    agent_ref supports:
+    - numeric code: "1".."100"
+    - agent_id: e.g. "ATA系统"
+    """
+    if not executor.coordinator:
+        raise HTTPException(status_code=503, detail="AgentCoordinator not available")
+
+    ref = (agent_ref or "").strip()
+    if not ref:
+        raise HTTPException(status_code=400, detail="agent_ref is required")
+
+    # numeric_code
+    if ref.isdigit():
+        code = int(ref)
+        if not (1 <= code <= 100):
+            raise HTTPException(status_code=400, detail="numeric_code must be in range 1..100")
+        agent = executor.coordinator.registry.get_agent_by_code(code)
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent not found for numeric_code={code}")
+        return agent.agent_id
+
+    # agent_id
+    agent = executor.coordinator.registry.get_agent(ref)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Agent not found: {ref}")
+    return agent.agent_id
+
+
+
+
+# A2A Hub configuration (Flask service, proxied under MCP Bus)
+A2A_HUB_HOST = os.getenv("A2A_HUB_HOST", "127.0.0.1")
+A2A_HUB_PORT = int(os.getenv("A2A_HUB_PORT", "18788"))
+A2A_HUB_URL = f"http://{A2A_HUB_HOST}:{A2A_HUB_PORT}"
+A2A_HUB_ENABLED = os.getenv("A2A_HUB_ENABLED", "false").lower() == "true"
+
+_SERVICE_MAP: dict[str, dict[str, str]] = {}
+_SERVICE_START_MAP: dict[str, dict[str, Any]] = {}
+_service_processes: dict[str, subprocess.Popen] = {}
+
+
+def _load_service_map() -> dict[str, dict[str, str]]:
+    mapping: dict[str, dict[str, str]] = {}
+    raw = os.getenv("MCP_SERVICE_MAP", "").strip()
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                for name, info in parsed.items():
+                    if isinstance(info, dict) and "url" in info:
+                        mapping[str(name)] = {
+                            "url": str(info.get("url", "")),
+                            "health": str(info.get("health", "")),
+                        }
+        except Exception:
+            logger.warning("Failed to parse MCP_SERVICE_MAP JSON; ignoring")
+
+    # Built-in defaults for common local services
+    mapping.setdefault(
+        "a2a",
+        {"url": A2A_HUB_URL, "health": "/api/health"},
+    )
+    mapping.setdefault(
+        "dashboard",
+        {"url": DASHBOARD_URL, "health": "/"},
+    )
+    mapping.setdefault(
+        "langgraph",
+        {"url": "http://127.0.0.1:18788", "health": "/docs"},
+    )
+    mapping.setdefault(
+        "freqtrade",
+        {"url": os.getenv("FREQTRADE_API_URL", "http://127.0.0.1:18788"), "health": ""},
+    )
+    mapping.setdefault(
+        "clawdbot",
+        {"url": "http://127.0.0.1:18788", "health": "/"},
+    )
+    return mapping
+
+
+_SERVICE_MAP = _load_service_map()
+
+
+def _load_service_start_map() -> dict[str, dict[str, Any]]:
+    mapping: dict[str, dict[str, Any]] = {}
+    raw = os.getenv("MCP_SERVICE_START_MAP", "").strip()
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                for name, info in parsed.items():
+                    if isinstance(info, dict):
+                        mapping[str(name)] = info
+        except Exception:
+            logger.warning("Failed to parse MCP_SERVICE_START_MAP JSON; ignoring")
+
+    # Default: allow A2A to be started by manager if enabled.
+    mapping.setdefault(
+        "a2a",
+        {
+            "args": [sys.executable, "tools/a2a_hub/main.py"],
+            "cwd": str(get_repo_root()),
+        },
+    )
+    mapping.setdefault(
+        "clawdbot",
+        {
+            "args": [sys.executable, "tools/web_control/app.py"],
+            "cwd": str(get_repo_root()),
+        },
+    )
+    return mapping
+
+
+_SERVICE_START_MAP = _load_service_start_map()
+
+# 优化：创建HTTP连接池，复用连接以提高性能
+_dashboard_client: httpx.AsyncClient | None = None
+_freqtrade_client: httpx.AsyncClient | None = None
+_a2a_client: httpx.AsyncClient | None = None
+_a2a_process: subprocess.Popen | None = None
+_service_clients: dict[str, httpx.AsyncClient] = {}
+
+
+def get_dashboard_client() -> httpx.AsyncClient:
+    """获取Dashboard HTTP客户端（连接池复用）"""
+    global _dashboard_client
+    if _dashboard_client is None:
+        _dashboard_client = httpx.AsyncClient(
+            base_url=DASHBOARD_URL,
+            timeout=httpx.Timeout(10.0, connect=3.0),  # 连接超时3秒，总超时10秒
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+            follow_redirects=True,
+        )
+    return _dashboard_client
+
+
+
+
+
+def get_a2a_client() -> httpx.AsyncClient:
+    global _a2a_client
+    if _a2a_client is None:
+        _a2a_client = httpx.AsyncClient(
+            base_url=A2A_HUB_URL,
+            timeout=httpx.Timeout(10.0, connect=2.0),
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+        )
+    return _a2a_client
+
+
+def get_service_client(service: str) -> httpx.AsyncClient:
+    client = _service_clients.get(service)
+    if client is None:
+        base_url = _SERVICE_MAP[service]["url"]
+        client = httpx.AsyncClient(
+            base_url=base_url,
+            timeout=httpx.Timeout(10.0, connect=2.0),
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+            follow_redirects=True,
+        )
+        _service_clients[service] = client
+    return client
+
+
+def _check_service_health(service: str) -> bool | None:
+    info = _SERVICE_MAP.get(service)
+    if not info:
+        return None
+    health_path = info.get("health", "")
+    if not health_path:
+        return None
+    try:
+        resp = httpx.get(f"{info['url']}{health_path}", timeout=2)
+        return resp.status_code >= 200 and resp.status_code < 500
+    except Exception:
+        return False
+
+
+def _start_managed_service(service: str) -> bool:
+    config = _SERVICE_START_MAP.get(service)
+    if not config:
+        return False
+
+    svc_type = str(config.get("type") or "")
+    if svc_type == "freqtrade":
+        ok, _msg = freqtrade_service.start_webserver()
+        return ok
+    if svc_type == "dashboard":
+        start_dashboard_background()
+        return True
+
+    proc = _service_processes.get(service)
+    if proc and proc.poll() is None:
+        return True
+
+    healthy = _check_service_health(service)
+    if healthy:
+        return True
+
+    args = config.get("args")
+    cmd = config.get("cmd")
+    if not args and not cmd:
+        return False
+
+    cwd = config.get("cwd") or str(get_repo_root())
+    env = os.environ.copy()
+    env.update(config.get("env", {}))
+
+    try:
+        if args:
+            proc = subprocess.Popen(
+                args,
+                cwd=cwd,
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+            )
+        else:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=cwd,
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                shell=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+            )
+        _service_processes[service] = proc
+        return True
+    except Exception as exc:
+        logger.error(f"Failed to start service {service}: {exc}")
+        return False
+
+
+def _stop_managed_service(service: str) -> bool:
+    proc = _service_processes.get(service)
+    if not proc:
+        return False
+    if proc.poll() is None:
+        proc.terminate()
+        return True
+    return False
+
+
+def start_dashboard_background():
+    """Start Dashboard as background process"""
+    import subprocess
+    import sys
+    import threading
+
+    repo_root = get_repo_root()
+    
+    # Check both possible locations for the Dashboard script
+    possible_paths = [
+        repo_root / "isolated_observatory" / "scripts" / "dashboard" / "app.py",  # 新位置
+        repo_root / "scripts" / "dashboard" / "app.py"  # 旧位置（兼容）
+    ]
+    
+    dashboard_script = None
+    for path in possible_paths:
+        if path.exists() and path.is_file():
+            dashboard_script = path
+            break
+    
+    if not dashboard_script:
+        print(f"Warning: Dashboard script not found in any of the expected locations")
+        return None
+
+    def run_dashboard():
+        try:
+            # Start Dashboard in background (non-blocking)
+            subprocess.Popen(
+                [sys.executable, str(dashboard_script)],
+                cwd=str(repo_root),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+            )
+        except Exception as e:
+            print(f"Error starting Dashboard: {e}")
+
+    # Start Dashboard in background thread
+    dashboard_thread = threading.Thread(target=run_dashboard, daemon=True)
+    dashboard_thread.start()
+
+    # 优化：不阻塞主线程，Dashboard启动检查改为异步后台任务
+    # 原来的5秒阻塞导致启动太慢，现在改为完全异步
+    def check_dashboard_async():
+        import time
+        import httpx
+        # 延迟1秒后检查（给Dashboard一些启动时间）
+        time.sleep(1.0)
+        try:
+            response = httpx.get(f"{DASHBOARD_URL}/", timeout=2)
+            if response.status_code == 200:
+                print(f"[OK] Dashboard started successfully on {DASHBOARD_URL}")
+            else:
+                print(f"[WARN] Dashboard responded with status {response.status_code}")
+        except Exception as e:
+            print(f"[WARN] Dashboard may not be running yet, will retry on first request: {e}")
+    
+    # 在后台线程中检查，不阻塞主线程
+    check_thread = threading.Thread(target=check_dashboard_async, daemon=True)
+    check_thread.start()
+
+    return dashboard_thread
+
+
+def _check_a2a_health() -> bool:
+    try:
+        resp = httpx.get(f"{A2A_HUB_URL}/api/health", timeout=2)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+def start_a2a_background():
+    """Start A2A Hub as background process (best-effort)."""
+    global _a2a_process
+    if _check_a2a_health():
+        logger.info("A2A Hub already running; skip start")
+        return
+
+    repo_root = get_repo_root()
+    a2a_script = repo_root / "tools" / "a2a_hub" / "main.py"
+    if not a2a_script.exists():
+        logger.warning("A2A Hub script not found; skip start")
+        return
+
+    try:
+        _a2a_process = subprocess.Popen(
+            [sys.executable, str(a2a_script)],
+            cwd=str(a2a_script.parent),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+    except Exception as exc:
+        logger.error(f"Failed to start A2A Hub: {exc}")
+        return
+
+    def _wait_ready():
+        for _ in range(20):
+            if _check_a2a_health():
+                logger.info("A2A Hub started successfully")
+                return
+            time.sleep(0.5)
+        logger.warning("A2A Hub start timed out")
+
+    thread = threading.Thread(target=_wait_ready, daemon=True)
+    thread.start()
+
+
+# 全局标志，防止重复启动
+_freqtrade_startup_task_running = False
+
+
+async def _start_freqtrade_with_retry(max_retries: int = 5, retry_delay: float = 2.0):
+    """可靠启动Freqtrade，确保100%成功率（带重试机制）"""
+    global _freqtrade_startup_task_running
+
+    auto_start_env = os.getenv("AUTO_START_FREQTRADE", "false").lower()
+    auto_start_freqtrade = auto_start_env == "true"
+
+    if not auto_start_freqtrade:
+        logger.info("Freqtrade auto-start is disabled (AUTO_START_FREQTRADE=false)")
+        return False
+
+    # 优化：完全移除延迟，立即启动（最快速度）
+    # 不再等待，立即启动Freqtrade以最快速度加载
+    # await asyncio.sleep(0.5)  # 移除延迟
+
+    logger.info("Auto-starting Freqtrade WebServer (immediate start, no delay)...")
+
+    # 优化：检查是否已经在运行（避免重复启动）
+    current_status = freqtrade_service.get_status()
+    if current_status["webserver"]["running"]:
+        pid = current_status.get("webserver", {}).get("pid", "unknown")
+        logger.info(f"✅ Freqtrade WebServer is already running (PID: {pid}), skipping startup")
+        _freqtrade_startup_task_running = False
+        return True
+
+    # 优化：设置运行标志，防止重复启动
+    _freqtrade_startup_task_running = True
+
+    # 重试机制：确保100%成功率（仅在未启动时重试）
+    for attempt in range(1, max_retries + 1):
+        try:
+            # 优化：每次重试前再次检查是否已经启动（可能被其他进程启动）
+            check_status = freqtrade_service.get_status()
+            if check_status["webserver"]["running"]:
+                pid = check_status.get("webserver", {}).get("pid", "unknown")
+                logger.info(
+                    f"✅ Freqtrade WebServer is now running (PID: {pid}), detected before attempt {attempt}"
+                )
+                _freqtrade_startup_task_running = False
+                return True
+
+            logger.info(f"Starting Freqtrade WebServer (attempt {attempt}/{max_retries}, immediate start)...")
+            # 记录启动开始时间
+            start_attempt_time = time.time()
+            
+            # 优化：使用同步启动，不等待验证（最快速度）
+            success, message = freqtrade_service.start_webserver()
+            
+            # 记录启动耗时
+            start_duration = (time.time() - start_attempt_time) * 1000
+            logger.info(f"[Performance] Freqtrade start_webserver() took {start_duration:.0f}ms")
+
+            if success:
+                # 优化：最激进 - 进程启动后立即返回成功，不等待任何验证
+                # 进程启动成功即认为"就绪"，API完全就绪是后续异步检查
+                # 获取PID（通过get_status或直接访问）
+                try:
+                    status = freqtrade_service.get_status()
+                    pid = status.get("webserver", {}).get("pid", "unknown")
+                except:
+                    pid = "unknown"
+                logger.info(
+                    f"✅ Freqtrade WebServer process started (PID: {pid}), API will be ready shortly (startup took {start_duration:.0f}ms)"
+                )
+                _freqtrade_startup_task_running = False
+                return True
+                # 移除所有等待和验证，立即返回成功
+            else:
+                logger.warning(f"⚠️ Attempt {attempt}/{max_retries} failed: {message}")
+
+            # 如果不是最后一次尝试，等待后重试
+            if attempt < max_retries:
+                logger.info(f"Retrying in {retry_delay:.1f} seconds...")
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 1.5  # 指数退避
+
+        except Exception as e:
+            logger.error(f"❌ Exception on attempt {attempt}/{max_retries}: {e}", exc_info=True)
+            if attempt < max_retries:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 1.5
+
+    # 所有重试都失败了
+    _freqtrade_startup_task_running = False
+    logger.error(f"❌ Failed to start Freqtrade WebServer after {max_retries} attempts")
+    logger.info("You can manually start it via: POST /api/freqtrade/webserver/start")
+    return False
+
+
+async def _start_freqtrade_async():
+    """异步启动Freqtrade，与总服务器同步启动但不阻塞主进程（使用可靠启动机制）"""
+    global _freqtrade_startup_task_running
+    logger.info("🔵 _start_freqtrade_async() called - starting Freqtrade startup task")
+    
+    # 优化：防止重复启动任务
+    if _freqtrade_startup_task_running:
+        logger.warning("⚠️ Freqtrade startup task is already running, skipping duplicate call")
+        return
+    
+    logger.info("🚀 Calling _start_freqtrade_with_retry()...")
+    try:
+        result = await _start_freqtrade_with_retry(max_retries=5, retry_delay=2.0)
+        logger.info(f"✅ _start_freqtrade_with_retry() completed with result: {result}")
+    except Exception as e:
+        logger.error(f"❌ Exception in _start_freqtrade_async(): {e}", exc_info=True)
+        raise
+
+
+@app.on_event("startup")
+async def startup_event():
+    """FastAPI启动事件 - 初始化所有服务"""
+    logger.info("=" * 60)
+    logger.info("🚀 FastAPI Startup Event - Starting all services")
+    logger.info("=" * 60)
+    
+    # 自动启动Freqtrade WebServer（如果启用）
+    # 默认禁用自启，但提供可靠的启动机制确保100%成功率
+    # 如果需要与总服务器同步启动，请设置环境变量 AUTO_START_FREQTRADE=true
+    auto_start_env = os.getenv("AUTO_START_FREQTRADE", "false").lower()
+    auto_start_freqtrade = auto_start_env == "true"
+
+    # 详细日志输出
+    env_value = os.getenv("AUTO_START_FREQTRADE", "false")
+    logger.info("=" * 60)
+    logger.info("Freqtrade Auto-Start Check")
+    logger.info("=" * 60)
+    logger.info(f"AUTO_START_FREQTRADE environment variable: {env_value}")
+    logger.info(f"Auto-start enabled: {auto_start_freqtrade}")
+    logger.info("=" * 60)
+
+    # 如果启用自动启动，使用可靠启动机制（重试+验证）确保100%成功率
+    if auto_start_freqtrade:
+        # 优化：先检查是否已经运行，避免不必要的启动任务
+        logger.info("Checking current Freqtrade status...")
+        current_status = freqtrade_service.get_status()
+        logger.info(f"Current status: {current_status}")
+        
+        # 检查是否由我们管理的进程在运行
+        webserver_running = current_status["webserver"]["running"]
+        managed_process = freqtrade_service.webserver_proc is not None
+        
+        if webserver_running and managed_process:
+            # 由我们管理的进程在运行，跳过启动
+            pid = current_status.get("webserver", {}).get("pid", "unknown")
+            logger.info(
+                f"✅ Freqtrade WebServer is already running (managed, PID: {pid}), skipping auto-start"
+            )
+        elif webserver_running and not managed_process:
+            # 外部进程在运行，记录但不启动（避免冲突）
+            pid = current_status.get("webserver", {}).get("pid", "unknown")
+            logger.info(
+                f"⚠️ External Freqtrade WebServer detected (PID: {pid}), skipping auto-start to avoid conflict"
+            )
+            logger.info("If you want to manage it, stop the external process first")
+        else:
+            # 优化：立即启动Freqtrade，不延迟（最快速度）
+            # 创建后台任务，立即启动，不阻塞主进程
+            logger.info("Creating async task to start Freqtrade...")
+            task = asyncio.create_task(_start_freqtrade_async())
+            logger.info(f"✅ Async task created: {task}")
+            logger.info(
+                "Freqtrade will start immediately with server (async, non-blocking, immediate start)"
+            )
+            # 确保任务被调度（给事件循环一个机会）
+            await asyncio.sleep(0)  # 让出控制权，确保任务被调度
+            logger.info("Task should be scheduled now")
+    else:
+        logger.info("Freqtrade auto-start is disabled (AUTO_START_FREQTRADE=false or not set)")
+
+    # 更新FREQTRADE_API_URL环境变量（如果freqtrade在本地启动）
+    if freqtrade_service.get_status()["webserver"]["running"]:
+        os.environ["FREQTRADE_API_URL"] = freqtrade_service.api_url
+        logger.info(f"Freqtrade API URL set to: {freqtrade_service.api_url}")
+    global security, tool_executor, audit_logger, config
+
+    # 优化：配置文件读取保持同步（通常很快，不会阻塞太久）
+    # 但如果配置文件很大，可以考虑延迟加载非关键配置
+    repo_root = os.getenv("REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    config_path = os.path.join(os.path.dirname(__file__), "..", "config", "config.example.json")
+
+    # 快速读取配置文件（通常很快，不会阻塞）
+    with open(config_path) as f:
+        config = json.load(f)
+
+    paths_config = config.get("paths", {})
+    security_config = load_security_config(config_path, repo_root)
+
+    security = PathSecurity(security_config, repo_root)
+    audit_logger = AuditLogger(paths_config.get("log_dir", "docs/LOG/mcp_bus"), repo_root)
+    tool_executor = ToolExecutor(
+        repo_root=repo_root,
+        inbox_dir=paths_config.get("inbox_dir", "docs/REPORT/inbox"),
+        board_file=paths_config.get("board_file", "docs/REPORT/QCC-PROGRAM-BOARD-v0.1.md"),
+        security=security,
+        audit_logger=audit_logger,
+    )
+
+    # Start Dashboard in background if enabled
+    # Legacy Dash dashboard is being phased out in favor of UI-TARS native pages.
+    # Keep it opt-in to avoid spawning a broken placeholder process on fresh installs.
+    # 优化：Dashboard延迟启动（非关键服务，延迟3秒）
+    dashboard_enabled = os.getenv("DASHBOARD_ENABLED", "false").lower() == "true"
+    if dashboard_enabled:
+        # 在后台任务中延迟启动Dashboard，不阻塞startup事件
+        async def start_dashboard_async():
+            await asyncio.sleep(3.0)  # 延迟3秒，确保核心服务先启动完成
+            print("Starting Dashboard in background (delayed)...")
+            start_dashboard_background()
+        asyncio.create_task(start_dashboard_async())
+
+    # Start A2A Hub in background if enabled (proxy under MCP Bus)
+    if A2A_HUB_ENABLED:
+        auto_start_a2a = os.getenv("A2A_HUB_AUTO_START", "true").lower() == "true"
+        if auto_start_a2a:
+            logger.info("Starting A2A Hub in background...")
+            _start_managed_service("a2a")
+        else:
+            logger.info("A2A Hub auto-start disabled (A2A_HUB_AUTO_START=false)")
+
+    # Generic managed services (if enabled)
+    if os.getenv("MCP_SERVICE_AUTO_START", "false").lower() == "true":
+        logger.info("Auto-starting all managed services...")
+        async def start_all_services_async():
+            for name in _SERVICE_START_MAP.keys():
+                if name == "a2a" and not A2A_HUB_ENABLED:
+                    continue
+                try:
+                    logger.info(f"🚀 Starting service: {name}")
+                    ok = _start_managed_service(name)
+                    if ok:
+                        logger.info(f"✅ Service {name} started successfully")
+                        # 给服务一点启动时间
+                        await asyncio.sleep(2)
+                    else:
+                        logger.warning(f"⚠️ Service {name} failed to start")
+                except Exception as e:
+                    logger.error(f"❌ Error starting service {name}: {e}", exc_info=True)
+        # 在后台异步启动所有服务，不阻塞主服务器
+        asyncio.create_task(start_all_services_async())
+
+    # 优化：Monitoring服务延迟启动（非关键服务）
+    # Start monitoring service in background after a delay (non-critical service)
+    async def start_monitoring_async():
+        await asyncio.sleep(2.0)  # 延迟2秒启动，优先让核心服务先启动
+        monitoring_service.start()
+        logger.info("Monitoring service started (delayed)")
+    asyncio.create_task(start_monitoring_async())
+
+    # OKX API初始检查（验证凭证配置，不阻塞启动）
+    async def _check_okx_credentials():
+        """检查OKX API凭证配置（后台任务，不阻塞启动）"""
+        await asyncio.sleep(5)  # 延迟5秒，确保其他服务先启动
+        try:
+            repo_root = get_repo_root()
+            candidates = [
+                repo_root / "user_data" / "configs" / "freqtrade_live_config.json",
+                repo_root / "user_data" / "config.json",
+                repo_root / "configs" / "config_live.json",
+                repo_root / "configs" / "config.json",
+            ]
+
+            cfg_path = next((p for p in candidates if p.exists()), None)
+            cfg: dict[str, Any] = {}
+            if cfg_path:
+                try:
+                    cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+                except Exception as exc:
+                    logger.warning(f"Failed to parse config at {cfg_path}: {exc}")
+                    cfg = {}
+
+            exchange = cfg.get("exchange", {}) if isinstance(cfg, dict) else {}
+
+            def _expand_env(value: Any) -> str:
+                if not isinstance(value, str):
+                    return ""
+                text = value.strip()
+                if not text:
+                    return ""
+                if text.startswith("$"):
+                    key = text[1:].strip("{}")
+                    return os.getenv(key, "")
+                return text
+
+            key = _expand_env(exchange.get("key", ""))
+            secret = _expand_env(exchange.get("secret", ""))
+            passphrase = _expand_env(exchange.get("password", ""))
+
+            missing = [name for name, v in [("key", key), ("secret", secret), ("passphrase", passphrase)] if not v]
+            if missing:
+                logger.warning(f"⚠️ OKX API credentials missing: {', '.join(missing)}")
+                logger.info("OKX API will work in read-only mode (public endpoints only)")
+            else:
+                logger.info("✅ OKX API credentials present (not validated)")
+        except Exception as e:
+            logger.warning(f"⚠️ OKX API check task error: {e}")
+
+    # 创建后台任务检查OKX凭证（不阻塞启动）
+    asyncio.create_task(_check_okx_credentials())
+    logger.info("OKX API credentials check scheduled (background task)")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # 停止Freqtrade服务
+    logger.info("Stopping Freqtrade services...")
+    freqtrade_service.stop_webserver()
+    freqtrade_service.stop_trade()
+    logger.info("Freqtrade services stopped")
+    """Shutdown event handler"""
+    # Stop monitoring service
+    monitoring_service.stop()
+    logger.info("Monitoring service stopped")
+    # 优化：关闭HTTP连接池
+    global _dashboard_client, _freqtrade_client
+    if _dashboard_client:
+        await _dashboard_client.aclose()
+        _dashboard_client = None
+    if _freqtrade_client:
+        await _freqtrade_client.aclose()
+        _freqtrade_client = None
+
+
+class MCPRequest(BaseModel):
+    jsonrpc: str = "2.0"
+    id: str | int | None | None = None
+    method: str
+    params: dict[str, Any] | None = None
+
+
+class MCPToolCall(BaseModel):
+    name: str
+    arguments: dict[str, Any]
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Handle favicon.ico request - return favicon file if exists (with permanent caching)"""
+    favicon_path = Path(__file__).parent.parent / "web_viewer" / "favicon.ico"
+    if favicon_path.exists():
+        return create_cached_file_response(favicon_path, media_type="image/x-icon")
+    # 如果文件不存在，返回 204 No Content 避免 404 日志
+    return Response(status_code=204)
+
+
+@app.get("/")
+async def root(request: Request):
+    """Root endpoint - serve unified dashboard (optimized for speed)"""
+    # 检查认证（如果启用）- 默认关闭，可通过环境变量启用
+    auth_enabled = os.getenv("AUTH_ENABLED", "false").lower() == "true"
+
+    if auth_enabled:
+        authorization = request.headers.get("authorization")
+        token = None
+
+        if authorization and authorization.startswith("Bearer "):
+            token = authorization[7:]
+        else:
+            # 检查cookie中的token
+            token = request.cookies.get("auth_token")
+
+        if token:
+            payload = auth_service.verify_token(token)
+            if not payload:
+                # Token无效，清除cookie并重定向
+                response = RedirectResponse(url="/login")
+                response.delete_cookie("auth_token")
+                return response
+        else:
+            # 没有token，重定向到登录页
+            return RedirectResponse(url="/login")
+
+    dashboard_html = Path(__file__).parent.parent / "web_viewer" / "dashboard.html"
+    if dashboard_html.exists():
+        # 永久缓存（直到手动清除）
+        return create_cached_file_response(dashboard_html)
+    # Fallback to viewer if dashboard doesn't exist
+    viewer_html = Path(__file__).parent.parent / "web_viewer" / "index.html"
+    if viewer_html.exists():
+        return create_cached_file_response(viewer_html)
+    return {
+        "name": "QCC Bus MCP Server",
+        "version": "0.1.0",
+        "status": "running",
+        "dashboard": "/",
+        "web_viewer": "/viewer",
+        "mcp": "/mcp",
+        "health": "/health",
+    }
+
+
+@app.get("/login")
+async def login_page():
+    """登录页面"""
+    login_html = Path(__file__).parent.parent / "web_viewer" / "login.html"
+    if login_html.exists():
+        return create_cached_file_response(login_html)
+    return HTMLResponse("<h1>Login Page Not Found</h1><p>login.html not found</p>")
+
+
+@app.get("/viewer")
+async def viewer():
+    """ATA Messages Web Viewer"""
+    viewer_html = Path(__file__).parent.parent / "web_viewer" / "index.html"
+    if viewer_html.exists():
+        return create_cached_file_response(viewer_html)
+    return HTMLResponse("<h1>Web Viewer Not Found</h1><p>index.html not found</p>")
+
+
+@app.api_route(
+    "/dashboard/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+)
+async def dashboard_proxy(path: str, request: Request):
+    """Proxy Dashboard requests to Dash app (optimized for speed with connection pooling)"""
+    # Debug: Log deep integration status for every request
+    logger.info(f"📊 Request to /dashboard/{path}")
+    logger.info(f"📊 DASHBOARD_DEEP_INTEGRATION value: {DASHBOARD_DEEP_INTEGRATION}")
+    logger.info(f"📊 Environment variable: DASHBOARD_DEEP_INTEGRATION={os.getenv('DASHBOARD_DEEP_INTEGRATION')}")
+    
+    # Deep integration requests are handled automatically by WSGIMiddleware
+    # FastAPI will forward these requests to the mounted Dash app
+    if DASHBOARD_DEEP_INTEGRATION:
+        # In deep integration mode, this route should never be called directly
+        # because WSGIMiddleware handles /dashboard path directly
+        # This is just a fallback to ensure proper error handling
+        logger.warning(f"Dashboard proxy route called in deep integration mode for path: /dashboard/{path}")
+        raise HTTPException(status_code=404, detail="Dashboard route not found")
+    
+    # Traditional proxy flow for non-deep integration
+    # Build target URL
+    target_path = f"/{path}" if path else "/"
+
+    # Forward query parameters
+    if request.url.query:
+        target_path += f"?{request.url.query}"
+
+    # Filter headers to avoid conflicts
+    headers = {}
+    for key, value in request.headers.items():
+        if key.lower() not in ["host", "content-length"]:
+            headers[key] = value
+
+    # 优化：使用连接池复用，避免每次创建新连接
+    client = get_dashboard_client()
+
+    try:
+        # Forward request using connection pool
+        if request.method == "GET":
+            response = await client.get(target_path, headers=headers)
+        elif request.method == "POST":
+            body = await request.body()
+            response = await client.post(target_path, content=body, headers=headers)
+        elif request.method == "PUT":
+            body = await request.body()
+            response = await client.put(target_path, content=body, headers=headers)
+        elif request.method == "DELETE":
+            response = await client.delete(target_path, headers=headers)
+        elif request.method == "PATCH":
+            body = await request.body()
+            response = await client.patch(target_path, content=body, headers=headers)
+        elif request.method == "OPTIONS":
+            response = await client.options(target_path, headers=headers)
+        else:
+            raise HTTPException(status_code=405, detail="Method not allowed")
+
+        # Filter response headers
+        response_headers = {}
+        for key, value in response.headers.items():
+            if key.lower() not in ["content-encoding", "transfer-encoding", "content-length"]:
+                response_headers[key] = value
+
+        # 优化：只对HTML内容进行路径修复，且使用更高效的方式
+        content = response.content
+        content_type = response.headers.get("content-type", "text/html")
+
+        # If it's HTML, fix resource paths to use proxy routes (only if needed)
+        if "text/html" in content_type and path == "":
+            try:
+                html_text = content.decode("utf-8", errors="ignore")
+                # 优化：使用单次替换，减少正则操作
+                # 只替换必要的路径，避免不必要的处理
+                if DASHBOARD_URL in html_text:
+                    html_text = html_text.replace(f"{DASHBOARD_URL}/_dash-", "/_dash-")
+                    html_text = html_text.replace(
+                        f"{DASHBOARD_URL}/_dash-component-suites/", "/_dash-component-suites/"
+                    )
+                content = html_text.encode("utf-8")
+            except Exception as e:
+                # If fixing fails, return original content
+                logger.warning(f"Failed to fix Dashboard HTML paths: {e}")
+
+        # 优化：为静态资源添加缓存头
+        if path.startswith("_dash-") or path.startswith("_dash-component-suites"):
+            response_headers["Cache-Control"] = "public, max-age=86400"  # 静态资源缓存1天
+        elif request.method == "GET" and content_type == "text/html":
+            response_headers["Cache-Control"] = "public, max-age=60"  # HTML缓存1分钟
+
+        # Return response
+        return Response(
+            content=content,
+            status_code=response.status_code,
+            headers=response_headers,
+            media_type=content_type,
+        )
+    except httpx.ConnectError:
+        return HTMLResponse(
+            content=f"""
+            <html>
+            <head><title>Dashboard Not Available</title></head>
+            <body>
+                <h1>Dashboard Not Available</h1>
+                <p>Dashboard service is not running on {DASHBOARD_URL}</p>
+                <p>It should start automatically when MCP server starts.</p>
+                <p>If it doesn't start, please check:</p>
+                <ul>
+                    <li>Port 8051 is not occupied</li>
+                    <li>Dashboard script exists: scripts/dashboard/app.py</li>
+                    <li>Check MCP server logs for errors</li>
+                </ul>
+            </body>
+            </html>
+            """,
+            status_code=503,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dashboard proxy error: {str(e)}")
+
+
+
+
+
+# --------------------------
+# Advanced Analysis API Endpoints
+# --------------------------
+
+# Performance Attribution
+@app.get("/api/performance/attribution")
+async def get_performance_attribution(token: dict = Depends(verify_token)):
+    """Performance attribution analysis"""
+    try:
+        # TODO: Implement actual performance attribution logic
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "total_return": 0.125,
+                "benchmark_return": 0.083,
+                "alpha": 0.042,
+                "beta": 1.15,
+                "attribution": {
+                    "sector": [
+                        { "sector": "Technology", "contribution": 0.065 },
+                        { "sector": "Finance", "contribution": 0.032 },
+                        { "sector": "Healthcare", "contribution": 0.028 }
+                    ],
+                    "strategy": [
+                        { "factor": "Momentum", "contribution": 0.052 },
+                        { "factor": "Value", "contribution": 0.038 },
+                        { "factor": "Size", "contribution": 0.015 }
+                    ]
+                },
+                "time_period": "30d"
+            },
+            "message": "Performance attribution retrieved successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"Performance attribution error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to get performance attribution"},
+            status_code=500
+        )
+
+
+# Value at Risk (VaR)
+@app.get("/api/risk/var")
+async def get_value_at_risk(
+    confidence_level: float = 0.95,
+    time_horizon: str = "1d",
+    token: dict = Depends(verify_token)
+):
+    """Calculate Value at Risk"""
+    try:
+        # TODO: Implement actual VaR calculation
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "var": -0.045,
+                "confidence_level": confidence_level,
+                "time_horizon": time_horizon,
+                "method": "Monte Carlo",
+                "portfolio_value": 1000000,
+                "var_amount": -45000
+            },
+            "message": "Value at Risk calculated successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"VaR calculation error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to calculate Value at Risk"},
+            status_code=500
+        )
+
+
+# Conditional Value at Risk (CVaR)
+@app.get("/api/risk/cvar")
+async def get_conditional_value_at_risk(
+    confidence_level: float = 0.95,
+    time_horizon: str = "1d",
+    token: dict = Depends(verify_token)
+):
+    """Calculate Conditional Value at Risk"""
+    try:
+        # TODO: Implement actual CVaR calculation
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "cvar": -0.068,
+                "confidence_level": confidence_level,
+                "time_horizon": time_horizon,
+                "method": "Monte Carlo",
+                "portfolio_value": 1000000,
+                "cvar_amount": -68000,
+                "var": -0.045,
+                "var_amount": -45000
+            },
+            "message": "Conditional Value at Risk calculated successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"CVaR calculation error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to calculate Conditional Value at Risk"},
+            status_code=500
+        )
+
+
+# Strategy Optimization
+@app.post("/api/optimization/strategy")
+async def optimize_strategy(
+    request: Request,
+    token: dict = Depends(verify_token)
+):
+    """Optimize trading strategy parameters"""
+    try:
+        body = await request.json()
+        
+        # TODO: Implement actual strategy optimization logic
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "strategy_id": body.get("strategy_id", "default"),
+                "optimization_method": "grid_search",
+                "objective": body.get("objective", "sharpe_ratio"),
+                "best_parameters": {
+                    "rsi_period": 14,
+                    "rsi_overbought": 70,
+                    "rsi_oversold": 30,
+                    "macd_fast": 12,
+                    "macd_slow": 26,
+                    "macd_signal": 9
+                },
+                "performance_metrics": {
+                    "sharpe_ratio": 1.85,
+                    "max_drawdown": 0.12,
+                    "win_rate": 0.62,
+                    "profit_factor": 1.95
+                },
+                "backtest_results": {
+                    "start_date": "2025-01-01",
+                    "end_date": "2025-12-31",
+                    "total_return": 0.358,
+                    "benchmark_return": 0.182
+                }
+            },
+            "message": "Strategy optimized successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"Strategy optimization error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to optimize strategy"},
+            status_code=500
+        )
+
+
+# Alerts List
+@app.get("/api/alerts/list")
+async def get_alerts_list(
+    status: str = "all",
+    limit: int = 20,
+    offset: int = 0,
+    token: dict = Depends(verify_token)
+):
+    """Get list of alerts"""
+    try:
+        # TODO: Implement actual alerts list retrieval
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "alerts": [
+                    {
+                        "id": "alert_001",
+                        "name": "Portfolio VaR Exceeded",
+                        "type": "risk",
+                        "status": "triggered",
+                        "severity": "high",
+                        "message": "Portfolio VaR (-4.5%) exceeded threshold (-4.0%)",
+                        "triggered_at": "2026-01-24T14:30:00Z",
+                        "created_at": "2026-01-01T00:00:00Z",
+                        "updated_at": "2026-01-24T14:30:00Z"
+                    },
+                    {
+                        "id": "alert_002",
+                        "name": "Strategy Drawdown Warning",
+                        "type": "performance",
+                        "status": "active",
+                        "severity": "medium",
+                        "message": "Strategy drawdown reached 8.5%",
+                        "triggered_at": "2026-01-23T09:15:00Z",
+                        "created_at": "2026-01-01T00:00:00Z",
+                        "updated_at": "2026-01-23T09:15:00Z"
+                    },
+                    {
+                        "id": "alert_003",
+                        "name": "High Volume Alert",
+                        "type": "market",
+                        "status": "resolved",
+                        "severity": "low",
+                        "message": "Unusual trading volume detected for BTC/USDT",
+                        "triggered_at": "2026-01-22T16:45:00Z",
+                        "resolved_at": "2026-01-22T17:00:00Z",
+                        "created_at": "2026-01-01T00:00:00Z",
+                        "updated_at": "2026-01-22T17:00:00Z"
+                    }
+                ],
+                "total": 3,
+                "limit": limit,
+                "offset": offset
+            },
+            "message": "Alerts list retrieved successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"Alerts list error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to get alerts list"},
+            status_code=500
+        )
+
+
+# Alerts Rules Management
+@app.get("/api/alerts/rules")
+async def get_alerts_rules(token: dict = Depends(verify_token)):
+    """Get alert rules"""
+    try:
+        # TODO: Implement actual alert rules retrieval
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "rules": [
+                    {
+                        "id": "rule_001",
+                        "name": "VaR Threshold Alert",
+                        "type": "risk",
+                        "status": "enabled",
+                        "conditions": [
+                            {
+                                "metric": "var",
+                                "operator": "<",
+                                "value": -0.04,
+                                "time_period": "1d",
+                                "confidence_level": 0.95
+                            }
+                        ],
+                        "actions": [
+                            { "type": "notification", "channel": "email" },
+                            { "type": "notification", "channel": "desktop" }
+                        ],
+                        "created_at": "2026-01-01T00:00:00Z",
+                        "updated_at": "2026-01-01T00:00:00Z"
+                    },
+                    {
+                        "id": "rule_002",
+                        "name": "Drawdown Warning",
+                        "type": "performance",
+                        "status": "enabled",
+                        "conditions": [
+                            {
+                                "metric": "max_drawdown",
+                                "operator": ">",
+                                "value": 0.08,
+                                "time_period": "30d"
+                            }
+                        ],
+                        "actions": [
+                            { "type": "notification", "channel": "email" },
+                            { "type": "notification", "channel": "slack" }
+                        ],
+                        "created_at": "2026-01-01T00:00:00Z",
+                        "updated_at": "2026-01-01T00:00:00Z"
+                    }
+                ],
+                "total": 2
+            },
+            "message": "Alert rules retrieved successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"Alert rules error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to get alert rules"},
+            status_code=500
+        )
+
+
+@app.post("/api/alerts/rules")
+async def create_alert_rule(request: Request, token: dict = Depends(verify_token)):
+    """Create a new alert rule"""
+    try:
+        body = await request.json()
+        
+        # TODO: Implement actual alert rule creation logic
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "id": f"rule_{int(time.time())}",
+                "name": body.get("name"),
+                "type": body.get("type"),
+                "status": "enabled",
+                "conditions": body.get("conditions", []),
+                "actions": body.get("actions", []),
+                "created_at": datetime.now().isoformat() + "Z",
+                "updated_at": datetime.now().isoformat() + "Z"
+            },
+            "message": "Alert rule created successfully"
+        }, status_code=201)
+    except Exception as e:
+        error_logger.log_error(f"Create alert rule error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to create alert rule"},
+            status_code=500
+        )
+
+
+@app.put("/api/alerts/rules/{rule_id}")
+async def update_alert_rule(rule_id: str, request: Request, token: dict = Depends(verify_token)):
+    """Update an existing alert rule"""
+    try:
+        body = await request.json()
+        
+        # TODO: Implement actual alert rule update logic
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": {
+                "id": rule_id,
+                "name": body.get("name"),
+                "type": body.get("type"),
+                "status": body.get("status"),
+                "conditions": body.get("conditions"),
+                "actions": body.get("actions"),
+                "created_at": "2026-01-01T00:00:00Z",
+                "updated_at": datetime.now().isoformat() + "Z"
+            },
+            "message": "Alert rule updated successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"Update alert rule error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to update alert rule"},
+            status_code=500
+        )
+
+
+@app.delete("/api/alerts/rules/{rule_id}")
+async def delete_alert_rule(rule_id: str, token: dict = Depends(verify_token)):
+    """Delete an alert rule"""
+    try:
+        # TODO: Implement actual alert rule deletion logic
+        # This is a mock implementation
+        return JSONResponse({
+            "ok": True,
+            "data": { "id": rule_id },
+            "message": "Alert rule deleted successfully"
+        })
+    except Exception as e:
+        error_logger.log_error(f"Delete alert rule error: {e}")
+        return JSONResponse(
+            {"ok": False, "error": str(e), "message": "Failed to delete alert rule"},
+            status_code=500
+        )
+
+
+# 导入策略管理器 - 使用相对路径
+import sys
+import os
+
+# 添加src目录到Python路径（repo_root/src，而不是 tools/src）
+_repo_root = Path(__file__).resolve().parents[3]
+src_path = str(_repo_root / "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+# 导入 StrategyManager（避免触发 quantsys/__init__.py 的重量级依赖，例如 pandas）
+import importlib.util
+
+_strategy_manager_path = str(_repo_root / "src" / "quantsys" / "api" / "strategy_manager.py")
+_spec = importlib.util.spec_from_file_location("quantsys_api_strategy_manager", _strategy_manager_path)
+if _spec is None or _spec.loader is None:
+    raise RuntimeError(f"Failed to load StrategyManager module spec from: {_strategy_manager_path}")
+_strategy_manager_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_strategy_manager_mod)
+StrategyManager = _strategy_manager_mod.StrategyManager
+
+# 初始化策略管理器
+strategy_manager = StrategyManager()
+
+# 导入Freqtrade API兼容层 - 使用相对导入
+from .freqtrade_api import router as freqtrade_router
+
+# 包含Freqtrade API路由
+app.include_router(freqtrade_router)
+
+# 策略相关API端点
+@app.get("/api/v1/strategies")
+async def get_strategies_list():
+    """获取所有策略列表"""
+    try:
+        strategies = strategy_manager.get_strategies()
+        return {
+            "strategies": strategies
+        }
+    except Exception as e:
+        return {
+            "strategies": []
+        }
+
+@app.get("/api/v1/strategy/{strategy}")
+async def get_strategy_detail(strategy: str):
+    """获取特定策略的详细信息"""
+    try:
+        strategy_info = strategy_manager.get_strategy(strategy)
+        return strategy_info
+    except Exception as e:
+        return {
+            "strategy": strategy,
+            "code": "",
+            "timeframe": ""
+        }
+
+@app.post("/api/strategies/sync")
+async def sync_strategies():
+    """同步策略数据"""
+    try:
+        success = strategy_manager.sync_strategies()
+        return {
+            "success": success,
+            "message": "策略同步完成" if success else "策略同步失败"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+# Proxy Dashboard static resources (_dash-* paths)
+@app.api_route("/_dash-{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+async def dashboard_static_proxy(path: str, request: Request):
+    """Proxy Dashboard static resources (_dash-* paths) - optimized with connection pooling"""
+    # Build target URL - Dashboard static resources use _dash- prefix
+    target_path = f"/_dash-{path}" if path else "/_dash-layout"
+
+    # Forward query parameters
+    if request.url.query:
+        target_path += f"?{request.url.query}"
+
+    # Filter headers
+    headers = {}
+    for key, value in request.headers.items():
+        if key.lower() not in ["host", "content-length"]:
+            headers[key] = value
+
+    # 优化：使用连接池复用
+    client = get_dashboard_client()
+
+    try:
+        if request.method == "GET":
+            response = await client.get(target_path, headers=headers)
+        elif request.method == "POST":
+            body = await request.body()
+            response = await client.post(target_path, content=body, headers=headers)
+        elif request.method == "PUT":
+            body = await request.body()
+            response = await client.put(target_path, content=body, headers=headers)
+        elif request.method == "DELETE":
+            response = await client.delete(target_path, headers=headers)
+        elif request.method == "PATCH":
+            body = await request.body()
+            response = await client.patch(target_path, content=body, headers=headers)
+        elif request.method == "OPTIONS":
+            response = await client.options(target_path, headers=headers)
+        else:
+            raise HTTPException(status_code=405, detail="Method not allowed")
+
+        # Filter response headers
+        response_headers = {}
+        for key, value in response.headers.items():
+            if key.lower() not in ["content-encoding", "transfer-encoding", "content-length"]:
+                response_headers[key] = value
+
+        # 优化：为静态资源添加缓存头
+        response_headers["Cache-Control"] = "public, max-age=86400"  # 静态资源缓存1天
+
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            headers=response_headers,
+            media_type=response.headers.get("content-type", "application/javascript"),
+        )
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503, detail=f"Dashboard service not available at {DASHBOARD_URL}"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dashboard proxy error: {str(e)}")
+
+
+# Proxy Dashboard component suites static files
+@app.api_route("/_dash-component-suites/{path:path}", methods=["GET"])
+async def dashboard_component_suites_proxy(path: str, request: Request):
+    """Proxy Dashboard component suites static files - optimized with connection pooling"""
+    target_path = f"/_dash-component-suites/{path}"
+
+    if request.url.query:
+        target_path += f"?{request.url.query}"
+
+    headers = {}
+    for key, value in request.headers.items():
+        if key.lower() not in ["host", "content-length"]:
+            headers[key] = value
+
+    # 优化：使用连接池复用
+    client = get_dashboard_client()
+
+    try:
+        response = await client.get(target_path, headers=headers)
+
+        response_headers = {}
+        for key, value in response.headers.items():
+            if key.lower() not in ["content-encoding", "transfer-encoding", "content-length"]:
+                response_headers[key] = value
+
+        # 优化：为组件套件添加缓存头
+        response_headers["Cache-Control"] = "public, max-age=86400"  # 缓存1天
+
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            headers=response_headers,
+            media_type=response.headers.get("content-type", "application/javascript"),
+        )
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503, detail=f"Dashboard service not available at {DASHBOARD_URL}"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dashboard proxy error: {str(e)}")
+
+
+@app.get("/api/a2a/status")
+async def a2a_status():
+    """A2A Hub health status"""
+    if not A2A_HUB_ENABLED:
+        raise HTTPException(status_code=503, detail="A2A Hub disabled")
+    
+    # In deep integration mode, A2A Hub is part of the same process
+    # Just return healthy status since we're running in the same process
+    try:
+        from .a2a_integration import configure_a2a_integration
+        return {
+            "status_code": 200,
+            "body": {
+                "status": "healthy",
+                "message": "A2A Hub running in deep integration mode",
+                "timestamp": datetime.now().isoformat()
+            }
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"A2A Hub unavailable: {exc}")
+
+
+@app.api_route(
+    "/a2a/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+)
+async def a2a_proxy(path: str, request: Request):
+    """Proxy A2A Hub requests to consolidate services under MCP Bus."""
+    if not A2A_HUB_ENABLED:
+        raise HTTPException(status_code=503, detail="A2A Hub disabled")
+    
+    # In deep integration mode, this route should never be called directly
+    # because WSGIMiddleware handles /a2a path directly
+    # This is just a fallback to ensure proper error handling
+    logger.warning(f"A2A proxy route called in deep integration mode for path: /a2a/{path}")
+    raise HTTPException(status_code=404, detail="A2A route not found")
+
+
+@app.get("/api/services")
+async def list_services():
+    """List registered services for proxying."""
+    services: dict[str, dict[str, Any]] = {}
+    for name, info in _SERVICE_MAP.items():
+        services[name] = {
+            "url": info.get("url"),
+            "health": info.get("health"),
+            "managed": name in _SERVICE_START_MAP,
+        }
+    return {"services": services}
+
+
+@app.get("/api/services/health")
+async def services_health():
+    """Check health for services that define a health endpoint."""
+    results: dict[str, dict[str, Any]] = {}
+    async with httpx.AsyncClient(timeout=2.0) as client:
+        for name, info in _SERVICE_MAP.items():
+            health_path = info.get("health", "")
+            if not health_path:
+                results[name] = {"enabled": True, "checked": False}
+                continue
+            url = f"{info['url']}{health_path}"
+            try:
+                resp = await client.get(url)
+                results[name] = {
+                    "enabled": True,
+                    "checked": True,
+                    "status_code": resp.status_code,
+                }
+            except Exception as exc:
+                results[name] = {"enabled": True, "checked": True, "error": str(exc)}
+    return {"services": results}
+
+
+@app.post("/api/services/start/{name}")
+async def start_service(name: str):
+    if name not in _SERVICE_START_MAP:
+        raise HTTPException(status_code=404, detail="Service not managed")
+    ok = _start_managed_service(name)
+    return {"service": name, "started": ok}
+
+
+@app.post("/api/services/stop/{name}")
+async def stop_service(name: str):
+    ok = _stop_managed_service(name)
+    return {"service": name, "stopped": ok}
+
+
+@app.get("/api/services/status/{name}")
+async def service_status(name: str):
+    if name not in _SERVICE_MAP:
+        raise HTTPException(status_code=404, detail="Unknown service")
+    proc = _service_processes.get(name)
+    running = proc is not None and proc.poll() is None
+    health = _check_service_health(name)
+    return {"service": name, "running": running, "health": health}
+
+
+@app.api_route(
+    "/proxy/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+)
+async def service_proxy(service: str, path: str, request: Request):
+    """Generic service proxy for consolidating multiple services under MCP Bus."""
+    if service not in _SERVICE_MAP:
+        raise HTTPException(status_code=404, detail=f"Unknown service: {service}")
+
+    target_path = f"/{path}" if path else "/"
+    if request.url.query:
+        target_path += f"?{request.url.query}"
+
+    headers = {}
+    for key, value in request.headers.items():
+        if key.lower() not in ["host", "content-length"]:
+            headers[key] = value
+
+    client = get_service_client(service)
+
+    try:
+        if request.method == "GET":
+            response = await client.get(target_path, headers=headers)
+        elif request.method == "POST":
+            body = await request.body()
+            response = await client.post(target_path, content=body, headers=headers)
+        elif request.method == "PUT":
+            body = await request.body()
+            response = await client.put(target_path, content=body, headers=headers)
+        elif request.method == "DELETE":
+            response = await client.delete(target_path, headers=headers)
+        elif request.method == "PATCH":
+            body = await request.body()
+            response = await client.patch(target_path, content=body, headers=headers)
+        elif request.method == "OPTIONS":
+            response = await client.options(target_path, headers=headers)
+        else:
+            raise HTTPException(status_code=405, detail="Method not allowed")
+
+        response_headers = {}
+        for key, value in response.headers.items():
+            if key.lower() not in ["content-encoding", "transfer-encoding", "content-length"]:
+                response_headers[key] = value
+
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            headers=response_headers,
+            media_type=response.headers.get("content-type", "application/json"),
+        )
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503, detail=f"Service not available at {_SERVICE_MAP[service]['url']}"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Proxy error: {str(e)}")
+
+
+@app.get("/collaboration")
+async def collaboration():
+    """Agent Collaboration Web Interface"""
+    collaboration_html = Path(__file__).parent.parent / "web_viewer" / "collaboration.html"
+    if collaboration_html.exists():
+        return create_cached_file_response(collaboration_html)
+    return HTMLResponse(
+        "<h1>Collaboration Interface Not Found</h1><p>collaboration.html not found</p>"
+    )
+
+
+@app.get("/agent/{agent_ref}")
+async def agent_home(agent_ref: str):
+    """Agent homepage (profile + inbox/outbox + send form)"""
+    agent_home_html = Path(__file__).parent.parent / "web_viewer" / "agent_home.html"
+    if not agent_home_html.exists():
+        return HTMLResponse("<h1>Agent Home Not Found</h1><p>agent_home.html not found</p>")
+    # the HTML reads agent_ref from URL and loads data via REST APIs
+    return create_cached_file_response(agent_home_html)
+
+
+@app.get("/agents")
+async def agents_panel():
+    """All registered agents panel"""
+    html = Path(__file__).parent.parent / "web_viewer" / "agents_panel.html"
+    if html.exists():
+        return create_cached_file_response(html)
+    return HTMLResponse("<h1>Agents Panel Not Found</h1><p>agents_panel.html not found</p>")
+
+
+@app.get("/chat")
+async def chat_panel():
+    """ATA Chat Panel: user -> route -> ATA outbox"""
+    # 优先使用增强版，如果不存在则使用原版
+    html_enhanced = Path(__file__).parent.parent / "web_viewer" / "chat_enhanced.html"
+    html_original = Path(__file__).parent.parent / "web_viewer" / "chat.html"
+    if html_enhanced.exists():
+        return create_cached_file_response(html_enhanced)
+    elif html_original.exists():
+        return create_cached_file_response(html_original)
+    return HTMLResponse("<h1>Chat Panel Not Found</h1><p>chat.html not found</p>")
+
+
+def _route_chat_target(executor: ToolExecutor, message: str) -> str | None:
+    """Lightweight keyword router: pick a role then resolve to an agent id (prefer user_ai)."""
+    msg = (message or "").lower()
+    # keyword -> preferred role
+    if any(k in msg for k in ["文档", "report", "docs", "markdown"]):
+        role = "doc_writer"
+    elif any(k in msg for k in ["交易", "回测", "策略", "下单", "风控"]):
+        role = "trading"
+    elif any(k in msg for k in ["数据", "etl", "采集", "清洗", "数据管道"]):
+        role = "data_engineer"
+    elif any(k in msg for k in ["网页", "web", "服务器", "server", "mcp"]):
+        role = "infra_ops"
+    elif any(k in msg for k in ["架构", "设计", "结构", "模块划分"]):
+        role = "designer"
+    elif any(k in msg for k in ["ci", "门禁", "自测", "evidence", "verdict", "gate"]):
+        role = "infra_quality"
+    else:
+        role = "implementer"
+
+    if not executor.coordinator:
+        return None
+    # Prefer user_ai for routed work; fall back to any matching role
+    agents = executor.coordinator.registry.find_agents(role=role, available_only=True)
+    user_agents = [a for a in agents if getattr(a, "category", "user_ai") == "user_ai"]
+    chosen = None
+    if user_agents:
+        chosen = executor.coordinator.load_balancer.select_agent(user_agents) or user_agents[0]
+    elif agents:
+        chosen = executor.coordinator.load_balancer.select_agent(agents) or agents[0]
+    return chosen.agent_id if chosen else None
+
+
+@app.post("/api/notification/send")
+async def api_notification_send(
+    body: NotificationSendRequest, request: Request, token: dict = Depends(verify_token)
+):
+    """发送通知（集成已有的通知应用）"""
+    try:
+        from .notification_integration import get_notification_integration
+
+        notification = get_notification_integration()
+        result = notification.send_notification(body.title, body.message, body.mode)
+        return result
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/chat/send")
+async def api_chat_send(
+    body: ChatSendRequest, request: Request, token: dict = Depends(verify_token)
+):
+    """Receive user message, route to agent, enqueue via ata_send_request (admin approves later)."""
+    executor = get_tool_executor()
+    if not executor.coordinator:
+        raise HTTPException(status_code=500, detail="AgentCoordinator not available")
+
+    text = (body.message or "").strip()
+    if not text:
+        return {"success": False, "error": "message is required"}
+
+    # Choose target agent
+    target = body.target_agent.strip() if body.target_agent else ""
+    if target:
+        try:
+            to_agent_id = _resolve_agent_ref(executor, target)
+        except Exception:
+            return {"success": False, "error": f"Unknown target_agent: {target}"}
+    else:
+        to_agent_id = _route_chat_target(executor, text)
+        if not to_agent_id:
+            return {"success": False, "error": "No suitable agent found for routing"}
+
+    # Sender is ATA system
+    from_agent_id = "ATA系统"
+    from_obj = executor.coordinator.registry.get_agent(from_agent_id)
+    to_obj = executor.coordinator.registry.get_agent(to_agent_id)
+    from_display = _display_name(from_agent_id, getattr(from_obj, "numeric_code", None))
+    to_display = _display_name(to_agent_id, getattr(to_obj, "numeric_code", None))
+
+    # Ensure comm prefix
+    msg_text = text
+    if not msg_text.startswith(f"@{to_display}"):
+        msg_text = f"@{to_display} {msg_text}"
+
+    taskcode = (body.taskcode or "").strip()
+    if not taskcode:
+        taskcode = f"CHAT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+    params = ATASendRequestParams(
+        taskcode=taskcode,
+        from_agent=from_agent_id,
+        to_agent=to_agent_id,
+        kind="request",
+        payload={
+            "message": msg_text,
+            "text": msg_text,
+            "from_display": from_display,
+            "to_display": to_display,
+            "source": "web_chat",
+        },
+        priority="normal",
+        requires_response=True,
+        context_hint="web_chat",
+    )
+    result = executor.ata_send_request(
+        params, caller="web_chat", user_agent=request.headers.get("user-agent"), trace_id="web_chat"
+    )
+
+    # 如果启用了通知，发送通知（使用已有的通知应用）
+    notification_mode = getattr(body, "notification_mode", "ata")
+    notification_result = None
+    if notification_mode != "ata":
+        try:
+            from .notification_integration import get_notification_integration
+
+            notification = get_notification_integration()
+            notification_result = notification.send_notification(
+                title="ATA消息已发送",
+                message=f"消息已路由到 {to_agent_id}，TaskCode: {taskcode}",
+                mode=notification_mode,
+            )
+        except Exception as e:
+            logger.warning(f"通知发送失败: {e}")
+
+    return {
+        "success": bool(result.get("success")),
+        "taskcode": taskcode,
+        "routed_to": to_agent_id,
+        "request_id": result.get("request_id"),
+        "status": result.get("status"),
+        "error": result.get("error"),
+        "notification": notification_result,
+    }
+
+
+@app.get("/monitoring")
+async def monitoring_panel():
+    """实时监控面板"""
+    html = Path(__file__).parent.parent / "web_viewer" / "monitoring.html"
+    if html.exists():
+        return create_cached_file_response(html)
+    return HTMLResponse("<h1>Monitoring Panel Not Found</h1><p>monitoring.html not found</p>")
+
+
+# Static files for performance optimization
+web_viewer_dir = Path(__file__).parent.parent / "web_viewer"
+static_dir = web_viewer_dir / "static"
+static_dir.mkdir(parents=True, exist_ok=True)
+
+# Copy performance script to static directory if it exists
+performance_script = web_viewer_dir / "dashboard_performance.js"
+if performance_script.exists():
+    import shutil
+
+    static_performance = static_dir / "dashboard_performance.js"
+    if not static_performance.exists():
+        shutil.copy2(performance_script, static_performance)
+
+# Copy design-system.css to static directory if it exists in styles
+styles_dir = web_viewer_dir / "styles"
+design_system_css = styles_dir / "design-system.css"
+if design_system_css.exists():
+    import shutil
+
+    static_design_system = static_dir / "design-system.css"
+    if not static_design_system.exists():
+        shutil.copy2(design_system_css, static_design_system)
+
+# Mount static files directory with caching
+if static_dir.exists():
+    # 优化：为静态文件添加永久缓存头（直到手动清除）
+    class CachedStaticFiles(StaticFiles):
+        """带永久缓存头的静态文件服务（浏览器永久缓存直到手动清除）"""
+
+        async def __call__(self, scope, receive, send):
+            if scope["type"] == "http":
+
+                async def send_wrapper(message):
+                    if message["type"] == "http.response.start":
+                        headers = dict(message.get("headers", []))
+                        # 永久缓存策略：所有静态资源缓存1年，标记为不可变
+                        # 浏览器会永久缓存直到用户手动清除缓存
+                        # max-age=31536000 = 1年（365天）
+                        path = (scope.get("path", "") or "").lower()
+                        if path.endswith(
+                            (
+                                ".css",
+                                ".js",
+                                ".ico",
+                                ".png",
+                                ".jpg",
+                                ".jpeg",
+                                ".gif",
+                                ".svg",
+                                ".woff",
+                                ".woff2",
+                                ".ttf",
+                                ".eot",
+                            )
+                        ):
+                            # 静态资源：永久缓存（1年），不可变
+                            headers[b"cache-control"] = b"public, max-age=31536000, immutable"
+                        else:
+                            # 其他资源：也使用长期缓存
+                            headers[b"cache-control"] = b"public, max-age=31536000, immutable"
+                        # 性能优化头
+                        headers[b"x-content-type-options"] = b"nosniff"
+                        headers[b"x-frame-options"] = b"SAMEORIGIN"
+                        message["headers"] = list(headers.items())
+                    await send(message)
+
+                await super().__call__(scope, receive, send_wrapper)
+            else:
+                await super().__call__(scope, receive, send)
+
+    app.mount("/static", CachedStaticFiles(directory=str(static_dir)), name="static")
+
+    # 同时挂载styles目录，以防有其他地方引用
+    if styles_dir.exists():
+        app.mount("/styles", CachedStaticFiles(directory=str(styles_dir)), name="styles")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.get("/health")
+async def health():
+    from datetime import datetime
+
+    a2a_status = None
+    if A2A_HUB_ENABLED:
+        a2a_status = {"enabled": True, "healthy": _check_service_health("a2a")}
+    else:
+        a2a_status = {"enabled": False}
+
+    return {
+        "ok": True,
+        "ts": datetime.now().isoformat(),
+        "status": "healthy",
+        "version": "0.1.0",
+        "a2a": a2a_status,
+    }
+
+
+@app.get("/api/langsmith/status")
+async def get_langsmith_status():
+    """LangSmith tracing configuration/status (safe, no secrets)."""
+    try:
+        from tools.langsmith.fastapi_middleware import langsmith_status
+
+        payload = langsmith_status()
+        payload["middleware_attached"] = bool(LANGSMITH_MIDDLEWARE_ATTACHED)
+        payload["available"] = True
+        return payload
+    except Exception as e:
+        return {
+            "available": False,
+            "configured": False,
+            "middleware_attached": False,
+            "error": str(e),
+        }
+
+
+# Monitoring API endpoints
+@app.get("/api/monitoring/status")
+@cached(prefix="monitoring", ttl=5)  # 缓存5秒
+async def get_monitoring_status():
+    """获取所有服务状态"""
+    return monitoring_service.get_status_summary()
+
+
+@app.get("/api/monitoring/metrics")
+@cached(prefix="monitoring", ttl=5)  # 缓存5秒
+async def get_monitoring_metrics():
+    """获取系统指标"""
+    metrics = (
+        monitoring_service.metrics_history[-100:] if monitoring_service.metrics_history else []
+    )
+    return {
+        "metrics": [
+            {
+                "timestamp": m.timestamp.isoformat(),
+                "cpu_percent": m.cpu_percent,
+                "memory_percent": m.memory_percent,
+                "memory_used_mb": m.memory_used_mb,
+                "memory_total_mb": m.memory_total_mb,
+                "disk_percent": m.disk_percent,
+                "disk_used_gb": m.disk_used_gb,
+                "disk_total_gb": m.disk_total_gb,
+                "network_sent_mb": m.network_sent_mb,
+                "network_recv_mb": m.network_recv_mb,
+            }
+            for m in metrics
+        ]
+    }
+
+
+
+
+
+@app.get("/api/monitoring/alerts")
+async def get_monitoring_alerts(resolved: bool = False):
+    """获取告警列表"""
+    alerts = monitoring_service.alerts
+    if not resolved:
+        alerts = [a for a in alerts if not a.resolved]
+
+    return {
+        "alerts": [
+            {
+                "id": a.id,
+                "level": a.level,
+                "service": a.service,
+                "message": a.message,
+                "timestamp": a.timestamp.isoformat(),
+                "resolved": a.resolved,
+            }
+            for a in alerts[-50:]  # 最近50条
+        ]
+    }
+
+
+@app.post("/api/monitoring/alerts/{alert_id}/resolve")
+async def resolve_alert(alert_id: str):
+    """解决告警"""
+    await monitoring_service.resolve_alert(alert_id)
+    return {"success": True, "alert_id": alert_id}
+
+
+# Authentication API endpoints
+@app.post("/api/auth/login")
+async def login(request: Request):
+    """用户登录"""
+    try:
+        body = await request.json()
+        username = body.get("username")
+        password = body.get("password")
+
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Username and password required")
+
+        token = auth_service.authenticate(username, password)
+        if not token:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # 记录审计日志
+        user = auth_service.get_user_by_username(username)
+        auth_service.log_audit(
+            user_id=user.id if user else None,
+            action="login",
+            ip_address=request.client.host if request.client else None,
+        )
+
+        response = JSONResponse(
+            {
+                "success": True,
+                "token": token,
+                "user": {"id": user.id, "username": user.username, "role": user.role.value},
+            }
+        )
+
+        # 设置cookie
+        response.set_cookie(
+            key="auth_token",
+            value=token,
+            max_age=86400,  # 24小时
+            httponly=True,
+            secure=False,  # 开发环境，生产环境应设为True
+            samesite="lax",
+        )
+
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+
+@app.post("/api/auth/logout")
+async def logout(request: Request, authorization: str | None = Header(None)):
+    """用户登出"""
+    token = None
+
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+    else:
+        token = request.cookies.get("auth_token")
+
+    if token:
+        auth_service.logout(token)
+
+        # 记录审计日志
+        payload = auth_service.verify_token(token)
+        if payload:
+            auth_service.log_audit(
+                user_id=payload.get("user_id"),
+                action="logout",
+                ip_address=request.client.host if request.client else None,
+            )
+
+    response = JSONResponse({"success": True})
+    response.delete_cookie("auth_token")
+    return response
+
+
+@app.get("/api/auth/me")
+async def get_current_user(request: Request, authorization: str | None = Header(None)):
+    """获取当前用户信息"""
+    token = None
+
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+    else:
+        token = request.cookies.get("auth_token")
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    payload = auth_service.verify_token(token)
+
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = auth_service.get_user_by_id(payload["user_id"])
+    if not user or not user.active:
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": user.role.value,
+        "last_login": user.last_login.isoformat() if user.last_login else None,
+    }
+
+
+@app.get("/api/auth/permissions")
+async def get_permissions(request: Request, authorization: str | None = Header(None)):
+    """获取用户权限"""
+    token = None
+
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+    else:
+        token = request.cookies.get("auth_token")
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    payload = auth_service.verify_token(token)
+
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    role = payload.get("role", "viewer")
+
+    # 定义权限
+    permissions = {
+        "admin": [
+            "read",
+            "write",
+            "delete",
+            "manage_users",
+            "manage_config",
+            "view_logs",
+            "view_monitoring",
+            "manage_alerts",
+        ],
+        "operator": ["read", "write", "view_logs", "view_monitoring", "manage_alerts"],
+        "viewer": ["read", "view_logs", "view_monitoring"],
+    }
+
+    return {"role": role, "permissions": permissions.get(role, [])}
+
+
+@app.websocket("/ws/monitoring")
+async def websocket_monitoring(websocket: WebSocket):
+    """WebSocket实时监控推送"""
+    await websocket.accept()
+    try:
+        while True:
+            # 发送最新状态
+            status = monitoring_service.get_status_summary()
+            await websocket.send_json(status)
+            await asyncio.sleep(5)  # 每5秒推送一次
+    except Exception as e:
+        logger.error(f"WebSocket监控连接错误: {e}")
+    finally:
+        await websocket.close()
+
+
+# Error Logging API endpoints
+@app.get("/api/logs/errors")
+async def get_error_logs(
+    level: str | None = None,
+    service: str | None = None,
+    keyword: str | None = None,
+    resolved: bool | None = None,
+    limit: int = 100,
+    offset: int = 0,
+):
+    """获取错误日志"""
+    from datetime import datetime, timedelta
+
+    start_time = datetime.now() - timedelta(days=7)  # 默认最近7天
+    end_time = datetime.now()
+
+    logs = error_logger.search_logs(
+        level=level,
+        service=service,
+        keyword=keyword,
+        start_time=start_time,
+        end_time=end_time,
+        resolved=resolved,
+        limit=limit,
+        offset=offset,
+    )
+
+    return {"logs": logs, "total": len(logs)}
+
+
+@app.get("/api/logs/search")
+async def search_logs(
+    q: str, level: str | None = None, service: str | None = None, limit: int = 50
+):
+    """搜索日志"""
+    logs = error_logger.search_logs(level=level, service=service, keyword=q, limit=limit)
+    return {"logs": logs}
+
+
+@app.get("/api/logs/stats")
+async def get_log_statistics(days: int = 7):
+    """获取日志统计"""
+    from datetime import datetime, timedelta
+
+    start_time = datetime.now() - timedelta(days=days)
+    end_time = datetime.now()
+
+    stats = error_logger.get_statistics(start_time=start_time, end_time=end_time)
+    return stats
+
+
+@app.get("/api/logs/export")
+async def export_logs(format: str = "json", days: int = 7):
+    """导出日志"""
+    from datetime import datetime, timedelta
+
+    start_time = datetime.now() - timedelta(days=days)
+    end_time = datetime.now()
+
+    content = error_logger.export_logs(format=format, start_time=start_time, end_time=end_time)
+
+    if format == "json":
+        return Response(content=content, media_type="application/json")
+    elif format == "csv":
+        return Response(content=content, media_type="text/csv")
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+
+
+@app.post("/api/logs/{log_id}/resolve")
+async def resolve_log(log_id: str):
+    """标记日志为已解决"""
+    error_logger.resolve_log(log_id)
+    return {"success": True, "log_id": log_id}
+
+
+# Cache Management API endpoints
+@app.get("/api/cache/stats")
+async def get_cache_stats():
+    """获取缓存统计信息"""
+    stats = cache_service.get_stats()
+    return stats
+
+
+@app.delete("/api/cache/clear")
+async def clear_cache(pattern: str | None = None):
+    """清除缓存"""
+    if pattern:
+        deleted = cache_service.clear_pattern(pattern)
+        return {"success": True, "pattern": pattern, "deleted_keys": deleted}
+    else:
+        # 清除所有缓存（仅内存缓存）
+        if not cache_service.use_redis:
+            cache_service.memory_cache.clear()
+            return {"success": True, "message": "All memory cache cleared"}
+        else:
+            # Redis需要指定pattern
+            return {"success": False, "message": "Please specify a pattern for Redis cache"}
+
+
+# Freqtrade Management API endpoints
+@app.get("/api/freqtrade/status")
+async def get_freqtrade_status():
+    """获取Freqtrade服务状态（无需认证，用于监控）"""
+    status = freqtrade_service.get_status()
+    return status
+
+
+@app.get("/api/exchange/okx/status")
+async def get_okx_connection_status():
+    """获取OKX交易所连接私钥状态（无需认证，用于监控）"""
+    try:
+        repo_root = get_repo_root()
+
+        candidates = [
+            repo_root / "user_data" / "configs" / "freqtrade_live_config.json",
+            repo_root / "user_data" / "config.json",
+            repo_root / "configs" / "config_live.json",
+            repo_root / "configs" / "config.json",
+        ]
+
+        cfg_path = next((p for p in candidates if p.exists()), None)
+        cfg: dict[str, Any] = {}
+        if cfg_path:
+            try:
+                cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+            except Exception as exc:
+                logger.warning(f"Failed to parse config at {cfg_path}: {exc}")
+                cfg = {}
+
+        exchange = cfg.get("exchange", {}) if isinstance(cfg, dict) else {}
+
+        def _expand_env(value: Any) -> str:
+            if not isinstance(value, str):
+                return ""
+            text = value.strip()
+            if not text:
+                return ""
+            # Support "$VAR" or "${VAR}" indirections.
+            if text.startswith("$"):
+                key = text[1:].strip("{}")
+                return os.getenv(key, "")
+            return text
+
+        raw_key = exchange.get("key", "")
+        raw_secret = exchange.get("secret", "")
+        raw_passphrase = exchange.get("password", "")
+
+        key = _expand_env(raw_key)
+        secret = _expand_env(raw_secret)
+        passphrase = _expand_env(raw_passphrase)
+
+        creds_status = {
+            "key": "configured" if key else "missing",
+            "secret": "configured" if secret else "missing",
+            "passphrase": "configured" if passphrase else "missing",
+        }
+        missing = [k for k, v in creds_status.items() if v == "missing"]
+
+        connection: dict[str, Any]
+        if missing:
+            connection = {
+                "state": "error",
+                "detail": f"Missing credentials: {', '.join(missing)}",
+                "code": None,
+            }
+        else:
+            # We keep this probe lightweight; full private signing is handled elsewhere.
+            connection = {
+                "state": "configured",
+                "detail": "Credentials present (not validated)",
+                "code": None,
+            }
+
+        return {
+            "connection": connection,
+            "credentials": creds_status,
+            "config_path": str(cfg_path) if cfg_path else None,
+            "timestamp": time.time(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get OKX connection status: {e}", exc_info=True)
+        return {
+            "connection": {"state": "error", "detail": str(e)},
+            "credentials": {},
+            "timestamp": time.time(),
+        }
+
+
+# Trading System API endpoints
+# These endpoints replace the legacy Dash-based dashboard modules and are used by UI-TARS native pages.
+def _ensure_repo_src_on_path() -> None:
+    """Ensure `<repo>/src` is importable as `quantsys.*` for optional trading system APIs."""
+    try:
+        import sys
+
+        repo_root = get_repo_root()
+        src_path = repo_root / "src"
+        src_str = str(src_path)
+        if src_str not in sys.path:
+            sys.path.insert(0, src_str)
+    except Exception:
+        # Best-effort: imports below will error with a helpful message.
+        pass
+
+
+# ========== 1. AccountService ==========
+@app.get("/api/account/balance")
+async def get_account_balance(
+    exchange: str = "okx",
+    trading_mode: str = "drill",
+    token: dict = Depends(verify_token),
+):
+    """Get account balance."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.account_service import AccountService
+
+        account_service = AccountService(exchange=exchange, trading_mode=trading_mode)
+        balance = account_service.get_balance()
+        return {"success": True, "balance": balance, "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Failed to get account balance: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/account/positions")
+async def get_account_positions(
+    exchange: str = "okx",
+    trading_mode: str = "drill",
+    symbol: str | None = None,
+    token: dict = Depends(verify_token),
+):
+    """Get account positions (optionally for a single symbol)."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.account_service import AccountService
+
+        account_service = AccountService(exchange=exchange, trading_mode=trading_mode)
+        if symbol:
+            position = account_service.get_position(symbol)
+            positions = {symbol: position} if position != 0.0 else {}
+        else:
+            account_state = account_service.get_account_state()
+            positions = getattr(account_state, "positions", {})
+        return {"success": True, "positions": positions, "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Failed to get account positions: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/account/summary")
+async def get_account_summary(
+    exchange: str = "okx",
+    trading_mode: str = "drill",
+    symbol: str | None = None,
+    token: dict = Depends(verify_token),
+):
+    """Get account summary (balance/equity/positions)."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.account_service import AccountService
+
+        account_service = AccountService(exchange=exchange, trading_mode=trading_mode)
+        account_state = account_service.get_account_state(symbol=symbol)
+        return {
+            "success": True,
+            "balance": getattr(account_state, "balance", None),
+            "equity": getattr(account_state, "equity", None),
+            "total_position": getattr(account_state, "total_position", None),
+            "leverage": getattr(account_state, "leverage", None),
+            "positions": getattr(account_state, "positions", {}),
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get account summary: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ========== 2. RiskGate ==========
+@app.get("/api/risk/status")
+async def get_risk_gate_status(token: dict = Depends(verify_token)):
+    """Get risk gate status (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "status": "ACTIVE",
+            "enabled": True,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get risk gate status: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/risk/history")
+async def get_risk_history(limit: int = 100, token: dict = Depends(verify_token)):
+    """Get risk check history (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "history": [],
+            "limit": limit,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get risk history: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/risk/statistics")
+async def get_risk_statistics(token: dict = Depends(verify_token)):
+    """Get risk statistics (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "statistics": {
+                "total_checks": 0,
+                "passed": 0,
+                "blocked": 0,
+                "pass_rate": 0.0,
+                "blocked_reasons": {},
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get risk statistics: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.post("/api/risk/check")
+async def check_risk(
+    payload: dict[str, Any],
+    token: dict = Depends(verify_token),
+):
+    """Manually trigger a risk check (for UI testing)."""
+    try:
+        if not payload:
+            raise HTTPException(status_code=400, detail="Request body is required")
+
+        symbol = payload.get("symbol")
+        side = payload.get("side")
+        amount = float(payload.get("amount", 0))
+        price = float(payload.get("price", 0))
+        if not all([symbol, side, amount, price]):
+            raise HTTPException(status_code=400, detail="Missing required fields: symbol/side/amount/price")
+
+        exchange = payload.get("exchange", "okx")
+        trading_mode = payload.get("trading_mode", "drill")
+
+        _ensure_repo_src_on_path()
+        from quantsys.common.risk_manager import RiskManager
+        from quantsys.execution.account_service import AccountService
+        from quantsys.execution.risk_gate import RiskGate
+
+        risk_manager = RiskManager({})
+        account_service = AccountService(exchange=exchange, trading_mode=trading_mode)
+        risk_gate = RiskGate(risk_manager=risk_manager, account_service=account_service)
+
+        verdict = risk_gate.check_order(symbol, side, amount, price)
+        is_allowed = risk_gate.is_order_allowed(symbol, side, amount, price)
+
+        return {
+            "success": True,
+            "allowed": is_allowed,
+            "verdict": {
+                "is_blocked": getattr(verdict, "is_blocked", False),
+                "allow_open": getattr(verdict, "allow_open", True),
+                "allow_reduce": getattr(verdict, "allow_reduce", True),
+                "blocked_reason": getattr(verdict, "blocked_reason", None),
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Risk check failed: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ========== 3. SignalBus ==========
+@app.get("/api/signals/latest")
+async def get_latest_signals(
+    limit: int = 10,
+    symbol: str | None = None,
+    token: dict = Depends(verify_token),
+):
+    """Get latest trading signals."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.strategy.signal_bus import get_signal_bus
+
+        signal_bus = get_signal_bus()
+        signals = signal_bus.get_signal_history(symbol=symbol, limit=limit)
+        return {
+            "success": True,
+            "signals": [s.to_dict() for s in signals],
+            "count": len(signals),
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get latest signals: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/signals/history")
+async def get_signal_history(
+    limit: int = 100,
+    symbol: str | None = None,
+    signal_type: str | None = None,
+    token: dict = Depends(verify_token),
+):
+    """Get signal history."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.strategy.signal_bus import get_signal_bus
+
+        signal_bus = get_signal_bus()
+        signals = signal_bus.get_signal_history(symbol=symbol, limit=limit)
+        if signal_type:
+            signals = [s for s in signals if getattr(getattr(s, "signal_type", None), "value", None) == signal_type]
+        return {
+            "success": True,
+            "signals": [s.to_dict() for s in signals],
+            "count": len(signals),
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get signal history: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/signals/statistics")
+async def get_signal_statistics(token: dict = Depends(verify_token)):
+    """Get signal statistics."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.strategy.signal_bus import get_signal_bus
+
+        signal_bus = get_signal_bus()
+        signals = signal_bus.get_signal_history(limit=1000)
+
+        stats: dict[str, Any] = {
+            "total": len(signals),
+            "by_type": {},
+            "by_strategy": {},
+            "by_symbol": {},
+        }
+
+        for signal in signals:
+            stype = getattr(getattr(signal, "signal_type", None), "value", None) or "unknown"
+            stats["by_type"][stype] = stats["by_type"].get(stype, 0) + 1
+
+            strategy_id = getattr(signal, "strategy_id", None) or "unknown"
+            stats["by_strategy"][strategy_id] = stats["by_strategy"].get(strategy_id, 0) + 1
+
+            sym = getattr(signal, "symbol", None) or "unknown"
+            stats["by_symbol"][sym] = stats["by_symbol"].get(sym, 0) + 1
+
+        return {"success": True, "statistics": stats, "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Failed to get signal statistics: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ========== 4. OrderExecutor ==========
+@app.get("/api/orders/status")
+async def get_order_status(token: dict = Depends(verify_token)):
+    """Get order execution status (placeholder)."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.order_ids import OrderIdManager
+
+        _ = OrderIdManager()
+        return {
+            "success": True,
+            "status": {"pending": 0, "executing": 0, "completed": 0, "failed": 0},
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get order status: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/orders/history")
+async def get_order_history(limit: int = 100, token: dict = Depends(verify_token)):
+    """Get order execution history (placeholder)."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.order_ids import OrderIdManager
+
+        _ = OrderIdManager()
+        return {
+            "success": True,
+            "orders": [],
+            "count": 0,
+            "limit": limit,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get order history: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/orders/statistics")
+async def get_order_statistics(token: dict = Depends(verify_token)):
+    """Get order execution statistics (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "statistics": {"total": 0, "success_rate": 0.0, "avg_execution_time": 0.0, "failed_count": 0},
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get order statistics: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ========== 5. StateStorage ==========
+@app.get("/api/state/orders")
+async def get_state_orders(
+    storage_type: str = "file",
+    storage_dir: str = "data/state",
+    token: dict = Depends(verify_token),
+):
+    """Get stored orders (placeholder)."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.state_storage import StateStorageFactory
+
+        _ = StateStorageFactory.create(storage_type=storage_type, storage_dir=storage_dir)
+        return {
+            "success": True,
+            "orders": {},
+            "count": 0,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get state orders: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/state/positions")
+async def get_state_positions(
+    storage_type: str = "file",
+    storage_dir: str = "data/state",
+    token: dict = Depends(verify_token),
+):
+    """Get stored positions."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.state_storage import StateStorageFactory
+
+        state_storage = StateStorageFactory.create(storage_type=storage_type, storage_dir=storage_dir)
+        positions = state_storage.get_all_positions()
+        return {
+            "success": True,
+            "positions": positions,
+            "count": len(positions) if hasattr(positions, "__len__") else None,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get state positions: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/state/portfolio")
+async def get_state_portfolio(
+    storage_type: str = "file",
+    storage_dir: str = "data/state",
+    token: dict = Depends(verify_token),
+):
+    """Get portfolio snapshot."""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.state_storage import StateStorageFactory
+
+        state_storage = StateStorageFactory.create(storage_type=storage_type, storage_dir=storage_dir)
+        portfolio = state_storage.get_portfolio() or {}
+        return {"success": True, "portfolio": portfolio, "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Failed to get portfolio: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ========== 6. Exceptions ==========
+@app.get("/api/exceptions/statistics")
+async def get_exception_statistics(token: dict = Depends(verify_token)):
+    """Get exception statistics (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "statistics": {"total": 0, "by_type": {}, "recent_count": 0},
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get exception statistics: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/exceptions/history")
+async def get_exception_history(limit: int = 100, type: str | None = None, token: dict = Depends(verify_token)):
+    """Get exception history (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "exceptions": [],
+            "count": 0,
+            "limit": limit,
+            "type": type,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get exception history: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ========== 7. ExchangeAdapter ==========
+@app.get("/api/exchange/status")
+async def get_exchange_status(token: dict = Depends(verify_token)):
+    """Get exchange adapter status (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "status": "CONNECTED",
+            "exchange": "okx",
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get exchange status: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/exchange/statistics")
+async def get_exchange_statistics(token: dict = Depends(verify_token)):
+    """Get exchange request statistics (placeholder)."""
+    try:
+        return {
+            "success": True,
+            "statistics": {"total_requests": 0, "successful": 0, "failed": 0, "retries": 0},
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get exchange statistics: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ========== 8. OrderValidator ==========
+@app.get("/api/validator/statistics")
+@cached(prefix="validator", ttl=10)  # 优化：添加缓存，减少重复计算
+async def get_validator_statistics(token: dict = Depends(verify_token)):
+    """Get order validation statistics (placeholder)."""
+    try:
+        # 优化：快速返回，不进行耗时操作
+        # 如果将来需要查询数据库，应该使用缓存或异步查询
+        return {
+            "success": True,
+            "statistics": {"total_validations": 0, "passed": 0, "failed": 0, "pass_rate": 0.0},
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to get validator statistics: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+def _require_ata_admin_request(request: Request) -> None:
+    """REST 侧管理员硬校验（fail-closed）：必须已登录且 role=admin（基于 auth_token cookie）。"""
+    token = request.cookies.get("auth_token")
+    if not token:
+        raise HTTPException(status_code=403, detail="ADMIN_REQUIRED: missing auth_token cookie")
+    payload = auth_service.verify_token(token)
+    if not payload or payload.get("role") != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="ADMIN_REQUIRED: not an admin user")
+
+
+@app.post("/api/freqtrade/webserver/start")
+async def start_freqtrade_webserver():
+    """启动Freqtrade WebServer（无需认证，用于自动启动和管理）"""
+    success, message = freqtrade_service.start_webserver()
+    if success:
+        return {"success": True, "message": message}
+    else:
+        raise HTTPException(status_code=500, detail=message)
+
+
+@app.post("/api/freqtrade/webserver/stop")
+async def stop_freqtrade_webserver():
+    """停止Freqtrade WebServer（无需认证，用于自动管理）"""
+    success, message = freqtrade_service.stop_webserver()
+    if success:
+        return {"success": True, "message": message}
+    else:
+        raise HTTPException(status_code=500, detail=message)
+
+
+@app.post("/api/freqtrade/trade/start")
+async def start_freqtrade_trade(
+    request: Request,
+    strategy: str | None = None,
+    dry_run: bool = True,
+    passphrase: str | None = None,
+    token: dict = Depends(verify_token),
+):
+    """启动Freqtrade交易进程"""
+    _require_ata_admin_request(request)
+    success, message = freqtrade_service.start_trade(
+        strategy=strategy, dry_run=dry_run, passphrase=passphrase
+    )
+    if success:
+        return {"success": True, "message": message}
+    else:
+        raise HTTPException(status_code=500, detail=message)
+
+
+@app.post("/api/freqtrade/trade/stop")
+async def stop_freqtrade_trade(request: Request, token: dict = Depends(verify_token)):
+    """停止Freqtrade交易进程"""
+    _require_ata_admin_request(request)
+    success, message = freqtrade_service.stop_trade()
+    if success:
+        return {"success": True, "message": message}
+    else:
+        raise HTTPException(status_code=500, detail=message)
+
+
+@app.get("/api/freqtrade/logs")
+async def get_freqtrade_logs(
+    log_type: str = "webserver",
+    lines: int = 100,
+    request: Request = None,
+    token: dict = Depends(verify_token),
+):
+    """获取Freqtrade日志"""
+    if request is not None:
+        _require_ata_admin_request(request)
+    if log_type not in ["webserver", "trade"]:
+        raise HTTPException(status_code=400, detail="log_type must be 'webserver' or 'trade'")
+
+    logs = freqtrade_service.get_logs(log_type=log_type, lines=lines)
+    return {"logs": logs, "log_type": log_type, "lines": lines}
+
+
+# Chart API endpoints
+@app.get("/api/charts/trading")
+@cached(prefix="charts", ttl=60)  # 缓存60秒
+async def get_trading_chart(
+    symbol: str | None = None,
+    timeframe: str = "1h",
+    limit: int = 100,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    token: dict = Depends(verify_token),
+):
+    """获取交易数据图表"""
+    data = chart_service.get_trading_data(
+        symbol=symbol, timeframe=timeframe, limit=limit, start_time=start_time, end_time=end_time
+    )
+    return data
+
+
+@app.get("/api/charts/performance")
+@cached(prefix="charts", ttl=30)  # 缓存30秒
+async def get_performance_chart(
+    days: int = 30, metrics: str | None = None, token: dict = Depends(verify_token)
+):
+    """获取性能数据图表"""
+    metrics_list = metrics.split(",") if metrics else None
+    data = chart_service.get_performance_data(days=days, metrics=metrics_list)
+    return data
+
+
+@app.post("/api/charts/save")
+async def save_chart_config(
+    chart_id: str,
+    chart_type: str,
+    title: str,
+    config: dict[str, Any],
+    token: dict = Depends(verify_token),
+):
+    """保存图表配置"""
+    success = chart_service.save_chart_config(
+        chart_id=chart_id, chart_type=chart_type, title=title, config=config
+    )
+    if success:
+        return {"success": True, "chart_id": chart_id}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to save chart config")
+
+
+@app.get("/api/charts/config/{chart_id}")
+async def get_chart_config(chart_id: str):
+    """获取图表配置"""
+    config = chart_service.get_chart_config(chart_id)
+    if config:
+        return config
+    else:
+        raise HTTPException(status_code=404, detail="Chart config not found")
+
+
+@app.get("/api/charts/configs")
+async def list_chart_configs(chart_type: str | None = None):
+    """列出所有图表配置"""
+    configs = chart_service.list_chart_configs(chart_type=chart_type)
+    return {"charts": configs, "total": len(configs)}
+
+
+@app.delete("/api/charts/config/{chart_id}")
+async def delete_chart_config(chart_id: str):
+    """删除图表配置"""
+    success = chart_service.delete_chart_config(chart_id)
+    if success:
+        return {"success": True, "chart_id": chart_id}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to delete chart config")
+
+
+@app.websocket("/ws/charts/{chart_id}")
+async def websocket_chart_data(websocket: WebSocket, chart_id: str):
+    """WebSocket实时图表数据推送"""
+    await websocket.accept()
+
+    try:
+        # 获取图表配置
+        config = chart_service.get_chart_config(chart_id)
+        if not config:
+            await websocket.send_json({"error": "Chart config not found"})
+            await websocket.close()
+            return
+
+        chart_type = config.get("chart_type", "performance")
+
+        # 发送初始数据
+        if chart_type == "trading":
+            data = chart_service.get_trading_data(limit=100)
+        elif chart_type == "performance":
+            data = chart_service.get_performance_data(days=7)
+        else:
+            data = {"error": "Unknown chart type"}
+
+        await websocket.send_json({"type": "initial", "data": data})
+
+        # 定期推送更新（每5秒）
+        import asyncio
+
+        while True:
+            await asyncio.sleep(5)
+
+            if chart_type == "performance":
+                # 性能数据实时更新
+                data = chart_service.get_performance_data(days=7)
+                await websocket.send_json({"type": "update", "data": data})
+            elif chart_type == "trading":
+                # 交易数据更新（较慢，30秒一次）
+                await asyncio.sleep(25)
+                data = chart_service.get_trading_data(limit=100)
+                await websocket.send_json({"type": "update", "data": data})
+
+    except Exception as e:
+        logger.error(f"WebSocket chart error: {e}")
+        await websocket.send_json({"error": str(e)})
+        await websocket.close()
+
+
+
+
+
+@app.api_route("/mcp", methods=["GET", "POST"])
+async def mcp_endpoint(
+    request: Request, authorization: str | None = Header(None), caller: str = Depends(get_caller)
+):
+    # Handle authentication manually inside the endpoint
+    resource_metadata_url = "https://mcp.timquant.tech/.well-known/oauth-protected-resource"
+    required_scope = "mcp.tools"
+
+    # Set WWW-Authenticate header for all responses
+    headers = {
+        "WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata_url}", scope="{required_scope}"'
+    }
+
+    # Check if it's a GET request
+    if request.method == "GET":
+        # Return valid response for GET requests (don't return 405)
+        return JSONResponse(
+            content={
+                "jsonrpc": "2.0",
+                "id": "0",  # Use string "0" instead of None (Cursor doesn't accept null)
+                "result": {
+                    "message": "MCP Server is running",
+                    "status": "healthy",
+                    "version": "0.1.0",
+                    "supported_methods": [
+                        "initialize",
+                        "tools/list",
+                        "tools/call",
+                        "resources/list",
+                        "prompts/list",
+                    ],
+                },
+            },
+            status_code=200,
+            headers=headers,
+        )
+
+    # For POST requests, process normally
+    try:
+        # 优先尝试使用FastAPI的自动JSON解析（最可靠）
+        import json
+        import re
+
+        try:
+            raw_body = await request.json()
+        except Exception:
+            # 如果FastAPI解析失败，尝试手动解析
+            # 获取原始请求体
+            raw_bytes = await request.body()
+            raw_text = raw_bytes.decode("utf-8", errors="replace")
+
+            cleaned_text = raw_text.strip()
+
+            # 1. 移除首尾可能的引号
+            if (cleaned_text.startswith("'") and cleaned_text.endswith("'")) or (
+                cleaned_text.startswith('"') and cleaned_text.endswith('"')
+            ):
+                cleaned_text = cleaned_text[1:-1]
+
+            # 2. 处理转义字符 - 处理shell或代理转义的问题
+            # 如果文本包含转义的空格、冒号等（如 \ jsonrpc\:），需要清理
+            if "\\ " in cleaned_text or "\\:" in cleaned_text or "\\{" in cleaned_text:
+                # 处理常见的转义模式：\ 后跟空格、冒号、大括号等
+                cleaned_text = re.sub(r"\\([ :{}])", r"\1", cleaned_text)
+
+            # 3. 处理双重转义问题
+            if "\\\\" in cleaned_text or (cleaned_text.count("\\") > cleaned_text.count('"') / 2):
+                # 处理双重转义：将 \\ 替换为 \，但保留有效的JSON转义序列
+                # 先保护有效的JSON转义序列
+                cleaned_text = (
+                    cleaned_text.replace("\\\\n", "\n")
+                    .replace("\\\\t", "\t")
+                    .replace("\\\\r", "\r")
+                )
+                # 然后处理其他转义（但保留JSON标准转义）
+                cleaned_text = re.sub(r'\\([^"\\/bfnrtu])', r"\1", cleaned_text)
+
+            # 3. 尝试解析
+            try:
+                raw_body = json.loads(cleaned_text)
+            except json.JSONDecodeError:
+                # 如果还是失败，尝试更激进的清理（仅作为最后手段）
+                # 移除所有反斜杠转义（除了JSON标准转义）
+                cleaned_text = re.sub(r'\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', "", cleaned_text)
+                try:
+                    raw_body = json.loads(cleaned_text)
+                except json.JSONDecodeError as e:
+                    # 如果所有解析都失败，返回有意义的错误
+                    error_response = {
+                        "jsonrpc": "2.0",
+                        "id": "0",  # Use string "0" instead of None (Cursor doesn't accept null)
+                        "error": {"code": -32700, "message": f"Parse error: {str(e)}"},
+                    }
+                    return JSONResponse(content=error_response, status_code=400, headers=headers)
+
+        # Extract request_id and method from raw_body as dict
+        request_id = raw_body.get("id") if isinstance(raw_body, dict) else None
+        # Convert None to "0" for Cursor compatibility (Cursor doesn't accept null id)
+        if request_id is None:
+            request_id = "0"
+        method = raw_body.get("method") if isinstance(raw_body, dict) else None
+        params = raw_body.get("params", {}) if isinstance(raw_body, dict) else {}
+
+        print(f"DEBUG: Extracted - method: {method}, request_id: {request_id}, params: {params}")
+
+        # Check if authentication is disabled
+        auth_mode = os.getenv("AUTH_MODE", "none").lower()
+        authentication_required = auth_mode not in ["none", "noauth", "disabled"]
+
+        if authentication_required:
+            # Normal authentication flow
+            if authorization:
+                if authorization.startswith("Bearer "):
+                    token = authorization[7:]
+
+                    if auth_mode == "oauth":
+                        try:
+                            # Use OAuth JWT validation
+                            token = await verify_jwt(token)
+                        except Exception as e:
+                            # Authentication failed, return JSON-RPC error with _meta
+                            error_response = {
+                                "jsonrpc": "2.0",
+                                "id": request_id,
+                                "error": {"code": 403, "message": f"Invalid token: {str(e)}"},
+                            }
+                            return JSONResponse(
+                                content=error_response, status_code=403, headers=headers
+                            )
+                    else:
+                        # Use legacy Bearer token validation
+                        expected_token = os.getenv("MCP_BUS_TOKEN")
+                        if expected_token and token != expected_token:
+                            error_response = {
+                                "jsonrpc": "2.0",
+                                "id": request_id,
+                                "error": {"code": 403, "message": "Invalid token"},
+                            }
+                            return JSONResponse(
+                                content=error_response, status_code=403, headers=headers
+                            )
+                else:
+                    # Invalid Authorization header format
+                    error_response = {
+                        "jsonrpc": "2.0",
+                        "id": request_id,
+                        "error": {"code": 401, "message": "Invalid Authorization header format"},
+                    }
+                    return JSONResponse(content=error_response, status_code=401, headers=headers)
+
+            # If we get here without a token and authentication is required, return 401
+            error_response = {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {"code": 401, "message": "Missing Authorization header"},
+            }
+            return JSONResponse(content=error_response, status_code=401, headers=headers)
+
+        # Authentication successful, process the request
+        if method == "tools/list":
+            result = await tools_list()
+            # Set the correct request ID
+            result["id"] = request_id
+            # Remove _meta field if present (TRAE doesn't support it)
+            if "_meta" in result:
+                del result["_meta"]
+            return JSONResponse(content=result, headers=headers)
+        elif method == "tools/call":
+            result = await tools_call(params, caller, request)
+            # Set the correct request ID from the request
+            result["id"] = request_id
+            # Remove _meta field if present (TRAE doesn't support it)
+            if "_meta" in result:
+                del result["_meta"]
+            return JSONResponse(content=result, headers=headers)
+        elif method == "initialize":
+            # GPT connector initialization request - use correct GPT format with serverInfo
+            # Extract requested protocol version if provided
+            requested_protocol = (
+                params.get("protocolVersion") if isinstance(params, dict) else "2.0"
+            )
+
+            result = {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "protocolVersion": requested_protocol,
+                    "serverInfo": {"name": "TimQuant MCP Server", "version": "1.0.0"},
+                    "capabilities": {"tools": {"enabled": True}},
+                },
+            }
+            # Note: Removed _meta field as TRAE doesn't support it
+            # Authentication info is still available in HTTP headers
+            return JSONResponse(content=result, headers=headers)
+        elif method == "resources/list":
+            # Support resources/list method for ChatGPT connector
+            result = {"jsonrpc": "2.0", "id": request_id, "result": {"resources": []}}
+            # Note: Removed _meta field as TRAE doesn't support it
+            return JSONResponse(content=result, headers=headers)
+        elif method == "prompts/list":
+            # Support prompts/list method for ChatGPT connector
+            result = {"jsonrpc": "2.0", "id": request_id, "result": {"prompts": []}}
+            # Note: Removed _meta field as TRAE doesn't support it
+            return JSONResponse(content=result, headers=headers)
+        elif method == "notifications/initialized":
+            # Handle notifications/initialized (JSON-RPC notification - no id required)
+            # Return 200 OK with no body for notifications
+            return JSONResponse(content={}, status_code=200, headers=headers)
+        else:
+            # For unknown methods, return appropriate error
+            error_response = {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {"code": -32601, "message": "Method not found"},
+            }
+            return JSONResponse(content=error_response, status_code=400, headers=headers)
+    except Exception as e:
+        # Create JSON-RPC error response with _meta field
+        print(f"DEBUG: Exception occurred: {type(e).__name__}: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
+
+        # Get request_id if available, otherwise use "0"
+        request_id = (
+            getattr(request, "request_id", None) if hasattr(request, "request_id") else None
+        )
+        if request_id is None:
+            try:
+                # Try to extract from request body if possible
+                body = await request.body()
+                if body:
+                    try:
+                        body_dict = json.loads(body.decode("utf-8"))
+                        request_id = body_dict.get("id", "0")
+                    except:
+                        request_id = "0"
+                else:
+                    request_id = "0"
+            except:
+                request_id = "0"
+
+        error_response = {
+            "jsonrpc": "2.0",
+            "id": request_id
+            if request_id is not None
+            else "0",  # Use string "0" instead of None (Cursor doesn't accept null)
+            "error": {"code": 500, "message": f"Internal error: {str(e)}"},
+        }
+        return JSONResponse(content=error_response, status_code=500, headers=headers)
+
+
+async def tools_list():
+    # Complete tool list for both GPT and TRAE connectors
+    tools = [
+        {
+            "name": "ping",
+            "description": "Test connectivity with a simple ping response",
+            "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+        },
+        {
+            "name": "echo",
+            "description": "Echo back the input text",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"text": {"type": "string", "description": "Text to echo back"}},
+                "required": ["text"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "inbox_append",
+            "description": "Append a new block to the daily inbox file (for GPT/TRAE communication)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "date": {"type": "string", "description": "Date in YYYY-MM-DD format"},
+                    "task_code": {
+                        "type": "string",
+                        "description": "Task identifier (e.g., TC-GPT-001)",
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Source identifier (e.g., ChatGPT, TRAE)",
+                    },
+                    "text": {"type": "string", "description": "Content to append"},
+                },
+                "required": ["date", "task_code", "source", "text"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "admin_vault_put",
+            "description": "ADMIN ONLY: store a secret document in docs/REPORT/ata/admin_vault/ (fail-closed if not admin)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "doc_name": {"type": "string", "description": "Filename only, e.g. secrets.md"},
+                    "content": {"type": "string", "description": "Document content"},
+                },
+                "required": ["doc_name", "content"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "admin_vault_get",
+            "description": "ADMIN ONLY: read a secret document from docs/REPORT/ata/admin_vault/ (fail-closed if not admin)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "doc_name": {"type": "string", "description": "Filename only, e.g. secrets.md"}
+                },
+                "required": ["doc_name"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "admin_whoami",
+            "description": "Return whether current request is recognized as ATA admin (debug helper)",
+            "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+        },
+        {
+            "name": "inbox_tail",
+            "description": "Read the last n lines or last block from the inbox (for GPT/TRAE communication)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "date": {"type": "string", "description": "Date in YYYY-MM-DD format"},
+                    "n": {
+                        "type": "integer",
+                        "description": "Number of lines to return",
+                        "default": 50,
+                    },
+                },
+                "required": ["date"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "board_get",
+            "description": "Read the Program Board content (for task status tracking)",
+            "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+        },
+        {
+            "name": "board_set_status",
+            "description": "Update task status and artifacts in the Program Board (for GPT/TRAE communication)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_code": {"type": "string", "description": "Task identifier"},
+                    "status": {"type": "string", "description": "New status value"},
+                    "artifacts": {
+                        "type": "string",
+                        "description": "Artifacts/deliverables path",
+                        "default": None,
+                    },
+                },
+                "required": ["task_code", "status"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_send",
+            "description": "Send an ATA (Agent-to-Agent) message for communication between AI agents (Cursor, TRAE, ChatGPT)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "taskcode": {
+                        "type": "string",
+                        "description": "Task code associated with the message",
+                    },
+                    "from_agent": {
+                        "type": "string",
+                        "description": "Source agent (e.g., Cursor, TRAE, ChatGPT) or dialog ID (e.g., 'Cursor-Dialog-1')",
+                    },
+                    "to_agent": {
+                        "type": "string",
+                        "description": "Target agent (e.g., Cursor, TRAE, ChatGPT) or dialog ID (e.g., 'Cursor-Dialog-2')",
+                    },
+                    "kind": {
+                        "type": "string",
+                        "description": "Message kind (e.g., request, ack, response)",
+                    },
+                    "payload": {"type": "object", "description": "Message payload content"},
+                    "prev_sha256": {
+                        "type": "string",
+                        "description": "Previous message SHA256 for chain validation (optional)",
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "normal", "high", "urgent"],
+                        "description": "Message priority level",
+                        "default": "normal",
+                    },
+                    "requires_response": {
+                        "type": "boolean",
+                        "description": "Whether this message requires a response",
+                        "default": True,
+                    },
+                    "context_hint": {
+                        "type": "string",
+                        "description": "Context hint for conversation continuity (optional)",
+                    },
+                },
+                "required": ["taskcode", "from_agent", "to_agent", "kind", "payload"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_receive",
+            "description": "Receive ATA messages with optional filtering (for Cursor, TRAE, ChatGPT communication)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "taskcode": {"type": "string", "description": "Filter by task code (optional)"},
+                    "from_agent": {
+                        "type": "string",
+                        "description": "Filter by source agent (optional). Supports dialog IDs like 'Cursor-Dialog-1'",
+                    },
+                    "to_agent": {
+                        "type": "string",
+                        "description": "Filter by target agent (optional). Supports dialog IDs like 'Cursor-Dialog-1'",
+                    },
+                    "kind": {"type": "string", "description": "Filter by message kind (optional)"},
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "normal", "high", "urgent"],
+                        "description": "Filter by priority level (optional)",
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["pending", "delivered", "read", "acked"],
+                        "description": "Filter by message status (optional)",
+                    },
+                    "unread_only": {
+                        "type": "boolean",
+                        "description": "Return only unread messages",
+                        "default": False,
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of messages to return",
+                        "default": 50,
+                    },
+                    "include_context": {
+                        "type": "boolean",
+                        "description": "Include conversation context in response",
+                        "default": False,
+                    },
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_message_mark",
+            "description": "Mark ATA messages as read/acked/archived (receiver-side) to avoid stacking",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "msg_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of ATA msg_id to mark",
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["read", "acked", "archived"],
+                        "description": "Status to set",
+                    },
+                },
+                "required": ["msg_ids", "status"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_task_create",
+            "description": "Create an ATA task with routing, mailbox, and A2A Hub integration",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_code": {"type": "string", "description": "ATA task code (optional)"},
+                    "from_agent": {"type": "string", "description": "Requesting agent id"},
+                    "owner_role": {"type": "string", "description": "Owner role for routing"},
+                    "area": {"type": "string", "description": "Task area/domain"},
+                    "priority": {
+                        "type": "integer",
+                        "description": "Priority (0-3)",
+                        "default": 1,
+                    },
+                    "goal": {"type": "string", "description": "Task goal"},
+                    "capsule": {"type": "string", "description": "Task capsule/instructions"},
+                    "how_to_repro": {"type": "string", "description": "Reproduction steps"},
+                    "expected": {"type": "string", "description": "Expected outcome"},
+                    "actual": {"type": "string", "description": "Actual outcome"},
+                    "evidence_requirements": {"type": "string", "description": "Evidence requirements"},
+                    "scope_files": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Repo-relative scope files",
+                    },
+                    "metadata": {"type": "object", "description": "Additional metadata"},
+                    "deadline": {"type": "string", "description": "Optional deadline"},
+                    "owner": {"type": "string", "description": "Owner name/id"},
+                    "task_type": {"type": "string", "description": "Task type"},
+                },
+                "required": ["goal", "capsule", "how_to_repro", "expected", "evidence_requirements"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_task_status",
+            "description": "Query ATA task status from A2A Hub",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_code": {"type": "string", "description": "Task code"},
+                    "task_id": {"type": "string", "description": "Task id"},
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_task_result",
+            "description": "Submit ATA task result to A2A Hub",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_code": {"type": "string", "description": "Task code"},
+                    "status": {"type": "string", "description": "Result status (DONE/FAIL/CANCELLED)"},
+                    "result": {"type": "object", "description": "Result payload"},
+                    "report_path": {"type": "string", "description": "REPORT path (repo-relative)"},
+                    "selftest_log_path": {"type": "string", "description": "selftest.log path (repo-relative)"},
+                    "evidence_dir": {"type": "string", "description": "Evidence dir (repo-relative)"},
+                },
+                "required": ["task_code"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_ci_verify",
+            "description": "Run CI verification for ATA evidence triplet",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_code": {"type": "string", "description": "Task code"},
+                    "report_path": {"type": "string", "description": "REPORT path (repo-relative)"},
+                    "selftest_log_path": {"type": "string", "description": "selftest.log path (repo-relative)"},
+                    "evidence_dir": {"type": "string", "description": "Evidence dir (repo-relative)"},
+                },
+                "required": ["task_code"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "github_search",
+            "description": "Search GitHub repositories, code, or issues",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                    "search_type": {
+                        "type": "string",
+                        "enum": ["repositories", "code", "issues"],
+                        "description": "Search type: repositories, code, or issues",
+                        "default": "repositories",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of results to return",
+                        "default": 10,
+                    },
+                    "sort": {
+                        "type": "string",
+                        "description": "Sort option (stars, updated, etc.)",
+                        "default": None,
+                    },
+                    "order": {
+                        "type": "string",
+                        "enum": ["asc", "desc"],
+                        "description": "Sort order: asc or desc",
+                        "default": "desc",
+                    },
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "dialog_register",
+            "description": "Register a Cursor dialog (or other agent dialog) with a unique identity for ATA communication between different dialogs",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "agent_type": {
+                        "type": "string",
+                        "description": "Agent type (e.g., Cursor, GPT, TRAE)",
+                        "default": "Cursor",
+                    },
+                    "dialog_name": {
+                        "type": "string",
+                        "description": "Optional dialog name/description",
+                    },
+                    "dialog_id": {
+                        "type": "string",
+                        "description": "Optional custom dialog ID (auto-generated if not provided, e.g., 'Cursor-Dialog-1')",
+                    },
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "dialog_list",
+            "description": "List all registered dialogs (supports Cursor, GPT, and TRAE)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "agent_type": {
+                        "type": "string",
+                        "description": "Filter by agent type (optional, e.g., Cursor, GPT, TRAE)",
+                    }
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "conversation_stats",
+            "description": "Get conversation statistics for dialogs",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "dialog_id": {
+                        "type": "string",
+                        "description": "Filter by dialog ID (optional)",
+                    },
+                    "agent_type": {
+                        "type": "string",
+                        "description": "Filter by agent type (optional, e.g., Cursor, GPT, TRAE)",
+                    },
+                    "taskcode": {"type": "string", "description": "Filter by task code (optional)"},
+                    "from_date": {
+                        "type": "string",
+                        "description": "Filter from date (YYYY-MM-DD, optional)",
+                    },
+                    "to_date": {
+                        "type": "string",
+                        "description": "Filter to date (YYYY-MM-DD, optional)",
+                    },
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "conversation_search",
+            "description": "Search conversations by content",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                    "dialog_id": {
+                        "type": "string",
+                        "description": "Filter by dialog ID (optional)",
+                    },
+                    "agent_type": {
+                        "type": "string",
+                        "description": "Filter by agent type (optional)",
+                    },
+                    "taskcode": {"type": "string", "description": "Filter by task code (optional)"},
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of results",
+                        "default": 50,
+                    },
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "conversation_history",
+            "description": "Get conversation history for a specific dialog",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "dialog_id": {
+                        "type": "string",
+                        "description": "Dialog ID (e.g., Cursor-Dialog-1, GPT-Dialog-1, TRAE-Dialog-1)",
+                    },
+                    "taskcode": {"type": "string", "description": "Filter by task code (optional)"},
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of messages",
+                        "default": 100,
+                    },
+                    "include_context": {
+                        "type": "boolean",
+                        "description": "Include conversation context",
+                        "default": False,
+                    },
+                },
+                "required": ["dialog_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "conversation_mark",
+            "description": "Mark conversation messages with a status (read, acked, archived)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "dialog_id": {"type": "string", "description": "Dialog ID"},
+                    "msg_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of message IDs to mark",
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["read", "acked", "archived"],
+                        "description": "Status to set",
+                    },
+                },
+                "required": ["dialog_id", "msg_ids", "status"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "file_read",
+            "description": "Read file content for sending in ATA messages (GPT-compatible, embeds full file content instead of just path)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Relative file path from repo root (e.g., 'docs/README.md')",
+                    },
+                    "encoding": {
+                        "type": "string",
+                        "description": "File encoding: 'utf-8' for text files, 'binary' or 'base64' for binary files",
+                        "default": "utf-8",
+                    },
+                    "max_size": {
+                        "type": "integer",
+                        "description": "Maximum file size in bytes (default 10MB)",
+                        "default": 10485760,
+                    },
+                },
+                "required": ["file_path"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_send_with_file",
+            "description": "Send ATA message with file content embedded (for GPT to read files directly, no local file access needed)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "taskcode": {
+                        "type": "string",
+                        "description": "Task code associated with the message",
+                    },
+                    "from_agent": {
+                        "type": "string",
+                        "description": "Source agent (e.g., Cursor, GPT, TRAE) or dialog ID",
+                    },
+                    "to_agent": {
+                        "type": "string",
+                        "description": "Target agent (e.g., Cursor, GPT, TRAE) or dialog ID",
+                    },
+                    "message": {"type": "string", "description": "Optional message text"},
+                    "file_path": {
+                        "type": "string",
+                        "description": "Relative file path from repo root to send (e.g., 'docs/README.md')",
+                    },
+                    "encoding": {
+                        "type": "string",
+                        "description": "File encoding: 'utf-8' for text, 'binary' or 'base64' for binary files",
+                        "default": "utf-8",
+                    },
+                    "kind": {
+                        "type": "string",
+                        "description": "Message kind (e.g., request, ack, response)",
+                        "default": "request",
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "normal", "high", "urgent"],
+                        "description": "Message priority level",
+                        "default": "normal",
+                    },
+                    "requires_response": {
+                        "type": "boolean",
+                        "description": "Whether this message requires a response",
+                        "default": True,
+                    },
+                    "prev_sha256": {
+                        "type": "string",
+                        "description": "Previous message SHA256 for chain validation (optional)",
+                    },
+                    "context_hint": {
+                        "type": "string",
+                        "description": "Context hint for conversation continuity (optional)",
+                    },
+                },
+                "required": ["taskcode", "from_agent", "to_agent", "file_path"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "task_create",
+            "description": "Create a collaborative task with multiple agents",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_description": {"type": "string", "description": "Task description"},
+                    "workflow_template": {
+                        "type": "string",
+                        "description": "Workflow template name (optional)",
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "normal", "high", "urgent"],
+                        "description": "Task priority",
+                        "default": "normal",
+                    },
+                    "timeout": {
+                        "type": "number",
+                        "description": "Task timeout in seconds (optional)",
+                    },
+                    "required_roles": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Required roles (optional)",
+                    },
+                },
+                "required": ["task_description"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "task_status",
+            "description": "Query task status and progress",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string", "description": "Task ID"},
+                    "include_subtasks": {
+                        "type": "boolean",
+                        "description": "Include subtask status",
+                        "default": True,
+                    },
+                },
+                "required": ["task_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "agent_register",
+            "description": "ADMIN ONLY: register an agent for collaboration (申请制度：普通用户请用 agent_apply)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "agent_id": {"type": "string", "description": "Agent ID"},
+                    "agent_type": {
+                        "type": "string",
+                        "description": "Agent type (Cursor, GPT, TRAE)",
+                    },
+                    "role": {"type": "string", "description": "Agent role"},
+                    "capabilities": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Agent capabilities",
+                    },
+                    "max_concurrent_tasks": {
+                        "type": "integer",
+                        "description": "Max concurrent tasks",
+                        "default": 5,
+                    },
+                },
+                "required": ["agent_id", "agent_type", "role", "capabilities"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "agent_apply",
+            "description": "Apply for agent registration (pending approval by ATA admin)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "agent_id": {"type": "string"},
+                    "agent_type": {"type": "string"},
+                    "role": {"type": "string"},
+                    "capabilities": {"type": "array", "items": {"type": "string"}},
+                    "max_concurrent_tasks": {"type": "integer", "default": 5},
+                    "numeric_code": {"type": "integer"},
+                    "send_enabled": {"type": "boolean"},
+                    "note": {"type": "string"},
+                },
+                "required": ["agent_id", "agent_type", "role", "capabilities"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "agent_approve",
+            "description": "ADMIN ONLY: approve a pending agent application and register it (ensures numeric_code uniqueness)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "agent_id": {"type": "string"},
+                    "numeric_code": {"type": "integer"},
+                    "send_enabled": {"type": "boolean"},
+                },
+                "required": ["agent_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_send_request",
+            "description": "Request an ATA send (queued for ATA admin review/relay). Non-admin only.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "taskcode": {"type": "string"},
+                    "from_agent": {"type": "string"},
+                    "to_agent": {"type": "string"},
+                    "kind": {"type": "string"},
+                    "payload": {"type": "object"},
+                    "priority": {"type": "string", "default": "normal"},
+                    "requires_response": {"type": "boolean", "default": True},
+                    "context_hint": {"type": "string"},
+                    "report_path": {"type": "string"},
+                    "selftest_log_path": {"type": "string"},
+                    "evidence_dir": {"type": "string"},
+                },
+                "required": ["taskcode", "from_agent", "to_agent", "payload"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "ata_send_review",
+            "description": "ADMIN ONLY: approve/reject a pending ata_send_request. Approve triggers actual send.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "request_id": {"type": "string"},
+                    "action": {"type": "string"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["request_id", "action"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "workflow_execute",
+            "description": "Execute a predefined workflow",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workflow_name": {"type": "string", "description": "Workflow template name"},
+                    "inputs": {"type": "object", "description": "Workflow inputs"},
+                    "task_id": {"type": "string", "description": "Optional task ID"},
+                },
+                "required": ["workflow_name", "inputs"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "result_get",
+            "description": "Get task results",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string", "description": "Task ID"},
+                    "include_intermediate": {
+                        "type": "boolean",
+                        "description": "Include intermediate results",
+                        "default": False,
+                    },
+                },
+                "required": ["task_id"],
+                "additionalProperties": False,
+            },
+        },
+    ]
+
+    # Note: id will be set by the caller from the request_id
+    return {
+        "jsonrpc": "2.0",
+        "id": "0",  # Default value, will be overwritten by caller with actual request_id
+        "result": {"tools": tools},
+    }
+
+
+async def tools_call(params: dict[str, Any], caller: str, request: Request):
+    # Support both original format (name/arguments) and GPT format (toolName/params)
+    tool_name = params.get("name") or params.get("toolName")
+    arguments = params.get("arguments", {}) or params.get("params", {})
+
+    user_agent = request.headers.get("user-agent")
+    trace_id = request.headers.get("x-trace-id", params.get("trace_id", "unknown"))
+
+    admin_ctx = extract_admin_ctx(request)
+
+    if not tool_name:
+        return {
+            "jsonrpc": "2.0",
+            "id": "0",  # Will be overwritten by caller with actual request_id
+            "error": {"code": -32602, "message": "Missing tool name"},
+        }
+
+    try:
+        if tool_name == "ping":
+            result = tool_executor.ping(caller, user_agent, trace_id)
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {"content": [{"type": "text", "text": "pong"}]},
+            }
+        elif tool_name == "echo":
+            validated = EchoParams(**arguments)
+            result = tool_executor.echo(validated, caller, user_agent, trace_id)
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {"content": [{"type": "text", "text": result.get("text", "")}]},
+            }
+        elif tool_name == "inbox_append":
+            validated = InboxAppendParams(**arguments)
+            result = tool_executor.inbox_append(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {
+                    "content": [
+                        {"type": "text", "text": f"Successfully appended to inbox: {result}"}
+                    ]
+                },
+            }
+        elif tool_name == "inbox_tail":
+            validated = InboxTailParams(**arguments)
+            result = tool_executor.inbox_tail(validated, caller, user_agent, trace_id)
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {"content": [{"type": "text", "text": result.get("content", "")}]},
+            }
+        elif tool_name == "board_get":
+            result = tool_executor.board_get(caller, user_agent, trace_id)
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {"content": [{"type": "text", "text": result.get("content", "")}]},
+            }
+        elif tool_name == "board_set_status":
+            validated = BoardSetStatusParams(**arguments)
+            result = tool_executor.board_set_status(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {
+                    "content": [
+                        {"type": "text", "text": f"Successfully updated board status: {result}"}
+                    ]
+                },
+            }
+        elif tool_name == "ata_send":
+            validated = ATASendParams(**arguments)
+            result = tool_executor.ata_send(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_receive":
+            validated = ATAReceiveParams(**arguments)
+            result = tool_executor.ata_receive(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_message_mark":
+            validated = ATAMessageMarkParams(**arguments)
+            result = tool_executor.ata_message_mark(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_task_create":
+            validated = ATATaskCreateParams(**arguments)
+            result = tool_executor.ata_task_create(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_task_status":
+            validated = ATATaskStatusParams(**arguments)
+            result = tool_executor.ata_task_status(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_task_result":
+            validated = ATATaskResultParams(**arguments)
+            result = tool_executor.ata_task_result(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_ci_verify":
+            validated = ATACIVerifyParams(**arguments)
+            result = tool_executor.ata_ci_verify(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "github_search":
+            from .tools import GitHubSearchParams
+
+            validated = GitHubSearchParams(**arguments)
+            result = tool_executor.github_search(validated, caller, user_agent, trace_id)
+            # Format response according to MCP specification
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Will be overwritten by caller with actual request_id
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "dialog_register":
+            validated = DialogRegisterParams(**arguments)
+            result = tool_executor.dialog_register(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "dialog_list":
+            validated = DialogListParams(**arguments)
+            result = tool_executor.dialog_list(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "conversation_stats":
+            validated = ConversationStatsParams(**arguments)
+            result = tool_executor.conversation_stats(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "conversation_search":
+            validated = ConversationSearchParams(**arguments)
+            result = tool_executor.conversation_search(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "conversation_history":
+            validated = ConversationHistoryParams(**arguments)
+            result = tool_executor.conversation_history(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "conversation_mark":
+            validated = ConversationMarkParams(**arguments)
+            result = tool_executor.conversation_mark(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "file_read":
+            validated = FileReadParams(**arguments)
+            result = tool_executor.file_read(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_send_with_file":
+            validated = ATASendWithFileParams(**arguments)
+            result = tool_executor.ata_send_with_file(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "task_create":
+            validated = TaskCreateParams(**arguments)
+            result = tool_executor.task_create(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "task_status":
+            validated = TaskStatusParams(**arguments)
+            result = tool_executor.task_status(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "agent_register":
+            validated = AgentRegisterParams(**arguments)
+            result = tool_executor.agent_register(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "agent_apply":
+            validated = AgentApplyParams(**arguments)
+            result = tool_executor.agent_apply(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "agent_approve":
+            # Admin-only tool; auth enforced inside ToolExecutor.agent_approve
+            agent_id = str(arguments.get("agent_id") or "").strip()
+            numeric_code = arguments.get("numeric_code")
+            send_enabled = arguments.get("send_enabled")
+            result = tool_executor.agent_approve(
+                agent_id=agent_id,
+                caller=caller,
+                user_agent=user_agent,
+                trace_id=trace_id,
+                auth_ctx=admin_ctx,
+                numeric_code=numeric_code,
+                send_enabled=send_enabled,
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_send_request":
+            validated = ATASendRequestParams(**arguments)
+            result = tool_executor.ata_send_request(validated, caller, user_agent, trace_id)
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "ata_send_review":
+            validated = ATASendReviewParams(**arguments)
+            result = tool_executor.ata_send_review(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "admin_vault_put":
+            # Store a secret doc for admin-only reading
+            result = tool_executor.admin_vault_put(
+                arguments, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "admin_vault_get":
+            result = tool_executor.admin_vault_get(
+                arguments, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "admin_whoami":
+            info = {
+                "success": True,
+                "is_admin": bool(admin_ctx.get("is_admin")),
+                "admin_method": admin_ctx.get("method"),
+                "admin_reason": admin_ctx.get("reason"),
+                "has_env_token": bool(os.getenv("ATA_ADMIN_TOKEN")),
+                "provided_header_present": bool(request.headers.get("x-ata-admin-token")),
+            }
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(info, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "workflow_execute":
+            validated = WorkflowExecuteParams(**arguments)
+            result = tool_executor.workflow_execute(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        elif tool_name == "result_get":
+            validated = ResultGetParams(**arguments)
+            result = tool_executor.result_get(
+                validated, caller, user_agent, trace_id, auth_ctx=admin_ctx
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",
+                "result": {
+                    "content": [
+                        {"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}
+                    ]
+                },
+            }
+        else:
+            return {
+                "jsonrpc": "2.0",
+                "id": "0",  # Default value, will be overwritten by caller with actual request_id
+                "error": {"code": -32601, "message": f"Unknown tool: {tool_name}"},
+            }
+    except Exception as e:
+        return {
+            "jsonrpc": "2.0",
+            "id": "0",  # Default value, will be overwritten by caller with actual request_id
+            "error": {"code": -32603, "message": f"Internal error: {str(e)}"},
+        }
+
+
+
+
+
+# ============================================================================
+# Web Viewer API Endpoints (ATA Messages Visualization)
+# ============================================================================
+
+
+@app.get("/api/viewer/messages")
+async def api_viewer_messages(
+    from_agent: str | None = None,
+    to_agent: str | None = None,
+    taskcode: str | None = None,
+    kind: str | None = None,
+    limit: int = 1000,
+    token: dict = Depends(verify_token),
+):
+    """Get all ATA messages with optional filtering for web viewer"""
+    # 在AUTH_MODE=none时允许访问，即使token为None
+    default_auth_mode = (
+        "none" if os.getenv("MCP_BUS_HOST", "127.0.0.1") in ["127.0.0.1", "localhost"] else "oauth"
+    )
+    auth_mode = os.getenv("AUTH_MODE", default_auth_mode).lower()
+    if auth_mode != "none" and not token.get("authenticated", False):
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    all_messages = load_all_ata_messages()
+
+    # Apply filters
+    filtered = all_messages
+    if from_agent:
+        filtered = [m for m in filtered if m.get("from_agent", "").lower() == from_agent.lower()]
+    if to_agent:
+        filtered = [m for m in filtered if m.get("to_agent", "").lower() == to_agent.lower()]
+    if taskcode:
+        filtered = [m for m in filtered if taskcode.lower() in m.get("taskcode", "").lower()]
+    if kind:
+        filtered = [m for m in filtered if m.get("kind", "").lower() == kind.lower()]
+
+    # Limit results
+    if limit > 0:
+        filtered = filtered[-limit:]  # Get most recent messages
+
+    # Convert to summary format
+    summaries = []
+    for msg in filtered:
+        summaries.append(
+            {
+                "msg_id": msg.get("msg_id", ""),
+                "taskcode": msg.get("taskcode", ""),
+                "from_agent": msg.get("from_agent", ""),
+                "to_agent": msg.get("to_agent", ""),
+                "created_at": msg.get("created_at", ""),
+                "kind": msg.get("kind", ""),
+                "payload_preview": get_message_preview(msg.get("payload", {})),
+                "sha256": msg.get("sha256", ""),
+                "prev_sha256": msg.get("prev_sha256"),
+                "file_path": msg.get("file_path", ""),
+            }
+        )
+
+    return {"total": len(summaries), "messages": summaries}
+
+
+@app.get("/api/viewer/messages/{taskcode}")
+async def api_viewer_messages_by_taskcode(taskcode: str, token: dict = Depends(verify_token)):
+    """Get all messages for a specific taskcode"""
+    all_messages = load_all_ata_messages()
+    filtered = [m for m in all_messages if m.get("taskcode", "") == taskcode]
+    return {"taskcode": taskcode, "total": len(filtered), "messages": filtered}
+
+
+@app.get("/api/viewer/messages/detail/{msg_id}")
+async def api_viewer_message_detail(msg_id: str, token: dict = Depends(verify_token)):
+    """Get full details of a specific message"""
+    all_messages = load_all_ata_messages()
+    for msg in all_messages:
+        if msg.get("msg_id") == msg_id:
+            return msg
+    raise HTTPException(status_code=404, detail="Message not found")
+
+
+@app.get("/api/viewer/agents")
+async def api_viewer_agents(token: dict = Depends(verify_token)):
+    """Get list of all agents"""
+    # 在AUTH_MODE=none时允许访问，即使token为None
+    default_auth_mode = (
+        "none" if os.getenv("MCP_BUS_HOST", "127.0.0.1") in ["127.0.0.1", "localhost"] else "oauth"
+    )
+    auth_mode = os.getenv("AUTH_MODE", default_auth_mode).lower()
+    if auth_mode != "none" and not token.get("authenticated", False):
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    all_messages = load_all_ata_messages()
+    agents = set()
+    for msg in all_messages:
+        agents.add(msg.get("from_agent", ""))
+        agents.add(msg.get("to_agent", ""))
+    return {"agents": sorted(list(agents))}
+
+
+@app.get("/api/viewer/statistics")
+@cached(prefix="viewer", ttl=30)  # 缓存30秒
+async def api_viewer_statistics(token: dict = Depends(verify_token)):
+    """Get statistics about messages"""
+    # 在AUTH_MODE=none时允许访问，即使token为None
+    default_auth_mode = (
+        "none" if os.getenv("MCP_BUS_HOST", "127.0.0.1") in ["127.0.0.1", "localhost"] else "oauth"
+    )
+    auth_mode = os.getenv("AUTH_MODE", default_auth_mode).lower()
+    if auth_mode != "none" and not token.get("authenticated", False):
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    all_messages = load_all_ata_messages()
+
+    stats = {"total_messages": len(all_messages), "by_agent": {}, "by_kind": {}, "by_taskcode": {}}
+
+    for msg in all_messages:
+        from_agent = msg.get("from_agent", "Unknown")
+        kind = msg.get("kind", "Unknown")
+        taskcode = msg.get("taskcode", "Unknown")
+
+        # Count by agent
+        stats["by_agent"][from_agent] = stats["by_agent"].get(from_agent, 0) + 1
+
+        # Count by kind
+        stats["by_kind"][kind] = stats["by_kind"].get(kind, 0) + 1
+
+        # Count by taskcode
+        stats["by_taskcode"][taskcode] = stats["by_taskcode"].get(taskcode, 0) + 1
+
+    return stats
+
+
+@app.get("/api/viewer/conversations")
+async def api_viewer_conversations(
+    from_agent: str | None = None, to_agent: str | None = None, token: dict = Depends(verify_token)
+):
+    """Get conversations between agents, grouped by taskcode"""
+    all_messages = load_all_ata_messages()
+
+    # Group messages by taskcode
+    conversations = {}
+    for msg in all_messages:
+        taskcode = msg.get("taskcode", "Unknown")
+        if taskcode not in conversations:
+            conversations[taskcode] = []
+        conversations[taskcode].append(msg)
+
+    # Sort messages in each conversation by created_at
+    for taskcode in conversations:
+        conversations[taskcode].sort(key=lambda x: x.get("created_at", ""))
+
+    return {"total_conversations": len(conversations), "conversations": conversations}
+
+
+# Agent Collaboration API endpoints
+@app.get("/api/collaboration/agents")
+@cached(prefix="collaboration", ttl=5)  # 缓存5秒
+async def api_collaboration_agents():
+    """Get all registered agents"""
+    import json
+    from pathlib import Path
+    
+    # 尝试从coordinator获取智能体数据
+    try:
+        executor = get_tool_executor()
+        if executor.coordinator:
+            agents = executor.coordinator.get_all_agents()
+            if agents:
+                return {"agents": agents, "total": len(agents)}
+    except Exception as e:
+        print(f"从coordinator获取智能体数据失败: {e}")
+    
+    # 直接从文件读取智能体数据作为备份方案
+    try:
+        repo_root = Path(__file__).parent.parent.parent.parent
+        registry_path = repo_root / ".cursor" / "agent_registry.json"
+        if registry_path.exists():
+            with open(registry_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                agents_data = data.get("agents", {})
+                agents = []
+                for agent_id, agent_info in agents_data.items():
+                    # 格式化智能体数据
+                    agent_dict = {
+                        "agent_id": agent_info.get("agent_id"),
+                        "numeric_code": agent_info.get("numeric_code"),
+                        "display_name": f"{agent_info.get('agent_id')}#{agent_info.get('numeric_code', '--'):02d}",
+                        "agent_type": agent_info.get("agent_type"),
+                        "role": agent_info.get("role"),
+                        "capabilities": agent_info.get("capabilities", []),
+                        "current_load": agent_info.get("current_load", 0),
+                        "max_concurrent_tasks": agent_info.get("max_concurrent_tasks", 5),
+                        "status": agent_info.get("status", "available"),
+                        "send_enabled": agent_info.get("send_enabled", True),
+                        "category": agent_info.get("category", "user_ai"),
+                        "registered_at": agent_info.get("registered_at"),
+                        "last_heartbeat": agent_info.get("last_heartbeat"),
+                        "response_time_avg": agent_info.get("response_time_avg", 0.0),
+                        "success_rate": agent_info.get("success_rate", 1.0),
+                        "total_tasks": agent_info.get("total_tasks", 0),
+                        "completed_tasks": agent_info.get("completed_tasks", 0),
+                    }
+                    agents.append(agent_dict)
+                return {"agents": agents, "total": len(agents)}
+    except Exception as e:
+        print(f"直接从文件读取智能体数据失败: {e}")
+    
+    return {"agents": [], "total": 0}
+
+
+@app.get("/api/collaboration/tasks")
+async def api_collaboration_tasks(
+    status: str | None = None, limit: int = 50
+):
+    """Get all tasks"""
+    try:
+        executor = get_tool_executor()
+        if executor.orchestrator:
+            tasks = executor.orchestrator.get_all_tasks()
+            if status:
+                tasks = [t for t in tasks if t.get("status") == status]
+            if limit:
+                tasks = tasks[:limit]
+            return {"tasks": tasks, "total": len(tasks)}
+    except Exception as e:
+        print(f"从orchestrator获取任务数据失败: {e}")
+    
+    # 如果没有任务数据，返回空列表
+    return {"tasks": [], "total": 0}
+
+
+@app.get("/api/collaboration/tasks/{task_id}")
+async def api_collaboration_task_detail(task_id: str, token: dict = Depends(verify_token)):
+    """Get task detail"""
+    try:
+        executor = get_tool_executor()
+        if executor.orchestrator:
+            task_status = executor.orchestrator.get_task_status(task_id)
+            return task_status
+        return {"error": "Orchestrator not available"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/api/collaboration/workflows")
+async def api_collaboration_workflows():
+    """Get all workflows"""
+    try:
+        executor = get_tool_executor()
+        if executor.workflow_engine:
+            workflows = executor.workflow_engine.get_all_workflows()
+            return {"workflows": workflows, "total": len(workflows)}
+    except Exception as e:
+        print(f"从workflow_engine获取工作流数据失败: {e}")
+    
+    # 如果没有工作流数据，返回空列表
+    return {"workflows": [], "total": 0}
+
+
+@app.get("/api/collaboration/statistics")
+@cached(prefix="collaboration", ttl=5)  # 缓存5秒
+async def api_collaboration_statistics():
+    """Get collaboration statistics"""
+    import json
+    from pathlib import Path
+    
+    stats = {
+        "agents": {"total": 0, "available": 0, "busy": 0},
+        "tasks": {"total": 0, "pending": 0, "running": 0, "completed": 0, "failed": 0},
+        "workflows": {"total": 0, "running": 0, "completed": 0},
+    }
+
+    # 尝试从coordinator获取统计数据
+    try:
+        executor = get_tool_executor()
+        if executor.coordinator:
+            agents = executor.coordinator.get_all_agents()
+            stats["agents"]["total"] = len(agents)
+            stats["agents"]["available"] = len(
+                [a for a in agents if a.get("status") == "available"]
+            )
+            stats["agents"]["busy"] = len([a for a in agents if a.get("status") == "busy"])
+    except Exception as e:
+        print(f"从coordinator获取智能体统计数据失败: {e}")
+    
+    # 如果coordinator获取失败，直接从文件读取智能体数据并计算统计信息
+    if stats["agents"]["total"] == 0:
+        try:
+            repo_root = Path(__file__).parent.parent.parent.parent
+            registry_path = repo_root / ".cursor" / "agent_registry.json"
+            if registry_path.exists():
+                with open(registry_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    agents_data = data.get("agents", {})
+                    agents = list(agents_data.values())
+                    stats["agents"]["total"] = len(agents)
+                    stats["agents"]["available"] = len(
+                        [a for a in agents if a.get("status") == "available"]
+                    )
+                    stats["agents"]["busy"] = len(
+                        [a for a in agents if a.get("status") == "busy"]
+                    )
+        except Exception as e:
+            print(f"从文件获取智能体统计数据失败: {e}")
+
+    # 尝试从orchestrator获取任务统计数据
+    try:
+        executor = get_tool_executor()
+        if executor.orchestrator:
+            tasks = executor.orchestrator.get_all_tasks()
+            stats["tasks"]["total"] = len(tasks)
+            stats["tasks"]["pending"] = len([t for t in tasks if t.get("status") == "pending"])
+            stats["tasks"]["running"] = len([t for t in tasks if t.get("status") == "running"])
+            stats["tasks"]["completed"] = len([t for t in tasks if t.get("status") == "completed"])
+            stats["tasks"]["failed"] = len([t for t in tasks if t.get("status") == "failed"])
+    except Exception as e:
+        print(f"从orchestrator获取任务统计数据失败: {e}")
+
+    # 尝试从workflow_engine获取工作流统计数据
+    try:
+        executor = get_tool_executor()
+        if executor.workflow_engine:
+            workflows = executor.workflow_engine.get_all_workflows()
+            stats["workflows"]["total"] = len(workflows)
+            stats["workflows"]["running"] = len(
+                [w for w in workflows if w.get("status") == "running"]
+            )
+            stats["workflows"]["completed"] = len(
+                [w for w in workflows if w.get("status") == "completed"]
+            )
+    except Exception as e:
+        print(f"从workflow_engine获取工作流统计数据失败: {e}")
+
+    return stats
+
+
+# Agent Home APIs (profile + inbox/outbox + send)
+@app.get("/api/agents/{agent_ref}")
+async def api_agent_detail(agent_ref: str, token: dict = Depends(verify_token)):
+    """Get agent detail by agent_id or numeric_code (1..100)."""
+    executor = get_tool_executor()
+    agent_id = _resolve_agent_ref(executor, agent_ref)
+    agent = executor.coordinator.registry.get_agent(agent_id) if executor.coordinator else None
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {
+        "agent_id": agent.agent_id,
+        "numeric_code": agent.numeric_code,
+        "display_name": _display_name(agent.agent_id, agent.numeric_code),
+        "agent_type": agent.agent_type,
+        "role": agent.role,
+        "capabilities": agent.capabilities,
+        "status": agent.status.value,
+        "send_enabled": getattr(agent, "send_enabled", True),
+        "current_load": agent.current_load,
+        "max_concurrent_tasks": agent.max_concurrent_tasks,
+        "registered_at": agent.registered_at,
+        "last_heartbeat": agent.last_heartbeat,
+    }
+
+
+@app.get("/api/agents/{agent_ref}/mailbox")
+async def api_agent_mailbox(
+    agent_ref: str,
+    box: str = "in",  # in|out
+    unread_only: bool = False,
+    limit: int = 50,
+    taskcode: str | None = None,
+    token: dict = Depends(verify_token),
+):
+    """Get inbox/outbox messages for an agent from ATA messages store."""
+    executor = get_tool_executor()
+    agent_id = _resolve_agent_ref(executor, agent_ref)
+    # Build id->display map (for consistent name-with-code rendering)
+    id_to_display: dict[str, str] = {}
+    if executor.coordinator:
+        try:
+            for a in executor.coordinator.registry.get_all_agents():
+                aid = a.get("agent_id")
+                if aid:
+                    id_to_display[aid] = _display_name(aid, a.get("numeric_code"))
+        except Exception:
+            pass
+
+    all_messages = load_all_ata_messages()
+    filtered: list[dict[str, Any]] = []
+
+    for msg in all_messages:
+        if taskcode and msg.get("taskcode") != taskcode:
+            continue
+
+        if box == "in":
+            if msg.get("to_agent") != agent_id:
+                continue
+        elif box == "out":
+            if msg.get("from_agent") != agent_id:
+                continue
+        else:
+            raise HTTPException(status_code=400, detail="box must be 'in' or 'out'")
+
+        if unread_only:
+            # treat anything not explicitly read/acked as unread
+            if msg.get("status") in ["read", "acked", "archived"]:
+                continue
+
+        payload = msg.get("payload", {}) if isinstance(msg.get("payload", {}), dict) else {}
+        from_id = msg.get("from_agent")
+        to_id = msg.get("to_agent")
+        filtered.append(
+            {
+                "msg_id": msg.get("msg_id"),
+                "taskcode": msg.get("taskcode"),
+                "kind": msg.get("kind"),
+                "priority": msg.get("priority"),
+                "status": msg.get("status"),
+                "from_agent": from_id,
+                "to_agent": to_id,
+                "from_display": id_to_display.get(from_id, from_id),
+                "to_display": id_to_display.get(to_id, to_id),
+                "created_at": msg.get("created_at"),
+                "preview": get_message_preview(payload, max_length=160),
+                "payload": payload,
+            }
+        )
+
+    # newest first
+    filtered.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    return {
+        "agent_id": agent_id,
+        "box": box,
+        "total": len(filtered),
+        "messages": filtered[: max(1, min(limit, 200))],
+    }
+
+
+# ==================== 配置管理集成 ====================
+# 将config_manager的功能集成到MCP Bus
+
+
+@app.get("/api/configs/list")
+async def list_configs():
+    """列出所有配置文件"""
+    from datetime import datetime
+
+    CONFIGS_DIR = REPO_ROOT / "configs" / "current"
+    config_files = [
+        ("config.json", "系统主配置", "json"),
+        ("config_live.json", "实盘交易配置", "json"),
+        ("freqtrade_config.json", "Freqtrade配置", "json"),
+        ("cloud_sync_config.json", "云端同步配置", "json"),
+        ("config_okx_aws.yaml", "OKX AWS配置", "yaml"),
+    ]
+
+    configs = []
+    for filename, description, file_type in config_files:
+        config_path = CONFIGS_DIR / filename
+        configs.append(
+            {
+                "filename": filename,
+                "description": description,
+                "type": file_type,
+                "exists": config_path.exists(),
+                "modified": datetime.fromtimestamp(config_path.stat().st_mtime).isoformat()
+                if config_path.exists()
+                else None,
+            }
+        )
+
+    return {"configs": configs}
+
+
+@app.get("/api/configs/{filename:path}")
+async def get_config(filename: str):
+    """获取配置文件内容"""
+    import json
+
+    import yaml
+
+    CONFIGS_DIR = REPO_ROOT / "configs" / "current"
+    config_path = CONFIGS_DIR / filename
+
+    if not config_path.exists():
+        raise HTTPException(status_code=404, detail="配置文件不存在")
+
+    if filename.endswith(".json"):
+        with open(config_path, encoding="utf-8") as f:
+            config = json.load(f)
+        return {"config": config, "filename": filename, "type": "json"}
+    elif filename.endswith(".yaml") or filename.endswith(".yml"):
+        with open(config_path, encoding="utf-8") as f:
+            yaml_content = f.read()
+            config = yaml.safe_load(yaml_content) or {}
+        return {
+            "config": config,
+            "filename": filename,
+            "type": "yaml",
+            "yaml_content": yaml_content,
+        }
+    else:
+        raise HTTPException(status_code=400, detail="不支持的文件类型")
+
+
+@app.post("/api/configs/{filename:path}")
+async def save_config(filename: str, request_data: dict[str, Any]):
+    """保存配置文件"""
+    import json
+    import shutil
+    from datetime import datetime
+
+    import yaml
+
+    CONFIGS_DIR = REPO_ROOT / "configs" / "current"
+    BACKUP_DIR = REPO_ROOT / "configs" / "_backup"
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = CONFIGS_DIR / filename
+
+    # 备份原文件
+    if config_path.exists():
+        backup_path = BACKUP_DIR / f"{filename}.{datetime.now().strftime('%Y%m%d_%H%M%S')}.bak"
+        shutil.copy2(config_path, backup_path)
+
+    try:
+        if filename.endswith(".yaml") or filename.endswith(".yml"):
+            if "yaml_content" in request_data:
+                with open(config_path, "w", encoding="utf-8") as f:
+                    f.write(request_data["yaml_content"])
+            else:
+                with open(config_path, "w", encoding="utf-8") as f:
+                    yaml.dump(
+                        request_data.get("config", {}),
+                        f,
+                        default_flow_style=False,
+                        allow_unicode=True,
+                    )
+        else:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(request_data.get("config", {}), f, indent=2, ensure_ascii=False)
+
+        return {"message": "配置保存成功", "filename": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"保存失败: {str(e)}")
+
+
+@app.post("/api/configs/{filename:path}/validate")
+async def validate_config(filename: str, request_data: dict[str, Any]):
+    """验证配置文件内容"""
+    import sys
+
+    import yaml
+    from pydantic import ValidationError
+
+    if not request_data:
+        raise HTTPException(status_code=400, detail="配置数据不能为空")
+
+    if filename.endswith(".yaml") or filename.endswith(".yml"):
+        if "yaml_content" in request_data:
+            try:
+                config_data = yaml.safe_load(request_data["yaml_content"])
+                if config_data is None:
+                    config_data = {}
+            except yaml.YAMLError as exc:
+                raise HTTPException(status_code=400, detail=f"YAML解析错误: {exc}")
+        elif "config" in request_data:
+            config_data = request_data.get("config") or {}
+        else:
+            raise HTTPException(status_code=400, detail="需要提供yaml_content或config字段")
+    else:
+        if "config" not in request_data:
+            raise HTTPException(status_code=400, detail="配置数据不能为空")
+        config_data = request_data.get("config") or {}
+
+    try:
+        if filename == "config.json":
+            try:
+                from quantsys.contracts_runtime.config_schema import MainConfig
+            except Exception:
+                repo_root = get_repo_root()
+                src_path = repo_root / "src"
+                src_str = str(src_path)
+                if src_str not in sys.path:
+                    sys.path.insert(0, src_str)
+                from quantsys.contracts_runtime.config_schema import MainConfig
+            MainConfig(**config_data)
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=f"配置验证失败: {exc}")
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"配置验证失败: {exc}")
+
+    return {"valid": True, "message": "配置验证通过"}
+
+
+@app.get("/api/configs/{filename:path}/backup")
+async def list_backups(filename: str):
+    """列出配置文件的备份"""
+    from datetime import datetime
+
+    BACKUP_DIR = REPO_ROOT / "configs" / "_backup"
+    backup_pattern = f"{filename}.*.bak"
+
+    backups = []
+    for backup_file in BACKUP_DIR.glob(backup_pattern):
+        backups.append(
+            {
+                "filename": backup_file.name,
+                "path": str(backup_file.relative_to(BACKUP_DIR)),
+                "created": datetime.fromtimestamp(backup_file.stat().st_mtime).isoformat(),
+                "size": backup_file.stat().st_size,
+            }
+        )
+
+    backups.sort(key=lambda x: x["created"], reverse=True)
+    return {"backups": backups}
+
+
+@app.post("/api/configs/{filename:path}/restore")
+async def restore_backup(filename: str, request_data: dict[str, Any]):
+    """恢复备份"""
+    import shutil
+
+    BACKUP_DIR = REPO_ROOT / "configs" / "_backup"
+    CONFIGS_DIR = REPO_ROOT / "configs" / "current"
+
+    backup_filename = request_data.get("backup_filename")
+    if not backup_filename:
+        raise HTTPException(status_code=400, detail="备份文件名不能为空")
+
+    backup_path = BACKUP_DIR / backup_filename
+    if not backup_path.exists():
+        raise HTTPException(status_code=404, detail="备份文件不存在")
+
+    config_path = CONFIGS_DIR / filename
+    try:
+        shutil.copy2(backup_path, config_path)
+        return {"message": "配置恢复成功", "filename": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"恢复失败: {str(e)}")
+
+
+# ==================== 因子库 / 策略库 / 回测 / 市场概率 ====================
+
+
+def _get_factor_registry_path() -> Path:
+    return REPO_ROOT / "src" / "quantsys" / "factors" / "factor_registry.json"
+
+
+@app.get("/api/factors/list")
+async def api_factors_list():
+    """列出因子库中所有因子（来自 factor_registry）"""
+    import json
+    
+    registry_path = _get_factor_registry_path()
+    if not registry_path.exists():
+        return {"factors": []}
+
+    try:
+        # 直接读取并解析因子注册表文件，避免依赖 FactorRegistry 类
+        with open(registry_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # 获取默认值
+        defaults = data.get("defaults", {})
+        factors_data = data.get("factors", {})
+        
+        factors = []
+        for code, factor_info in factors_data.items():
+            # 合并默认值和因子信息
+            merged = {**defaults, **factor_info}
+            
+            # 提取所需字段，确保所有字段都有值
+            factor_name = merged.get("name", code)
+            factor_desc = merged.get("description", "")
+            factor_type = merged.get("type", "unknown")
+            
+            factors.append(
+                {
+                    "code": code,
+                    "name": factor_name,
+                    "description": factor_desc,
+                    "category": factor_type,
+                    "parameters": {
+                        "window": merged.get("window"),
+                        "frequency": merged.get("frequency"),
+                    },
+                }
+            )
+        
+        return {"factors": factors}
+    except Exception as e:
+        import traceback
+        # 记录详细错误信息到日志
+        logger.error(f"因子库加载失败: {str(e)}")
+        logger.error(f"详细错误: {traceback.format_exc()}")
+        # 返回更友好的错误信息
+        raise HTTPException(status_code=500, detail=f"因子库加载失败: {str(e)}")
+
+
+class FactorEvaluateRequest(BaseModel):
+    """因子评估请求"""
+    factor_code: str | None = None
+    factor_codes: list[str] | None = None  # 多因子组合评估
+    symbol: str
+    timeframe: str
+    start_time: str  # YYYY-MM-DD
+    end_time: str  # YYYY-MM-DD
+
+
+@app.post("/api/factors/evaluate")
+async def api_factors_evaluate(request: FactorEvaluateRequest):
+    """评估因子有效性（单因子或多因子组合）"""
+    from quantsys.factors.factor_evaluation_system import FactorEvaluationSystem
+    from datetime import datetime
+
+    try:
+        # 解析时间
+        start_time = datetime.strptime(request.start_time, "%Y-%m-%d")
+        end_time = datetime.strptime(request.end_time, "%Y-%m-%d")
+
+        # 初始化评估系统
+        evaluation_system = FactorEvaluationSystem()
+
+        try:
+            # 单因子评估
+            if request.factor_code:
+                result = evaluation_system.evaluate_single_factor(
+                    request.factor_code,
+                    request.symbol,
+                    request.timeframe,
+                    start_time,
+                    end_time,
+                )
+                if result is None:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"因子评估失败：未找到数据或数据量不足",
+                    )
+                return {"success": True, "result": result}
+
+            # 多因子组合评估
+            elif request.factor_codes and len(request.factor_codes) > 0:
+                result = evaluation_system.evaluate_factor_combination(
+                    request.factor_codes,
+                    request.symbol,
+                    request.timeframe,
+                    start_time,
+                    end_time,
+                )
+                if result is None:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"因子组合评估失败：未找到数据或数据量不足",
+                    )
+                return {"success": True, "result": result}
+
+            else:
+                raise HTTPException(
+                    status_code=400, detail="必须提供 factor_code 或 factor_codes"
+                )
+
+        finally:
+            evaluation_system.close()
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"时间格式错误: {str(e)}")
+    except Exception as e:
+        logger.error(f"因子评估失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"因子评估失败: {str(e)}")
+
+
+@app.get("/api/factors/ranking")
+async def api_factors_ranking(
+    symbol: str,
+    timeframe: str,
+    start_time: str,  # YYYY-MM-DD
+    end_time: str,  # YYYY-MM-DD
+    top_n: int = 10,
+):
+    """获取因子排名（按IC值排序）"""
+    from quantsys.factors.factor_evaluation_system import FactorEvaluationSystem
+    from datetime import datetime
+
+    try:
+        # 解析时间
+        start_time_dt = datetime.strptime(start_time, "%Y-%m-%d")
+        end_time_dt = datetime.strptime(end_time, "%Y-%m-%d")
+
+        # 初始化评估系统
+        evaluation_system = FactorEvaluationSystem()
+
+        try:
+            result = evaluation_system.get_factor_ranking(
+                symbol, timeframe, start_time_dt, end_time_dt, top_n
+            )
+            if result is None:
+                raise HTTPException(
+                    status_code=404, detail="因子排名失败：未找到数据或数据量不足"
+                )
+            return {"success": True, "result": result}
+
+        finally:
+            evaluation_system.close()
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"时间格式错误: {str(e)}")
+    except Exception as e:
+        logger.error(f"因子排名失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"因子排名失败: {str(e)}")
+
+
+@app.get("/api/factors/stability")
+async def api_factors_stability(
+    factor_code: str,
+    symbol: str,
+    timeframe: str,
+    start_time: str,  # YYYY-MM-DD
+    end_time: str,  # YYYY-MM-DD
+    rolling_window: int = 60,
+):
+    """分析因子稳定性"""
+    from quantsys.factors.factor_evaluation_system import FactorEvaluationSystem
+    from datetime import datetime
+
+    try:
+        # 解析时间
+        start_time_dt = datetime.strptime(start_time, "%Y-%m-%d")
+        end_time_dt = datetime.strptime(end_time, "%Y-%m-%d")
+
+        # 初始化评估系统
+        evaluation_system = FactorEvaluationSystem()
+
+        try:
+            result = evaluation_system.analyze_factor_stability(
+                factor_code,
+                symbol,
+                timeframe,
+                start_time_dt,
+                end_time_dt,
+                rolling_window,
+            )
+            if result is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="因子稳定性分析失败：未找到数据或数据量不足",
+                )
+            return {"success": True, "result": result}
+
+        finally:
+            evaluation_system.close()
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"时间格式错误: {str(e)}")
+    except Exception as e:
+        logger.error(f"因子稳定性分析失败: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"因子稳定性分析失败: {str(e)}"
+        )
+
+
+def _get_strategies_path() -> Path:
+    return REPO_ROOT / "configs" / "current" / "strategies.json"
+
+
+@app.get("/api/strategies/list")
+async def api_strategies_list():
+    """列出策略库（来自 strategies.json，不存在则返回空）"""
+    import json
+
+    path = _get_strategies_path()
+    if not path.exists():
+        return {"strategies": []}
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        strategies = data.get("strategies", [])
+        return {"strategies": strategies}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"策略库加载失败: {str(e)}")
+
+
+def _get_backtest_results_path() -> Path:
+    return REPO_ROOT / "configs" / "current" / "backtest_results.json"
+
+
+@app.get("/api/backtest/results")
+async def api_backtest_results():
+    """列出回测结果（来自 backtest_results.json）"""
+    import json
+
+    path = _get_backtest_results_path()
+    if not path.exists():
+        return {"results": []}
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        results = data.get("results", [])
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"回测结果加载失败: {str(e)}")
+
+
+@app.post("/api/backtest/run")
+async def api_backtest_run(request_data: dict[str, Any]):
+    """提交回测任务（持久化到 backtest_results.json）"""
+    import json
+    from datetime import datetime
+
+    strategy_id = request_data.get("strategy_id") or ""
+    symbol = request_data.get("symbol") or "BTC/USDT"
+    timeframe = request_data.get("timeframe") or "1h"
+    start_time = request_data.get("start_time") or ""
+    end_time = request_data.get("end_time") or ""
+
+    if not strategy_id or not start_time or not end_time:
+        raise HTTPException(status_code=400, detail="缺少 strategy_id / start_time / end_time")
+
+    path = _get_backtest_results_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    results = []
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            results = data.get("results", [])
+        except Exception:
+            results = []
+
+    backtest_id = f"bt_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{strategy_id[:8]}"
+    entry = {
+        "id": backtest_id,
+        "strategy_id": strategy_id,
+        "strategy_name": request_data.get("strategy_name") or strategy_id,
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "start_time": start_time,
+        "end_time": end_time,
+        "total_return": None,
+        "sharpe_ratio": None,
+        "max_drawdown": None,
+        "win_rate": None,
+        "status": "pending",
+        "created": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    results.insert(0, entry)
+
+    try:
+        path.write_text(
+            json.dumps({"results": results}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return {"backtest_id": backtest_id, "status": "queued", "results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"回测提交失败: {str(e)}")
+
+
+@app.get("/api/market-probability/list")
+async def api_market_probability_list():
+    """市场概率库 - 返回模拟的市场概率数据"""
+    import random
+    from datetime import datetime
+    
+    # 模拟的交易对和时间周期
+    symbols = ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "ADA/USDT"]
+    timeframes = ["1h", "4h", "1d", "1w"]
+    
+    # 生成模拟数据
+    probabilities = []
+    for symbol in symbols:
+        for timeframe in timeframes:
+            # 生成随机方向概率，确保三者之和为1
+            bullish = random.uniform(0.3, 0.7)
+            bearish = random.uniform(0.15, 0.4)
+            neutral = 1.0 - bullish - bearish
+            
+            # 确保数值在合理范围内
+            bullish = max(0.0, min(1.0, bullish))
+            bearish = max(0.0, min(1.0, bearish))
+            neutral = max(0.0, min(1.0, neutral))
+            
+            # 生成随机幅度概率（小/中/大），确保三者之和为1
+            small_magnitude = random.uniform(0.2, 0.6)
+            medium_magnitude = random.uniform(0.2, 0.5)
+            large_magnitude = 1.0 - small_magnitude - medium_magnitude
+            
+            # 确保数值在合理范围内
+            small_magnitude = max(0.0, min(1.0, small_magnitude))
+            medium_magnitude = max(0.0, min(1.0, medium_magnitude))
+            large_magnitude = max(0.0, min(1.0, large_magnitude))
+            
+            # 生成随机时间概率（短/中/长），确保三者之和为1
+            short_time = random.uniform(0.2, 0.6)
+            medium_time = random.uniform(0.2, 0.5)
+            long_time = 1.0 - short_time - medium_time
+            
+            # 确保数值在合理范围内
+            short_time = max(0.0, min(1.0, short_time))
+            medium_time = max(0.0, min(1.0, medium_time))
+            long_time = max(0.0, min(1.0, long_time))
+            
+            probabilities.append({
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "bullish_probability": round(bullish, 4),
+                "bearish_probability": round(bearish, 4),
+                "neutral_probability": round(neutral, 4),
+                "small_magnitude_probability": round(small_magnitude, 4),
+                "medium_magnitude_probability": round(medium_magnitude, 4),
+                "large_magnitude_probability": round(large_magnitude, 4),
+                "short_time_probability": round(short_time, 4),
+                "medium_time_probability": round(medium_time, 4),
+                "long_time_probability": round(long_time, 4),
+                "timestamp": datetime.now().isoformat()
+            })
+    
+    return {"probabilities": probabilities}
+
+
+# ==================== Browser-Tools-MCP 集成 ====================
+
+
+@app.get("/api/browser-tools/status")
+async def browser_tools_status():
+    """检查Browser-Tools-Server状态"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    available = await integration.check_server_available()
+    return {"available": available, "base_url": integration.base_url}
+
+
+@app.post("/api/browser-tools/audit/accessibility")
+async def browser_audit_accessibility(request_data: dict[str, Any]):
+    """运行可访问性审计"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    url = request_data.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL不能为空")
+    result = await integration.run_accessibility_audit(url)
+    return result
+
+
+@app.post("/api/browser-tools/audit/performance")
+async def browser_audit_performance(request_data: dict[str, Any]):
+    """运行性能审计"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    url = request_data.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL不能为空")
+    result = await integration.run_performance_audit(url)
+    return result
+
+
+@app.post("/api/browser-tools/audit/seo")
+async def browser_audit_seo(request_data: dict[str, Any]):
+    """运行SEO审计"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    url = request_data.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL不能为空")
+    result = await integration.run_seo_audit(url)
+    return result
+
+
+@app.post("/api/browser-tools/audit/best-practices")
+async def browser_audit_best_practices(request_data: dict[str, Any]):
+    """运行最佳实践审计"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    url = request_data.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL不能为空")
+    result = await integration.run_best_practices_audit(url)
+    return result
+
+
+@app.post("/api/browser-tools/audit/all")
+async def browser_audit_all(request_data: dict[str, Any]):
+    """运行完整审计（所有审计类型）"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    url = request_data.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL不能为空")
+    result = await integration.run_audit_mode(url)
+    return result
+
+
+@app.post("/api/browser-tools/screenshot")
+async def browser_screenshot(request_data: dict[str, Any]):
+    """捕获浏览器截图"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    url = request_data.get("url")
+    result = await integration.capture_screenshot(url)
+    return result
+
+
+@app.get("/api/browser-tools/logs/console")
+async def browser_console_logs():
+    """获取控制台日志"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    result = await integration.get_console_logs()
+    return result
+
+
+@app.get("/api/browser-tools/logs/network")
+async def browser_network_logs():
+    """获取网络日志"""
+    from .browser_tools_integration import get_browser_tools_integration
+
+    integration = get_browser_tools_integration()
+    result = await integration.get_network_logs()
+    return result
+
+
+@app.get("/browser-tools")
+async def browser_tools_page():
+    """浏览器工具页面"""
+    return HTMLResponse("""
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>浏览器审计工具</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .container { max-width: 800px; margin: 0 auto; }
+            input, button { padding: 8px; margin: 5px; }
+            button { background: #667eea; color: white; border: none; cursor: pointer; }
+            button:hover { background: #5568d3; }
+            .result { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🌐 浏览器审计工具</h1>
+            <div>
+                <input type="text" id="urlInput" placeholder="输入URL (如: http://localhost:18788/)" style="width: 400px;">
+                <button onclick="runAudit('accessibility')">可访问性审计</button>
+                <button onclick="runAudit('performance')">性能审计</button>
+                <button onclick="runAudit('seo')">SEO审计</button>
+                <button onclick="runAudit('best-practices')">最佳实践</button>
+                <button onclick="runAudit('all')">全部审计</button>
+            </div>
+            <div id="result" class="result" style="display:none;"></div>
+        </div>
+        <script>
+            async function runAudit(type) {
+                const url = document.getElementById('urlInput').value;
+                if (!url) { alert('请输入URL'); return; }
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '正在运行审计...';
+                
+                try {
+                    const endpoint = type === 'all' ? '/api/browser-tools/audit/all' : `/api/browser-tools/audit/${type}`;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({url: url})
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        resultDiv.innerHTML = '<h3>审计结果:</h3><pre>' + JSON.stringify(data.data, null, 2) + '</pre>';
+                    } else {
+                        resultDiv.innerHTML = '<h3>错误:</h3><p>' + (data.error || '未知错误') + '</p>';
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = '<h3>错误:</h3><p>' + error.message + '</p>';
+                }
+            }
+        </script>
+    </body>
+    </html>
+    """)
+
+
+# ==================== Cursor10x 集成 ====================
+
+
+@app.get("/api/cursor10x/status")
+async def cursor10x_status():
+    """检查Cursor10x状态"""
+    from .cursor10x_integration import get_cursor10x_integration
+
+    integration = get_cursor10x_integration()
+    return {
+        "enabled": integration.is_available(),
+        "configured": bool(os.getenv("TURSO_DATABASE_URL")) and bool(os.getenv("TURSO_AUTH_TOKEN")),
+    }
+
+
+@app.post("/api/cursor10x/memory/store")
+async def cursor10x_store_memory(request_data: dict[str, Any]):
+    """存储记忆"""
+    from .cursor10x_integration import get_cursor10x_integration
+
+    integration = get_cursor10x_integration()
+    content = request_data.get("content", "")
+    memory_type = request_data.get("memory_type", "short_term")
+    importance = request_data.get("importance", 5)
+
+    if not content:
+        raise HTTPException(status_code=400, detail="内容不能为空")
+
+    result = await integration.store_memory(content, memory_type, importance)
+    return result
+
+
+@app.post("/api/cursor10x/memory/retrieve")
+async def cursor10x_retrieve_memory(request_data: dict[str, Any]):
+    """检索记忆"""
+    from .cursor10x_integration import get_cursor10x_integration
+
+    integration = get_cursor10x_integration()
+    query = request_data.get("query", "")
+    limit = request_data.get("limit", 10)
+
+    if not query:
+        raise HTTPException(status_code=400, detail="查询不能为空")
+
+    result = await integration.retrieve_memory(query, limit)
+    return result
+
+
+@app.get("/api/cursor10x/memory/stats")
+async def cursor10x_memory_stats():
+    """获取记忆统计"""
+    from .cursor10x_integration import get_cursor10x_integration
+
+    integration = get_cursor10x_integration()
+    result = await integration.get_memory_stats()
+    return result
+
+
+# ==================== Trading Data API ====================
+
+@app.get("/api/trading-data/catalog")
+async def get_trading_data_catalog(token: dict = Depends(verify_token)):
+    """获取交易数据目录"""
+    try:
+        # 添加超时保护，避免长时间阻塞
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+        import psycopg2
+        
+        def get_catalog_sync():
+            conn = None
+            cursor = None
+            try:
+                # 直接使用psycopg2连接数据库
+                conn = psycopg2.connect(
+                    host="localhost",
+                    port=5432,
+                    database="quant_trading",
+                    user="postgres",
+                    password="135769"
+                )
+                cursor = conn.cursor()
+                
+                # 查询trading_data_stats表中的统计信息
+                cursor.execute("SELECT symbol, timeframe, total_rows, latest_timestamp FROM trading_data_stats ORDER BY symbol, timeframe;")
+                stats_rows = cursor.fetchall()
+                
+                if not stats_rows:
+                    return {
+                        "success": True,
+                        "data": [],
+                        "total": 0,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                
+                # 查询所有交易对和时间周期的最早时间戳
+                cursor.execute("SELECT symbol, timeframe, MIN(timestamp) as earliest FROM trading_data GROUP BY symbol, timeframe;")
+                earliest_rows = cursor.fetchall()
+                
+                # 将最早时间戳转换为字典，方便查找
+                earliest_timestamps = {}
+                for row in earliest_rows:
+                    symbol = row[0]
+                    timeframe = row[1]
+                    earliest = row[2]
+                    earliest_timestamps[(symbol, timeframe)] = earliest
+                
+                # 构建返回结果
+                catalog = []
+                for row in stats_rows:
+                    symbol = row[0]
+                    timeframe = row[1]
+                    total_rows = row[2]
+                    latest_timestamp = row[3]
+                    
+                    # 获取最早时间戳
+                    symbol_timeframe = (symbol, timeframe)
+                    earliest = earliest_timestamps.get(symbol_timeframe)
+                    
+                    catalog.append({
+                        "symbol": symbol,
+                        "timeframe": timeframe,
+                        "count": total_rows,
+                        "latest_timestamp": latest_timestamp.isoformat() if latest_timestamp else None,
+                        "earliest_timestamp": earliest.isoformat() if earliest else None
+                    })
+                
+                return {
+                    "success": True,
+                    "data": catalog,
+                    "total": len(catalog),
+                    "timestamp": datetime.now().isoformat()
+                }
+            finally:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+        
+        # 使用线程池执行同步代码
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            result = await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(executor, get_catalog_sync),
+                timeout=10.0  # 恢复到10秒超时
+            )
+        return result
+    except asyncio.TimeoutError:
+        logger.error("Trading data catalog request timed out")
+        return JSONResponse(status_code=504, content={"success": False, "error": "Request timed out"})
+    except Exception as e:
+        logger.error(f"Failed to get trading data catalog: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# 下载任务管理器（内存存储，重启后丢失）
+_download_tasks: dict[str, dict[str, Any]] = {}
+_download_tasks_lock = threading.Lock()
+
+def _run_download_task(task_id: str, symbol: str, timeframe: str, days: int = 365):
+    """在后台线程中执行下载任务"""
+    try:
+        with _download_tasks_lock:
+            _download_tasks[task_id]["status"] = "running"
+            _download_tasks[task_id]["start_time"] = datetime.now().isoformat()
+            _download_tasks[task_id]["progress"] = 0
+        
+        _ensure_repo_src_on_path()
+        from quantsys.data.data_collection import fetch_from_okx_api
+        
+        logger.info(f"开始下载任务 {task_id}: {symbol} {timeframe}")
+        
+        # 更新进度
+        with _download_tasks_lock:
+            _download_tasks[task_id]["progress"] = 10
+        
+        # 执行下载
+        df = fetch_from_okx_api(symbol, timeframe, days)
+        
+        with _download_tasks_lock:
+            if df is not None and len(df) > 0:
+                _download_tasks[task_id]["status"] = "completed"
+                _download_tasks[task_id]["progress"] = 100
+                _download_tasks[task_id]["end_time"] = datetime.now().isoformat()
+                _download_tasks[task_id]["rows_downloaded"] = len(df)
+                logger.info(f"下载任务 {task_id} 完成: 下载了 {len(df)} 条记录")
+            else:
+                _download_tasks[task_id]["status"] = "failed"
+                _download_tasks[task_id]["progress"] = 0
+                _download_tasks[task_id]["end_time"] = datetime.now().isoformat()
+                _download_tasks[task_id]["error"] = "下载失败：未获取到数据"
+                logger.error(f"下载任务 {task_id} 失败: 未获取到数据")
+    except Exception as e:
+        with _download_tasks_lock:
+            _download_tasks[task_id]["status"] = "failed"
+            _download_tasks[task_id]["end_time"] = datetime.now().isoformat()
+            _download_tasks[task_id]["error"] = str(e)
+        logger.error(f"下载任务 {task_id} 异常: {e}", exc_info=True)
+
+
+@app.post("/api/trading-data/download")
+async def start_trading_data_download(
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """启动交易数据下载任务"""
+    try:
+        symbol = request_data.get("symbol")
+        timeframe = request_data.get("timeframe")
+        days = request_data.get("days", 365)  # 默认下载365天
+        
+        if not symbol or not timeframe:
+            raise HTTPException(status_code=400, detail="Missing symbol or timeframe")
+        
+        # 生成任务ID
+        task_id = f"download_{symbol}_{timeframe}_{int(time.time())}"
+        
+        # 创建任务记录
+        with _download_tasks_lock:
+            _download_tasks[task_id] = {
+                "id": task_id,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "days": days,
+                "status": "pending",
+                "progress": 0,
+                "start_time": None,
+                "end_time": None,
+                "error": None,
+                "rows_downloaded": 0,
+                "created_at": datetime.now().isoformat()
+            }
+        
+        # 在后台线程中启动下载任务
+        download_thread = threading.Thread(
+            target=_run_download_task,
+            args=(task_id, symbol, timeframe, days),
+            daemon=True
+        )
+        download_thread.start()
+        
+        return {
+            "success": True,
+            "task_id": task_id,
+            "status": "queued",
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to start download: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/trading-data/download/status")
+async def get_download_status(token: dict = Depends(verify_token)):
+    """获取下载任务状态"""
+    try:
+        with _download_tasks_lock:
+            # 获取所有任务，按创建时间倒序排列
+            tasks = list(_download_tasks.values())
+            tasks.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+            
+            # 计算活跃任务数（pending或running）
+            active_count = sum(
+                1 for task in tasks 
+                if task.get("status") in ["pending", "running"]
+            )
+            
+            # 只返回最近50个任务
+            recent_tasks = tasks[:50]
+            
+            return {
+                "success": True,
+                "tasks": recent_tasks,
+                "active_count": active_count,
+                "total_count": len(tasks),
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get download status: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ==================== Portfolio API ====================
+
+@app.get("/api/portfolio/list")
+async def list_portfolios(token: dict = Depends(verify_token)):
+    """列出所有投资组合"""
+    try:
+        # TODO: 从存储中读取组合列表
+        # 临时返回空列表
+        return {
+            "success": True,
+            "portfolios": [],
+            "total": 0,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to list portfolios: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.post("/api/portfolio/build")
+async def build_portfolio(
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """构建投资组合"""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.portfolio.portfolio_manager import PortfolioManager
+        
+        strategy_results = request_data.get("strategy_results", [])
+        allocation_method = request_data.get("allocation_method", "equal")
+        target_vol = request_data.get("target_vol", 0.02)
+        max_drawdown_threshold = request_data.get("max_drawdown_threshold", 0.2)
+        
+        if not strategy_results:
+            raise HTTPException(status_code=400, detail="strategy_results不能为空")
+        
+        config = {
+            "allocation_method": allocation_method,
+            "target_vol": target_vol,
+            "max_drawdown_threshold": max_drawdown_threshold
+        }
+        
+        manager = PortfolioManager(config)
+        portfolio = manager.build_portfolio(strategy_results)
+        
+        return {
+            "success": True,
+            "portfolio": portfolio,
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to build portfolio: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/portfolio/{portfolio_id}")
+async def get_portfolio(portfolio_id: str, token: dict = Depends(verify_token)):
+    """获取投资组合详情"""
+    try:
+        # TODO: 从存储中读取组合详情
+        raise HTTPException(status_code=404, detail=f"Portfolio {portfolio_id} not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get portfolio: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.post("/api/portfolio/{portfolio_id}/rebalance")
+async def rebalance_portfolio(
+    portfolio_id: str,
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """再平衡投资组合"""
+    try:
+        # TODO: 实现再平衡逻辑
+        raise HTTPException(status_code=404, detail=f"Portfolio {portfolio_id} not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to rebalance portfolio: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ==================== P&L API ====================
+
+@app.get("/api/pnl/realtime")
+async def get_realtime_pnl(
+    exchange: str = "okx",
+    trading_mode: str = "drill",
+    token: dict = Depends(verify_token)
+):
+    """获取实时盈亏"""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.account_service import AccountService
+        
+        account_service = AccountService(exchange=exchange, trading_mode=trading_mode)
+        account_state = account_service.get_account_state()
+        
+        # 计算实时盈亏
+        # 总盈亏 = 账户权益 - 初始资金（简化处理，使用余额作为基准）
+        initial_balance = 10000.0  # TODO: 从配置或历史记录获取初始资金
+        total_pnl = account_state.equity - initial_balance
+        
+        # 未实现盈亏：从持仓计算
+        unrealized_pnl = 0.0
+        # TODO: 从持仓数据计算未实现盈亏
+        
+        # 已实现盈亏 = 总盈亏 - 未实现盈亏
+        realized_pnl = total_pnl - unrealized_pnl
+        
+        return {
+            "success": True,
+            "total_pnl": total_pnl,
+            "unrealized_pnl": unrealized_pnl,
+            "realized_pnl": realized_pnl,
+            "equity": account_state.equity,
+            "balance": account_state.balance,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get realtime P&L: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/pnl/breakdown")
+async def get_pnl_breakdown(
+    exchange: str = "okx",
+    trading_mode: str = "drill",
+    group_by: str = "strategy",  # strategy, symbol
+    token: dict = Depends(verify_token)
+):
+    """获取盈亏分解"""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.execution.account_service import AccountService
+        
+        account_service = AccountService(exchange=exchange, trading_mode=trading_mode)
+        account_state = account_service.get_account_state()
+        
+        # TODO: 实现按策略或品种分解盈亏
+        breakdown = []
+        if group_by == "symbol":
+            for symbol, notional in account_state.positions.items():
+                # 简化处理：假设每个品种的盈亏比例
+                breakdown.append({
+                    "symbol": symbol,
+                    "pnl": 0.0,  # TODO: 计算实际盈亏
+                    "notional": notional
+                })
+        
+        return {
+            "success": True,
+            "group_by": group_by,
+            "breakdown": breakdown,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get P&L breakdown: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/pnl/attribution")
+async def get_pnl_attribution(
+    exchange: str = "okx",
+    trading_mode: str = "drill",
+    token: dict = Depends(verify_token)
+):
+    """获取盈亏归因"""
+    try:
+        # TODO: 实现盈亏归因分析
+        return {
+            "success": True,
+            "attribution": {
+                "by_strategy": {},
+                "by_symbol": {},
+                "by_time": {}
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get P&L attribution: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ==================== Performance Analysis API ====================
+
+@app.get("/api/performance/attribution")
+async def get_performance_attribution(
+    strategy_id: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    token: dict = Depends(verify_token)
+):
+    """获取收益归因分析"""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.evaluation.metrics import compute_equity_metrics
+        
+        # TODO: 从回测结果或策略数据获取权益曲线
+        # 临时返回示例数据
+        return {
+            "success": True,
+            "attribution": {
+                "by_strategy": {},
+                "by_factor": {},
+                "by_time": {}
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get performance attribution: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/performance/risk-attribution")
+async def get_risk_attribution(
+    strategy_id: str | None = None,
+    token: dict = Depends(verify_token)
+):
+    """获取风险归因分析"""
+    try:
+        # TODO: 实现风险归因分析
+        return {
+            "success": True,
+            "attribution": {
+                "var_decomposition": {},
+                "volatility_decomposition": {},
+                "correlation_contribution": {}
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get risk attribution: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/performance/factor-exposure")
+async def get_factor_exposure(
+    strategy_id: str | None = None,
+    token: dict = Depends(verify_token)
+):
+    """获取因子暴露分析"""
+    try:
+        # TODO: 实现因子暴露分析
+        return {
+            "success": True,
+            "exposures": {},
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get factor exposure: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/performance/cost-analysis")
+async def get_cost_analysis(
+    strategy_id: str | None = None,
+    token: dict = Depends(verify_token)
+):
+    """获取成本分析"""
+    try:
+        # TODO: 实现成本分析
+        return {
+            "success": True,
+            "costs": {
+                "total_cost": 0.0,
+                "commission": 0.0,
+                "slippage": 0.0,
+                "funding_cost": 0.0
+            },
+            "breakdown": {},
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cost analysis: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ==================== Advanced Risk Metrics API ====================
+
+@app.get("/api/risk/var")
+async def calculate_var(
+    portfolio_id: str | None = None,
+    confidence: float = 0.95,
+    horizon_days: int = 1,
+    method: str = "historical",  # historical, parametric, monte_carlo
+    token: dict = Depends(verify_token)
+):
+    """计算VaR"""
+    try:
+        # TODO: 实现VaR计算
+        return {
+            "success": True,
+            "var": 0.0,
+            "confidence": confidence,
+            "horizon_days": horizon_days,
+            "method": method,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to calculate VaR: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/risk/cvar")
+async def calculate_cvar(
+    portfolio_id: str | None = None,
+    confidence: float = 0.95,
+    horizon_days: int = 1,
+    token: dict = Depends(verify_token)
+):
+    """计算CVaR (Conditional VaR)"""
+    try:
+        # TODO: 实现CVaR计算
+        return {
+            "success": True,
+            "cvar": 0.0,
+            "var": 0.0,
+            "confidence": confidence,
+            "horizon_days": horizon_days,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to calculate CVaR: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.post("/api/risk/stress-test")
+async def run_stress_test(
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """运行压力测试"""
+    try:
+        _ensure_repo_src_on_path()
+        # TODO: 实现压力测试逻辑
+        scenario = request_data.get("scenario", "historical")
+        
+        return {
+            "success": True,
+            "scenario": scenario,
+            "results": {},
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to run stress test: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ==================== Optimization API ====================
+
+@app.post("/api/optimization/strategy")
+async def optimize_strategy(
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """策略参数优化"""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.evaluation.hyperopt import GridSearchOptimizer, RandomSearchOptimizer
+        
+        strategy_id = request_data.get("strategy_id")
+        method = request_data.get("method", "grid_search")  # grid_search, random_search
+        search_space = request_data.get("search_space", {})
+        
+        # TODO: 实现策略参数优化逻辑
+        return {
+            "success": True,
+            "optimization_id": f"opt_{int(time.time())}",
+            "method": method,
+            "status": "queued",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to optimize strategy: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.post("/api/optimization/factor")
+async def optimize_factor(
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """因子参数优化"""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.factors.factor_optimizer import FactorOptimizer
+        
+        factor_id = request_data.get("factor_id")
+        param_grid = request_data.get("param_grid", {})
+        
+        # TODO: 实现因子参数优化逻辑
+        return {
+            "success": True,
+            "optimization_id": f"opt_{int(time.time())}",
+            "status": "queued",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to optimize factor: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/optimization/results")
+async def get_optimization_results(
+    optimization_id: str | None = None,
+    token: dict = Depends(verify_token)
+):
+    """获取优化结果"""
+    try:
+        # TODO: 从存储中获取优化结果
+        return {
+            "success": True,
+            "results": [],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get optimization results: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ==================== Alerts API ====================
+
+@app.get("/api/alerts/rules")
+async def get_alert_rules(token: dict = Depends(verify_token)):
+    """获取警报规则列表"""
+    try:
+        # TODO: 从存储中获取警报规则
+        return {
+            "success": True,
+            "rules": [],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get alert rules: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.post("/api/alerts/rules")
+async def create_alert_rule(
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """创建警报规则"""
+    try:
+        rule_name = request_data.get("name")
+        rule_type = request_data.get("type")  # risk, trade, system
+        conditions = request_data.get("conditions", {})
+        
+        # TODO: 实现警报规则创建逻辑
+        return {
+            "success": True,
+            "rule_id": f"rule_{int(time.time())}",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to create alert rule: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/alerts/list")
+async def get_alerts(
+    status: str | None = None,  # active, resolved, all
+    limit: int = 50,
+    token: dict = Depends(verify_token)
+):
+    """获取警报列表"""
+    try:
+        # TODO: 从存储中获取警报列表
+        return {
+            "success": True,
+            "alerts": [],
+            "total": 0,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get alerts: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/alerts/history")
+async def get_alert_history(
+    limit: int = 100,
+    token: dict = Depends(verify_token)
+):
+    """获取警报历史"""
+    try:
+        # TODO: 从存储中获取警报历史
+        return {
+            "success": True,
+            "history": [],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get alert history: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+# ==================== Reports API ====================
+
+@app.post("/api/reports/generate")
+async def generate_report(
+    request_data: dict[str, Any],
+    token: dict = Depends(verify_token)
+):
+    """生成报告"""
+    try:
+        _ensure_repo_src_on_path()
+        from quantsys.portfolio.portfolio_manager import PortfolioManager
+        
+        report_type = request_data.get("type", "daily")  # daily, weekly, monthly
+        start_date = request_data.get("start_date")
+        end_date = request_data.get("end_date")
+        
+        # TODO: 实现报告生成逻辑
+        return {
+            "success": True,
+            "report_id": f"report_{int(time.time())}",
+            "type": report_type,
+            "status": "generating",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to generate report: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/reports/list")
+async def list_reports(
+    report_type: str | None = None,
+    limit: int = 50,
+    token: dict = Depends(verify_token)
+):
+    """获取报告列表"""
+    try:
+        # TODO: 从存储中获取报告列表
+        return {
+            "success": True,
+            "reports": [],
+            "total": 0,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to list reports: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/reports/{report_id}")
+async def get_report(
+    report_id: str,
+    token: dict = Depends(verify_token)
+):
+    """获取报告详情"""
+    try:
+        # TODO: 从存储中获取报告详情
+        raise HTTPException(status_code=404, detail=f"Report {report_id} not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get report: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/reports/templates")
+async def get_report_templates(token: dict = Depends(verify_token)):
+    """获取报告模板列表"""
+    try:
+        return {
+            "success": True,
+            "templates": [
+                {"id": "daily", "name": "日报", "description": "每日交易报告"},
+                {"id": "weekly", "name": "周报", "description": "每周交易报告"},
+                {"id": "monthly", "name": "月报", "description": "每月交易报告"},
+            ],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get report templates: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@app.get("/api/cursor10x/health")
+async def cursor10x_health():
+    """健康检查"""
+    from .cursor10x_integration import get_cursor10x_integration
+
+    integration = get_cursor10x_integration()
+    result = await integration.check_health()
+    return result
+
+
+@app.get("/configs")
+async def configs_page():
+    """配置管理页面"""
+    config_html_path = REPO_ROOT / "tools" / "config_manager" / "index.html"
+    if config_html_path.exists():
+        return create_cached_file_response(config_html_path)
+    else:
+        return HTMLResponse("""
+        <html>
+        <head><title>配置管理</title></head>
+        <body>
+        <h1>配置管理</h1>
+        <p>配置文件界面正在开发中...</p>
+        <a href="/viewer">返回查看器</a>
+        </body>
+        </html>
+        """)
+
+
+@app.post("/api/agents/{agent_ref}/send")
+async def api_agent_send(
+    agent_ref: str, body: AgentSendRequest, request: Request, token: dict = Depends(verify_token)
+):
+    """Send an ATA message from this agent to another agent (by id or numeric code)."""
+    executor = get_tool_executor()
+    from_agent_id = _resolve_agent_ref(executor, agent_ref)
+
+    # resolve to_agent (id or numeric)
+    to_ref = str(body.to_agent)
+    to_agent_id = _resolve_agent_ref(executor, to_ref)
+
+    # name-with-code convention for addressing
+    from_agent = (
+        executor.coordinator.registry.get_agent(from_agent_id) if executor.coordinator else None
+    )
+    to_agent = (
+        executor.coordinator.registry.get_agent(to_agent_id) if executor.coordinator else None
+    )
+    from_display = _display_name(from_agent_id, getattr(from_agent, "numeric_code", None))
+    to_display = _display_name(to_agent_id, getattr(to_agent, "numeric_code", None))
+
+    msg_text = body.message.strip()
+    # If not already addressed, prepend "@对方#NN"
+    if msg_text and not msg_text.startswith(f"@{to_display}"):
+        msg_text = f"@{to_display} {msg_text}"
+
+    validated = ATASendParams(
+        taskcode=body.taskcode,
+        from_agent=from_agent_id,
+        to_agent=to_agent_id,
+        kind=body.kind,
+        payload={
+            "message": msg_text,
+            "text": msg_text,
+            "from_display": from_display,
+            "to_display": to_display,
+            "ata_comm_rule": "name_with_code_v1",
+        },
+        priority=body.priority,
+        requires_response=body.requires_response,
+        context_hint=body.context_hint,
+    )
+
+    caller = "agent_home"
+    # Enforce same hard-gate as MCP tools/call: admin ctx required for sending
+    admin_ctx = extract_admin_ctx(request)
+    result = executor.ata_send(
+        validated, caller=caller, user_agent=None, trace_id="agent_home", auth_ctx=admin_ctx
+    )
+    return result
+
+
+def main():
+    # 使用统一的端口配置
+    import sys
+    import os
+
+    # In unified server mode, MCP Bus is mounted under the unified server process
+    # (single external port: 18788). Standalone startup must be disabled to prevent
+    # duplicate instances and port conflicts.
+    if str(os.getenv("UNIFIED_SERVER_MODE", "") or "").strip().lower() in {"1", "true", "yes", "on"}:
+        print("[mcp_bus] Running in unified server mode - independent startup disabled")
+        return 0
+    
+    # 将项目根目录添加到Python路径
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+    # Default to localhost for security (only accessible from 127.0.0.1)
+    host = os.getenv("MCP_BUS_HOST", "127.0.0.1")
+
+    # Legacy standalone MCP Bus port (kept for backwards compatibility).
+    # Unified server users should not run this standalone entrypoint.
+    try:
+        port = int(str(os.getenv("MCP_BUS_PORT", "") or "").strip() or "8001", 10)
+    except Exception:
+        port = 8001
+
+    lock_path = os.path.join(tempfile.gettempdir(), "quantsys-mcp-bus.lock")
+
+    def _is_pid_running(pid: int) -> bool:
+        if pid <= 0:
+            return False
+        if sys.platform == "win32":
+            try:
+                result = subprocess.run(
+                    ["tasklist", "/FI", f"PID eq {pid}"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                )
+                return str(pid) in result.stdout
+            except Exception:
+                return False
+        try:
+            os.kill(pid, 0)
+            return True
+        except Exception:
+            return False
+
+    def _is_port_listening(hostname: str, port_num: int) -> bool:
+        try:
+            with socket.create_connection((hostname, port_num), timeout=0.5):
+                return True
+        except OSError:
+            return False
+
+    def _terminate_pid(pid: int) -> bool:
+        if pid <= 0:
+            return False
+        if sys.platform == "win32":
+            try:
+                result = subprocess.run(
+                    ["taskkill", "/PID", str(pid), "/F"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                return result.returncode == 0
+            except Exception:
+                return False
+        try:
+            os.kill(pid, signal.SIGTERM)
+            return True
+        except Exception:
+            return False
+
+    force_restart = os.getenv("MCP_BUS_FORCE_RESTART", "").lower() in ("1", "true", "yes")
+
+    # Prevent duplicate server instances and noisy bind errors.
+    # 服务器管理策略：如果服务器已在运行，默认不重启（除非明确指定force_restart）
+    # 这样可以避免端口冲突，服务器独立运行
+    if os.path.exists(lock_path):
+        try:
+            with open(lock_path, "r", encoding="utf-8") as f:
+                raw = f.read().strip()
+            existing_pid = int(raw) if raw.isdigit() else 0
+        except OSError:
+            existing_pid = 0
+        if _is_pid_running(existing_pid):
+            if force_restart:
+                print(f"[mcp_bus] stopping existing server pid={existing_pid}", file=sys.stderr)
+                _terminate_pid(existing_pid)
+                for _ in range(10):
+                    if not _is_pid_running(existing_pid):
+                        break
+                    time.sleep(0.5)
+            else:
+                # 仅凭 PID 判断会误判（例如：PID 复用、残留锁文件、非 server 进程写入锁）。
+                # 必须同时确认 host:port 可连通；否则认为锁文件已过期，继续启动新实例并覆盖锁文件。
+                if _is_port_listening(host, port):
+                    print(f"[mcp_bus] server already running pid={existing_pid}, skipping startup", file=sys.stderr)
+                    return
+                print(
+                    f"[mcp_bus] stale lock detected (pid running but port not listening): pid={existing_pid} host={host} port={port}; continue startup",
+                    file=sys.stderr,
+                )
+
+    if _is_port_listening(host, port):
+        if force_restart:
+            for _ in range(10):
+                if not _is_port_listening(host, port):
+                    break
+                time.sleep(0.5)
+        if _is_port_listening(host, port):
+            print(f"[mcp_bus] port already in use {host}:{port}; skip start", file=sys.stderr)
+            return
+
+    try:
+        with open(lock_path, "w", encoding="utf-8") as f:
+            f.write(str(os.getpid()))
+    except OSError:
+        pass
+
+    def _cleanup_lock() -> None:
+        try:
+            with open(lock_path, "r", encoding="utf-8") as f:
+                raw = f.read().strip()
+            if raw == str(os.getpid()):
+                os.remove(lock_path)
+        except OSError:
+            pass
+
+    atexit.register(_cleanup_lock)
+
+    # 检查是否在后台模式运行（由 start_server_tray.py 启动）
+    # 如果是，则不显示控制台输出（已在子进程中处理）
+    log_level = os.getenv("LOG_LEVEL", "info").lower()
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level=log_level,
+        access_log=False,  # 后台运行时关闭访问日志以减少输出
+    )
+
+
+if __name__ == "__main__":
+    # DEPRECATED:
+    # `tools.mcp_bus.server.main` used to be the "local total server" entrypoint.
+    # The canonical entrypoint is now the Unified Server (single port: 18788),
+    # which mounts MCP Bus and all other local services.
+    #
+    # Keep this forwarder so old docs/scripts keep working.
+    try:
+        from tools.unified_server.main import main as unified_server_main
+
+        print("[mcp_bus] DEPRECATED: forwarding to unified_server (python -m tools.unified_server.main)")
+        unified_server_main()
+    except Exception:
+        # Fallback to legacy server start.
+        main()

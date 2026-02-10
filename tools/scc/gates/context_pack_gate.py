@@ -3,11 +3,7 @@ import json
 import pathlib
 from typing import Any
 
-from tools.scc.lib.utils import norm_rel
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+from tools.scc.lib.utils import load_json, norm_rel
 
 
 def _sha256_file(path: pathlib.Path) -> str:
@@ -90,7 +86,7 @@ def _validate_pack(repo: pathlib.Path, pack: dict) -> list[str]:
             continue
         if not ver:
             errors.append(f"ref missing version: {rel}")
-        abs_path = (repo / _norm_rel(rel)).resolve()
+        abs_path = (repo / norm_rel(rel)).resolve()
         if not abs_path.exists():
             errors.append(f"ref file missing: {rel}")
             continue
@@ -116,7 +112,7 @@ def run(repo: pathlib.Path, submit: dict, *, strict: bool = True) -> dict:
         return {"errors": [], "warnings": ["missing artifacts/<task_id>/context_pack_v1.json (non-strict)"]}
 
     try:
-        ref = _load_json(ref_path)
+        ref = load_json(ref_path)
     except Exception as e:
         return {"errors": [f"context_pack_v1.json parse failed: {e}"], "warnings": []}
 
@@ -129,7 +125,7 @@ def run(repo: pathlib.Path, submit: dict, *, strict: bool = True) -> dict:
         return {"errors": [f"missing rendered_context_pack.json for context_pack_id={cp_id}"], "warnings": []}
 
     try:
-        pack = _load_json(pack_path)
+        pack = load_json(pack_path)
     except Exception as e:
         return {"errors": [f"rendered_context_pack.json parse failed: {e}"], "warnings": []}
 

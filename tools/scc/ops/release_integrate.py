@@ -9,10 +9,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-_REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
+from tools.scc.lib.utils import load_json
 from tools.scc.validators.contract_validator import validate_release_record_v1
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
@@ -24,10 +21,6 @@ def _now_id() -> str:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
 
 
 def _write_json(path: pathlib.Path, obj: Any) -> None:

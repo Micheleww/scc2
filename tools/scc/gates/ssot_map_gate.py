@@ -3,11 +3,7 @@ import json
 import pathlib
 from datetime import datetime, timezone
 
-from tools.scc.lib.utils import norm_rel
-
-
-def _load_json(path: pathlib.Path):
-    return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
+from tools.scc.lib.utils import load_json, norm_rel as _norm_rel
 
 
 def _stable_dumps(obj) -> str:
@@ -33,7 +29,7 @@ def _facts_from_map(map_obj: dict) -> dict:
         if not isinstance(e, dict):
             continue
         p = str(e.get("path") or "")
-        if not _norm_rel(p).startswith("oc-scc-local/"):
+        if not norm_rel(p).startswith("oc-scc-local/"):
             continue
         i = e.get("id")
         if i:
@@ -83,7 +79,7 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
         errors.append("missing map/version.json (run: npm --prefix oc-scc-local run map:build)")
 
     try:
-        reg = _load_json(registry_path)
+        reg = load_json(registry_path)
     except Exception as e:
         return [f"docs/SSOT/registry.json invalid json: {e}"]
 
@@ -96,14 +92,14 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
 
     reg_modules = [str(x) for x in (facts_reg.get("modules") or []) if isinstance(x, str) and x.strip()]
     reg_entry = [str(x) for x in (facts_reg.get("entry_points") or []) if isinstance(x, str) and x.strip()]
-    reg_contracts = [_norm_rel(str(x)) for x in (facts_reg.get("contracts") or []) if isinstance(x, str) and x.strip()]
+    reg_contracts = [norm_rel(str(x)) for x in (facts_reg.get("contracts") or []) if isinstance(x, str) and x.strip()]
 
     for rel in reg_contracts:
         if not (repo / rel).exists():
             errors.append(f"docs/SSOT/registry.json references missing contract schema: {rel}")
 
     try:
-        map_obj = _load_json(map_path)
+        map_obj = load_json(map_path)
     except Exception as e:
         return errors + [f"map/map.json invalid json: {e}"]
 
@@ -122,7 +118,7 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
     }
 
     try:
-        ver = _load_json(ver_path) if ver_path.exists() else {}
+        ver = load_json(ver_path) if ver_path.exists() else {}
         map_hash = str(ver.get("hash") or "")
         map_path_rel = str(ver.get("map_path") or "map/map.json")
     except Exception:

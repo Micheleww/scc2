@@ -1,0 +1,46 @@
+{
+  "schema_version": "v0.1.0",
+  "generated_by": "tools/scc/ops/dispatch_from_task_tree.py",
+  "generated_utc": "2026-02-01T22:36:09.964573Z",
+  "max_outstanding": 1,
+  "timeout_s": 600,
+  "defaults": {
+    "model": "gpt-5.2"
+  },
+  "batches": [
+    {
+      "name": "contract_scope_harden_v0_1_0",
+      "parents": {
+        "parents": [
+          {
+            "id": "SCOPE_697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "title": "Contract scope harden: 697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "description": "TASK: CONTRACT_SCOPE_HARDEN\n\ntask_id: 697a1500-1e34-8321-ae0f-23f6314f1716_0002\ncontract_ref: docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json\n\nGoal:\n- Harden this contract so it becomes executable: fill scope_allow + acceptance + stop_condition + commands_hint.\n\nRules (mandatory):\n- You MUST ONLY edit the allowlisted contract file.\n- Do NOT search the repo. Do NOT open other files unless absolutely necessary.\n- Keep changes minimal and deterministic.\n- Acceptance must be executable commands; verifier judges only by acceptance outcomes.\n- Output MUST be a unified diff patch ONLY (no markdown/code fences, no narration).\n- Patch MUST start with `diff --git a/<path> b/<path>` so it can be applied via `git apply`.\n- Patch MUST touch exactly ONE file: the allowlisted contract file.\n- IMPORTANT: unified diff hunks MUST use a standard hunk header with ranges, e.g. `@@ -12,7 +12,9 @@` (NOT just `@@`).\n- IMPORTANT: inside hunks, every line MUST start with exactly one of: ` ` (context), `+` (add), `-` (remove). No raw JSON lines.\nExample (shape only):\ndiff --git a/docs/ssot/04_contracts/generated/<task_id>.json b/docs/ssot/04_contracts/generated/<task_id>.json\n--- a/docs/ssot/04_contracts/generated/<task_id>.json\n+++ b/docs/ssot/04_contracts/generated/<task_id>.json\n@@ -10,3 +10,4 @@\n   \"scope_allow\": [\"...\"],\n+  \"scope_allow\": [\"...\", \"docs/CANONICAL/PROGRESS.md\"],\n\nMinimum required fields to ensure:\n- goal / scope_allow / constraints / acceptance.checks[] / stop_condition / commands_hint / inputs_ref / outputs_expected\n\nTask label / hint: WebGPT user message 0002\n",
+            "role_id": "executor",
+            "skills_required": [
+              "PATCH_APPLY",
+              "SELFTEST"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json"
+            ],
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json",
+              "docs/START_HERE.md",
+              "docs/ssot/registry.json",
+              "docs/ssot/04_contracts/contract_min_spec.md",
+              "docs/DERIVED/secretary/GOAL_BRIEF__LATEST.md"
+            ],
+            "context_max_files": 1,
+            "context_max_total_chars": 12000,
+            "context_head_lines": 120,
+            "context_tail_lines": 80,
+            "require_changes": true
+          }
+        ]
+      }
+    }
+  ]
+}

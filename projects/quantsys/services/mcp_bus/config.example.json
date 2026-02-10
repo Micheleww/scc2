@@ -1,0 +1,15 @@
+{
+  "paths": {
+    "log_dir": "docs/LOG/mcp_bus",
+    "inbox_dir": "docs/REPORT/inbox",
+    "board_file": "docs/REPORT/QCC-PROGRAM-BOARD-v0.1.md"
+  },
+  "security": {
+    "allowed_domains": [
+      "*.timquant.tech"
+    ],
+    "protected_paths": [
+      "/api"
+    ]
+  }
+}

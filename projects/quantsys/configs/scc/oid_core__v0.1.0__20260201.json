@@ -1,0 +1,70 @@
+{
+  "version": "v0.1.0",
+  "name": "oid_core__v0.1.0__20260201",
+  "max_outstanding": 3,
+  "batches": [
+    {
+      "name": "oid_core_v0_1_0",
+      "parents": {
+        "parents": [
+          {
+            "id": "OID_API_V010",
+            "title": "OID Generator API + Postgres object_index registry",
+            "description": "TASK: OID_API_V010\n\nGoal:\n- Implement SCC OID Generator (single issuance) using ULID.\n- Implement Postgres authoritative registry (schema: object_index) with tables `objects` and `oid_events`.\n- Expose HTTP endpoints:\n  - POST /scc/oid/new\n  - POST /scc/oid/migrate\n\nConstraints:\n- Postgres is source of truth; no offline issuance.\n- Endpoints must fail-closed if Postgres is unreachable.\n- Keep changes minimal and within allowlist.\n\nAcceptance:\n- /scc/oid/new inserts into object_index.objects and writes oid_events(ISSUED).\n- /scc/oid/migrate updates object_index.objects and writes oid_events(MIGRATED).\n\nAllowed file changes:\n- Update: tools/unified_server/core/app_factory.py\n- Create: tools/scc/oid_registry.py\n- Update: tools/scc/oid_registry.py\n- Create: tools/scc/oid/**\n- Update: tools/scc/oid/**\n- Update: docs/ssot/01_conventions/OID_SPEC__v0.1.0.md\n",
+            "require_changes": true,
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "tools/unified_server/core/app_factory.py",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/unified_server/core/app_factory.py",
+              "tools/scc/oid_registry.py",
+              "tools/scc/oid/**",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md"
+            ]
+          },
+          {
+            "id": "OID_VALIDATOR_V010",
+            "title": "oid_validator CLI (fail-closed) + report output",
+            "description": "TASK: OID_VALIDATOR_V010\n\nGoal:\n- Implement `oid_validator` that enforces SCC_TOP + OID_SPEC v0.1.0.\n- Validator MUST query Postgres object_index as authority.\n- Validator MUST check mandatory inline frontmatter trees and match inline metadata against Postgres.\n\nOutputs:\n- Markdown report under `artifacts/scc_state/oid_validator/oid_validator__*.md`\n- Exit code 0/1.\n\nAllowed file changes:\n- Create: tools/scc/ops/oid_validator.py\n- Create: tools/scc/ops/oid_validator.ps1\n- Update: docs/ssot/01_conventions/OID_SPEC__v0.1.0.md\n- Update: docs/START_HERE.md\n",
+            "require_changes": true,
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "docs/ssot/02_architecture/SCC_TOP.md",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/scc/ops/oid_validator.py",
+              "tools/scc/ops/oid_validator.ps1",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md",
+              "docs/START_HERE.md"
+            ]
+          },
+          {
+            "id": "OID_GATE_WIREUP_V010",
+            "title": "Wire oid_validator into verdict/selftest gate (fail-closed)",
+            "description": "TASK: OID_GATE_WIREUP_V010\n\nGoal:\n- Integrate `oid_validator` into existing verdict/selftest pipeline (fail-closed).\n\nAcceptance:\n- There is a deterministic command in repo that runs oid_validator as part of gate.\n- Non-zero from validator blocks.\n\nAllowed file changes:\n- Update: tools/unified_gate.py\n- Update: tools/unified_gate_selftest.py\n- Update: tools/ci/**\n- Update: docs/ssot/05_runbooks/**\n- Update: docs/ssot/01_conventions/OID_SPEC__v0.1.0.md\n",
+            "require_changes": true,
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "tools/unified_gate.py",
+              "tools/unified_gate_selftest.py"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "tools/unified_gate.py",
+              "tools/unified_gate_selftest.py",
+              "tools/ci/**",
+              "docs/ssot/05_runbooks/**",
+              "docs/ssot/01_conventions/OID_SPEC__v0.1.0.md"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+

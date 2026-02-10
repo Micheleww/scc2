@@ -3,7 +3,6 @@
   "updated_at": "2026-02-05",
   "roles": [
     { "role": "architect", "policy": "roles/architect.json" },
-    { "role": "audit", "policy": "roles/audit.json" },
     { "role": "auditor", "policy": "roles/auditor.json" },
     { "role": "ci_fixup", "policy": "roles/ci_fixup.json" },
     { "role": "designer", "policy": "roles/designer.json" },

@@ -8,6 +8,8 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
+from tools.scc.lib.utils import load_json as _load_json, norm_rel as _norm_rel
+
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
@@ -15,14 +17,6 @@ def _now_ms() -> int:
 
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def _write_json(path: pathlib.Path, obj: Any) -> None:

@@ -1,0 +1,121 @@
+# SCC Unified Docker Compose - 唯一正式版本
+# 版本: 1.0.0
+# 最后更新: 2026-02-10
+#
+# 使用规范:
+#   1. 这是唯一的 docker-compose 配置文件
+#   2. 所有 SCC 服务必须通过此文件管理
+#   3. 镜像命名: scc:<version> (如 scc:1.0.0, scc:latest)
+#   4. 容器命名: scc-server (主服务)
+#
+# 常用命令:
+#   启动:     docker-compose up -d
+#   停止:     docker-compose down
+#   重启:     docker-compose restart
+#   查看日志: docker-compose logs -f
+#   更新:     docker-compose pull && docker-compose up -d
+
+services:
+  # ============================================
+  # SCC Server - 统一服务入口
+  # ============================================
+  scc-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: scc:latest
+    container_name: scc-server
+    restart: unless-stopped
+    ports:
+      - "${SCC_PORT:-18788}:18788"
+    environment:
+      # 核心配置
+      NODE_ENV: production
+      GATEWAY_PORT: 18788
+      LOG_LEVEL: info
+
+      # 插件上游配置
+      OPENCODE_ENABLED: "true"
+      OPENCODE_UPSTREAM: "http://host.docker.internal:18790"
+
+      CLAWDBOT_ENABLED: "true"
+      CLAWDBOT_UPSTREAM: "http://host.docker.internal:19001"
+
+      # 内部 SCC Upstream
+      SCC_UPSTREAM: "http://127.0.0.1:18789"
+
+      # 自动化配置
+      SCC_PARENT_INBOX: "/app/artifacts/scc_state/parent_inbox.jsonl"
+      SCC_AUTOMATION_MAX_OUTSTANDING: "3"
+
+      # 角色系统
+      ROLE_SYSTEM_STRICT: "false"
+
+      # Map 配置
+      AUTO_SPLIT_ON_PARENT_CREATE: "true"
+      MAP_QUERY_BACKEND: "json"
+
+      # 模型池配置
+      MODEL_POOL_FREE: "opencode/kimi-k2.5-free"
+      MODEL_POOL_VISION: "opencode/kimi-k2.5-free"
+      PREFER_FREE_MODELS: "true"
+
+      # 执行器配置
+      EXEC_CONCURRENCY_CODEX: "4"
+      EXEC_CONCURRENCY_OPENCODE: "6"
+      EXEC_TIMEOUT_CODEX_MS: "1200000"
+      EXEC_TIMEOUT_OPENCODE_MS: "1200000"
+
+      # 熔断器配置
+      CIRCUIT_BREAKERS_ENABLED: "true"
+      CIRCUIT_BREAKER_COOLDOWN_MS: "900000"
+
+      # CI 门控
+      CI_GATE_ENABLED: "true"
+      CI_GATES_STRICT: "false"
+
+      # Preflight 门控
+      PREFLIGHT_GATE_ENABLED: "true"
+
+    volumes:
+      # 持久化数据卷
+      - scc_artifacts:/app/artifacts
+      - scc_data:/app/data
+      - scc_logs:/app/logs
+      - scc_state:/app/state
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:18788/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - scc-network
+
+# ============================================
+# 数据卷
+# ============================================
+volumes:
+  scc_artifacts:
+    driver: local
+  scc_data:
+    driver: local
+  scc_logs:
+    driver: local
+  scc_state:
+    driver: local
+
+# ============================================
+# 网络
+# ============================================
+networks:
+  scc-network:
+    driver: bridge

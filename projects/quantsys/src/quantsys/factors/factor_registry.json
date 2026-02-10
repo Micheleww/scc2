@@ -1,0 +1,481 @@
+{
+  "defaults": {
+    "version": "1.0.0",
+    "description": "",
+    "dependencies": [],
+    "frequency": "configurable",
+    "window": "configurable",
+    "lag": 0,
+    "availability_lag": 0,
+    "output_columns": [],
+    "missing_strategy": "drop",
+    "standardized": false,
+    "availability": true,
+    "input_fields": [
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume"
+    ],
+    "output_range": "unbounded",
+    "missing_handling": "ffill",
+    "status": "active",
+    "data_source": "PG",
+    "used_by_strategy": "unknown"
+  },
+  "factors": {
+    "active_addresses": {
+      "type": "on_chain",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1,
+      "status": "active",
+      "data_source": "PG",
+      "used_by_strategy": "yes",
+      "versions": [
+        {
+          "version": "5432670f1de0bbeb",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T19:55:52.721524"
+        },
+        {
+          "version": "0a4bca6e79754a0e",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:25:23.917323"
+        },
+        {
+          "version": "b857dd4273fbcb21",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:27:31.251732"
+        },
+        {
+          "version": "a34cb7f4b92ff84e",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:28:51.765355"
+        },
+        {
+          "version": "d989e1ef507f8b0c",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:32:00.296655"
+        },
+        {
+          "version": "45f3a2753ecd1b6f",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:33:10.340395"
+        },
+        {
+          "version": "a53262318f89cba0",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:35:43.061165"
+        },
+        {
+          "version": "9700b3e467be9a24",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:37:02.425398"
+        },
+        {
+          "version": "d8ae36e586571638",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:39:02.728899"
+        },
+        {
+          "version": "fb3d2a9a8a25987b",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:41:15.884779"
+        },
+        {
+          "version": "4622f168951f5852",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:42:42.442940"
+        },
+        {
+          "version": "5eafbc96e62400f0",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:45:54.571150"
+        },
+        {
+          "version": "1ed40af8358072d4",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:47:08.662709"
+        },
+        {
+          "version": "5dd9cd819ba3a768",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:50:35.711348"
+        },
+        {
+          "version": "93d26822a583b492",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:52:54.174278"
+        },
+        {
+          "version": "e0a8e9d44243d77a",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T20:54:01.724546"
+        },
+        {
+          "version": "dbf28448e2bcf917",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T21:47:41.273301"
+        },
+        {
+          "version": "2c3fb2c0f55b0810",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-01-11T22:37:46.526824"
+        },
+        {
+          "version": "d9ad1aadc44b2990",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T06:12:07.162743"
+        },
+        {
+          "version": "37d76280896138f6",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T06:12:56.517667"
+        },
+        {
+          "version": "3f27e380af5dd53b",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T06:18:53.540347"
+        },
+        {
+          "version": "4fce4e2e3a7098a0",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T06:19:54.528403"
+        },
+        {
+          "version": "81c1a790cd4a4469",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T06:20:35.818322"
+        },
+        {
+          "version": "60ec3979eba584b8",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T06:42:09.411709"
+        },
+        {
+          "version": "948dda6c6cd3489a",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T06:44:47.091921"
+        },
+        {
+          "version": "a70f1474a6cfd919",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T07:13:26.572645"
+        },
+        {
+          "version": "b5594ed007116b80",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T08:09:32.160140"
+        },
+        {
+          "version": "df340301ba2524d0",
+          "data_version": "def456ghi7abc123",
+          "timestamp": "2026-02-02T08:09:47.971078"
+        }
+      ]
+    },
+    "adx": {
+      "type": "price",
+      "output_range": "0-100"
+    },
+    "ai_momentum": {
+      "type": "ai_ml",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "ai_volatility": {
+      "type": "ai_ml",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "alpha009": {
+      "type": "momentum"
+    },
+    "alpha042": {
+      "type": "momentum"
+    },
+    "alpha068": {
+      "type": "trend"
+    },
+    "alpha070": {
+      "type": "volatility"
+    },
+    "alpha081": {
+      "type": "volume"
+    },
+    "alpha095": {
+      "type": "volatility"
+    },
+    "alpha097": {
+      "type": "volatility"
+    },
+    "alpha100": {
+      "type": "volatility"
+    },
+    "alpha120": {
+      "type": "momentum"
+    },
+    "alpha125": {
+      "type": "trend"
+    },
+    "alpha126": {
+      "type": "price"
+    },
+    "alpha132": {
+      "type": "volume"
+    },
+    "alpha135": {
+      "type": "momentum"
+    },
+    "alpha153": {
+      "type": "momentum"
+    },
+    "alpha164": {
+      "type": "momentum"
+    },
+    "alpha173": {
+      "type": "trend"
+    },
+    "alpha184": {
+      "type": "momentum"
+    },
+    "alt_rank": {
+      "type": "alternative",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "atr": {
+      "type": "price"
+    },
+    "auto_factor": {
+      "type": "ai_ml",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "bb": {
+      "type": "price"
+    },
+    "cci": {
+      "type": "price"
+    },
+    "community_growth": {
+      "type": "alternative",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "dev_activity": {
+      "type": "alternative",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "dmi": {
+      "type": "trend"
+    },
+    "ema": {
+      "type": "price"
+    },
+    "exchange_net_flow": {
+      "type": "on_chain",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "funding_rate": {
+      "type": "crypto_exclusive"
+    },
+    "github_commits": {
+      "type": "alternative",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "gnn_topology": {
+      "type": "ai_ml",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "historical_volatility": {
+      "type": "volatility"
+    },
+    "ichimoku": {
+      "type": "trend"
+    },
+    "liquidations": {
+      "type": "crypto_exclusive"
+    },
+    "long_short_ratio": {
+      "type": "crypto_exclusive"
+    },
+    "ma": {
+      "type": "price"
+    },
+    "ma_crossover": {
+      "type": "trend"
+    },
+    "macd": {
+      "type": "price"
+    },
+    "mfi": {
+      "type": "volume",
+      "output_range": "0-100"
+    },
+    "miner_balance": {
+      "type": "on_chain",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "momentum": {
+      "type": "momentum"
+    },
+    "mvrv": {
+      "type": "on_chain",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "news_sentiment": {
+      "type": "sentiment",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "nupl": {
+      "type": "on_chain",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "obv": {
+      "type": "volume"
+    },
+    "open_interest": {
+      "type": "crypto_exclusive"
+    },
+    "parabolic_sar": {
+      "type": "trend"
+    },
+    "price_rate_of_change": {
+      "type": "price"
+    },
+    "realized_cap": {
+      "type": "on_chain",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "realized_volatility": {
+      "type": "volatility"
+    },
+    "reddit_activity": {
+      "type": "sentiment",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "return_volatility": {
+      "type": "volatility"
+    },
+    "roc": {
+      "type": "price"
+    },
+    "roc_momentum": {
+      "type": "momentum"
+    },
+    "rsi": {
+      "type": "price",
+      "output_range": "0-100"
+    },
+    "rsi_rate_of_change": {
+      "type": "momentum"
+    },
+    "social_sentiment": {
+      "type": "sentiment",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "sopr": {
+      "type": "on_chain",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "stablecoin_premium": {
+      "type": "crypto_exclusive"
+    },
+    "std_dev": {
+      "type": "price"
+    },
+    "stoch": {
+      "type": "price",
+      "output_range": "0-100"
+    },
+    "stoch_k": {
+      "type": "price",
+      "output_range": "0-100"
+    },
+    "trend_slope": {
+      "type": "trend"
+    },
+    "trend_strength": {
+      "type": "trend"
+    },
+    "tsi": {
+      "type": "momentum"
+    },
+    "twitter_mentions": {
+      "type": "sentiment",
+      "input_fields": [
+        "external"
+      ],
+      "availability_lag": 1
+    },
+    "vol_ma": {
+      "type": "volume"
+    },
+    "volatility": {
+      "type": "volatility"
+    },
+    "volume_rate_of_change": {
+      "type": "volume"
+    },
+    "vwap": {
+      "type": "volume"
+    },
+    "vwap_rate_of_change": {
+      "type": "volume"
+    },
+    "williams_r": {
+      "type": "momentum",
+      "output_range": "-100-0"
+    }
+  }
+}

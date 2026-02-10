@@ -1,0 +1,60 @@
+# ATA (Automated Task Agent) 最小闭环配置
+# TaskCode: ATA_E2E_BOOTSTRAP
+# 功能：文件信箱 → 自动执行 → 结果回写
+
+# 路径配置（全部基于repo_root相对路径）
+paths:
+  inbox: "docs/REPORT/ata/inbox"          # 任务投递目录
+  outbox: "docs/REPORT/ata/outbox"        # 结果回写目录  
+  work: "tmp/ata/work"                   # 工作目录
+  locks: "tmp/ata/locks"                 # 锁文件目录
+  logs: "tmp/ata/logs"                   # 日志目录
+
+# 轮询配置
+polling:
+  interval_seconds: 5                     # 轮询间隔（秒）
+  max_retries: 3                          # 最大重试次数
+  retry_delay_seconds: 2                  # 重试延迟（秒）
+
+# 执行器配置
+executors:
+  # Mock执行器（用于测试）
+  mock:
+    enabled: true
+    delay_seconds: 1                      # 模拟执行延迟
+    
+  # Shell执行器（实际命令执行）
+  shell:
+    enabled: true
+    command_whitelist:                    # 命令白名单（fail-closed）
+      - "echo"
+      - "python"
+      - "git"
+      - "ls"
+      - "cat"
+      - "head"
+      - "tail"
+      - "grep"
+      - "find"
+    timeout_seconds: 30                   # 命令超时时间
+
+# 结果配置
+result:
+  required_fields:                        # 结果必填字段
+    - "task_id"
+    - "status"
+    - "executor"
+    - "started_at"
+    - "finished_at"
+  artifact_extensions:                    # 允许的artifact文件扩展名
+    - ".json"
+    - ".log"
+    - ".txt"
+    - ".md"
+
+# 安全与审计
+security:
+  fail_closed: true                       # fail-closed模式
+  audit_enabled: true                     # 启用审计日志
+  max_concurrent_tasks: 5                 # 最大并发任务数
+  report_only: false                      # 报告模式（不执行实际更改）

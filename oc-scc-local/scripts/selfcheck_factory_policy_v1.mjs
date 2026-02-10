@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const repoRoot = process.env.SCC_REPO_ROOT ?? path.resolve(__dirname, "..", "..")
 console.log(`[selfcheck:factory_policy_v1] repoRoot=${repoRoot}`)
-const fpPath = path.join(repoRoot, "factory_policy.json")
+const fpPath = path.join(repoRoot, "config", "factory_policy.json")
 const fp = JSON.parse(fs.readFileSync(fpPath, "utf8").replace(/^\uFEFF/, ""))
 if (fp.schema_version !== "scc.factory_policy.v1") fail("factory_policy.schema_version mismatch")
 

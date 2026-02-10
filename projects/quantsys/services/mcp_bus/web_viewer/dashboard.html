@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuantSys Web UI (Legacy)</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #101a2d;
+        --text: #e6edf7;
+        --muted: #9db0cf;
+        --accent: #7dd3fc;
+        --border: rgba(125, 211, 252, 0.2);
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(1200px 800px at 20% 10%, rgba(125, 211, 252, 0.12), transparent 45%),
+          radial-gradient(900px 700px at 80% 20%, rgba(34, 211, 238, 0.10), transparent 45%),
+          var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 48px 20px;
+      }
+      .panel {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+      .title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 10px;
+        font-size: 20px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 12px;
+        padding: 2px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+      }
+      .muted {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        background: rgba(16, 26, 45, 0.65);
+      }
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: var(--text);
+      }
+      .card code {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.18);
+        color: var(--text);
+      }
+      .footer {
+        margin-top: 18px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        <div class="title">
+          QuantSys Web UI
+          <span class="badge">legacy</span>
+        </div>
+        <div class="muted">
+          The legacy web UI has been replaced by the UI-TARS Desktop app.
+          This server is still running for APIs and background services.
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>Recommended</h3>
+            <div class="muted">
+              Launch via the desktop shortcut: <code>UI-TARS Desktop</code>
+            </div>
+          </div>
+          <div class="card">
+            <h3>API Health</h3>
+            <div class="muted">
+              <a href="/health">/health</a>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Monitoring API</h3>
+            <div class="muted">
+              <a href="/api/monitoring/status">/api/monitoring/status</a>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Viewer API</h3>
+            <div class="muted">
+              <a href="/api/viewer/messages">/api/viewer/messages</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          Legacy assets were moved to: <code>isolated_observatory/tools/mcp_bus/web_viewer</code>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+

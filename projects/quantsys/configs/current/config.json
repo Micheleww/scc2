@@ -1,0 +1,40 @@
+{
+    "system": {
+        "name": "quantsys",
+        "version": "1.0.0",
+        "run_mode": "development",
+        "drill_mode": true,
+        "live_trading": false
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "quant_trading",
+        "user": "postgres",
+        "password": "postgres"
+    },
+    "data_collection": {
+        "exchanges": ["okx"],
+        "symbols": ["BTC-USDT", "ETH-USDT"],
+        "timeframes": ["1h", "4h", "1d"],
+        "start_date": "2025-01-01",
+        "end_date": "2025-12-31"
+    },
+    "real_time": {
+        "exchanges": ["okx"],
+        "symbols": ["BTC-USDT", "ETH-USDT"],
+        "timeframes": ["1h"]
+    },
+    "factor": {
+        "calculate_factors": true,
+        "traditional_factors": true,
+        "dl_factors": false
+    },
+    "strategy": {
+        "strategy_id": 1,
+        "max_strategies": 10
+    },
+    "freqtrade": {
+        "config_path": "user_data/config.json"
+    }
+}

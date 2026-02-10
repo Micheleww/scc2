@@ -6,16 +6,14 @@ import json
 import pathlib
 import sqlite3
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
+
+from tools.scc.lib.utils import norm_rel as _norm_rel
 
 
 def _default_repo_root() -> str:
     # tools/scc/map/*.py -> repo root is 3 levels up
     return str(pathlib.Path(__file__).resolve().parents[3])
-
-
-def _norm_rel(p: str) -> str:
-    return str(p or "").replace("\\", "/").lstrip("./")
 
 
 def _connect(path: pathlib.Path) -> sqlite3.Connection:
@@ -86,7 +84,7 @@ def query(conn: sqlite3.Connection, q: str, limit: int) -> List[Dict[str, Any]]:
     ):
         i, root = row
         out.append(
-            {"kind": "module", "id": i, "path": _norm_rel(root), "score": 1.0 * _score("module"), "reason": "sqlite match module"}
+            {"kind": "module", "id": i, "path": norm_rel(root), "score": 1.0 * _score("module"), "reason": "sqlite match module"}
         )
 
     # configs
@@ -96,7 +94,7 @@ def query(conn: sqlite3.Connection, q: str, limit: int) -> List[Dict[str, Any]]:
     ):
         k, p, line = row
         out.append(
-            {"kind": "config", "id": f"{k}@{p}:{line}", "path": _norm_rel(p), "key": k, "line": int(line), "score": 1.0 * _score("config"), "reason": "sqlite match config"}
+            {"kind": "config", "id": f"{k}@{p}:{line}", "path": norm_rel(p), "key": k, "line": int(line), "score": 1.0 * _score("config"), "reason": "sqlite match config"}
         )
 
     # test entry points

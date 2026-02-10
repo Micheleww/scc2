@@ -11,7 +11,7 @@
     "can_emit_events": true
   },
   "permissions": {
-    "read": { "pins_required": false, "allow_paths": ["artifacts/**", "contracts/**", "roles/**", "skills/**", "map/**", "playbooks/**", "patterns/**", "factory_policy.json"], "deny_paths": ["**/secrets/**"] },
+    "read": { "pins_required": false, "allow_paths": ["artifacts/**", "contracts/**", "roles/**", "skills/**", "map/**", "playbooks/**", "patterns/**", "config/factory_policy.json"], "deny_paths": ["**/secrets/**"] },
     "write": { "allow_paths": ["artifacts/**"], "deny_paths": ["contracts/**", "roles/**", "skills/**", "**/secrets/**"] },
     "tools": { "allow": ["node", "python"], "deny": ["git", "network"] }
   },

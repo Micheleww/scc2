@@ -4,11 +4,7 @@ import os
 import pathlib
 from typing import Any
 
-from tools.scc.lib.utils import norm_rel
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+from tools.scc.lib.utils import load_json, norm_rel
 
 
 def _sha256_bytes(b: bytes) -> str:
@@ -48,7 +44,7 @@ def run(repo: pathlib.Path, submit: dict, *, strict: bool = True) -> dict:
     warnings: list[str] = []
 
     try:
-        ref = _load_json(ref_path)
+        ref = load_json(ref_path)
     except Exception as e:
         return {"errors": [f"context_pack_v1.json parse failed: {e}"], "warnings": []}
 
@@ -66,7 +62,7 @@ def run(repo: pathlib.Path, submit: dict, *, strict: bool = True) -> dict:
         return {"errors": [], "warnings": ["missing artifacts/<task_id>/evidence/context_pack_v1_proof.json (not required for legacy tasks)"]}
 
     try:
-        proof = _load_json(evidence_proof)
+        proof = load_json(evidence_proof)
     except Exception as e:
         return {"errors": [f"context_pack_v1_proof.json parse failed: {e}"], "warnings": []}
 
@@ -89,7 +85,7 @@ def run(repo: pathlib.Path, submit: dict, *, strict: bool = True) -> dict:
 
     pack_bytes = _read_bytes(pack_path)
     if pack_bytes is None:
-        errors.append(f"cannot read rendered_context_pack.json: {_norm_rel(str(pack_path.relative_to(repo)))}")
+        errors.append(f"cannot read rendered_context_pack.json: {norm_rel(str(pack_path.relative_to(repo)))}")
         return {"errors": errors, "warnings": warnings}
 
     got_pack_sha = _sha256_bytes(pack_bytes)

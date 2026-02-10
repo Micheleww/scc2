@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exchange Tool Contract",
+  "description": "Schema for exchange server tool contract",
+  "version": "v0.1",
+  "type": "object",
+  "properties": {
+    "toolset_version": {
+      "description": "Version of the toolset",
+      "type": "string"
+    },
+    "RULESET_SHA256": {
+      "description": "SHA256 hash of the ruleset",
+      "type": "string"
+    },
+    "tools": {
+      "description": "List of available tools",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Name of the tool",
+            "type": "string"
+          },
+          "description": {
+            "description": "Description of the tool",
+            "type": "string"
+          },
+          "parameters": {
+            "description": "Parameters accepted by the tool",
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "Type of the parameter",
+                  "type": "string",
+                  "enum": ["string", "number", "boolean", "object", "array"]
+                },
+                "description": {
+                  "description": "Description of the parameter",
+                  "type": "string"
+                },
+                "required": {
+                  "description": "Whether the parameter is required",
+                  "type": "boolean",
+                  "default": false
+                }
+              },
+              "required": ["type", "description"]
+            }
+          }
+        },
+        "required": ["name", "description", "parameters"]
+      }
+    },
+    "tool_result": {
+      "description": "Result of a tool call",
+      "type": "object",
+      "properties": {
+        "success": {
+          "description": "Whether the tool call was successful",
+          "type": "boolean"
+        },
+        "results": {
+          "description": "Results of the tool call",
+          "type": "array"
+        },
+        "error": {
+          "description": "Error message if the tool call failed",
+          "type": "string"
+        },
+        "REASON_CODE": {
+          "description": "Reason code for failure",
+          "type": "string"
+        },
+        "trace_id": {
+          "description": "Trace ID for the tool call",
+          "type": "string"
+        }
+      },
+      "required": ["success"]
+    }
+  }
+}

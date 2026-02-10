@@ -1,0 +1,24 @@
+{
+  "requests": {
+    "ATA-OUTBOX-20260126085034-80c4896ec6": {
+      "request_id": "ATA-OUTBOX-20260126085034-80c4896ec6",
+      "status": "pending",
+      "submitted_at": "2026-01-26T08:50:34.591797Z",
+      "submitted_by": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10",
+      "taskcode": "ATA-MSG-VERIFY-20260126-085034",
+      "from_agent": "Cursor-Dialog-3",
+      "to_agent": "Cursor-Dialog-4",
+      "kind": "request",
+      "payload": {
+        "message": "应用内 ATA 发送请求验证",
+        "text": "应用内 ATA 发送请求验证"
+      },
+      "priority": "normal",
+      "requires_response": true,
+      "context_hint": null,
+      "report_path": null,
+      "selftest_log_path": null,
+      "evidence_dir": null
+    }
+  }
+}

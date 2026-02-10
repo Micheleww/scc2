@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "id": "bt_20260124165353_test_str",
+      "strategy_id": "test_strategy",
+      "strategy_name": "test_strategy",
+      "symbol": "BTC/USDT",
+      "timeframe": "1h",
+      "start_time": "2024-01-01T00:00:00Z",
+      "end_time": "2024-01-31T00:00:00Z",
+      "total_return": null,
+      "sharpe_ratio": null,
+      "max_drawdown": null,
+      "win_rate": null,
+      "status": "pending",
+      "created": "2026-01-24 16:53:53"
+    }
+  ]
+}

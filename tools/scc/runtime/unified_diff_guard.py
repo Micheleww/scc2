@@ -8,21 +8,10 @@ import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from tools.scc.lib.utils import norm_rel
+
 
 _DIFF_HEADER_RE = re.compile(r"^(?:diff --git a/(.*?) b/(.*?)|--- (?:a/)?(.*?)\n\+\+\+ (?:b/)?(.*?))$", re.MULTILINE)
-
-
-def _norm_rel(p: str) -> Optional[str]:
-    s = str(p or "").strip().replace("\\", "/").lstrip("./")
-    if not s:
-        return None
-    if s.startswith("/"):
-        return None
-    if re.match(r"^[a-zA-Z]:/", s):
-        return None
-    if ".." in s.split("/"):
-        return None
-    return s
 
 
 def _glob_match(path_posix: str, globs: List[str]) -> bool:
@@ -47,8 +36,8 @@ def list_touched_files(diff_text: str) -> List[str]:
     diff = str(diff_text or "")
     out: List[str] = []
     for m in re.finditer(r"^diff --git a/(.*?) b/(.*?)\s*$", diff, re.MULTILINE):
-        a = _norm_rel(m.group(1))
-        b = _norm_rel(m.group(2))
+        a = norm_rel(m.group(1))
+        b = norm_rel(m.group(2))
         if a:
             out.append(a)
         if b:
@@ -63,8 +52,8 @@ def list_touched_files(diff_text: str) -> List[str]:
             b = lines[i + 1][4:].strip()
             a = a[2:] if a.startswith("a/") else a
             b = b[2:] if b.startswith("b/") else b
-            na = _norm_rel(a)
-            nb = _norm_rel(b)
+            na = norm_rel(a)
+            nb = norm_rel(b)
             if na and na != "/dev/null":
                 out.append(na)
             if nb and nb != "/dev/null":
@@ -107,7 +96,7 @@ def guard_diff(
 
     denied: List[str] = []
     for f in touched:
-        nf = _norm_rel(f)
+        nf = norm_rel(f)
         if not nf:
             denied.append(f)
             continue

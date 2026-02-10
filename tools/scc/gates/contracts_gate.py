@@ -1,7 +1,7 @@
 import os
 import pathlib
 
-from tools.scc.lib.utils import load_json, norm_rel
+from tools.scc.lib.utils import load_json, norm_rel as _norm_rel
 from tools.scc.validators.contract_validator import (
     validate_pins_result_v1,
     validate_preflight_v1,

@@ -1,6 +1,6 @@
 import pathlib
 
-from tools.scc.lib.utils import load_json, norm_rel
+from tools.scc.lib.utils import load_json, norm_rel as _norm_rel
 from tools.scc.validators.contract_validator import validate_release_record_v1
 
 
@@ -19,7 +19,7 @@ def run(repo: pathlib.Path) -> list[str]:
     roles_registry_path = repo / "roles/registry.json"
     if not roles_registry_path.exists():
         return ["missing roles/registry.json"]
-    roles_registry = _load_json(roles_registry_path)
+    roles_registry = load_json(roles_registry_path)
     errors += _require_keys(roles_registry, ["schema_version", "roles"], "roles/registry.json")
     role_entries = roles_registry.get("roles") or []
     role_to_policy: dict[str, str] = {}
@@ -32,12 +32,12 @@ def run(repo: pathlib.Path) -> list[str]:
         if not role or not policy:
             errors.append("roles/registry.json: role entry missing role/policy")
             continue
-        role_to_policy[str(role)] = _norm_rel(str(policy))
+        role_to_policy[str(role)] = norm_rel(str(policy))
         if not (repo / policy).exists():
             errors.append(f"roles/registry.json: missing policy file: {policy}")
 
     for role, policy_rel in sorted(role_to_policy.items()):
-        policy = _load_json(repo / policy_rel)
+        policy = load_json(repo / policy_rel)
         if policy.get("schema_version") != "scc.role_policy.v1":
             errors.append(f"{policy_rel}: schema_version != scc.role_policy.v1")
         if policy.get("role") != role:
@@ -48,7 +48,7 @@ def run(repo: pathlib.Path) -> list[str]:
     if not skills_registry_path.exists():
         errors.append("missing skills/registry.json")
         return errors
-    skills_registry = _load_json(skills_registry_path)
+    skills_registry = load_json(skills_registry_path)
     errors += _require_keys(skills_registry, ["schema_version", "skills"], "skills/registry.json")
     skill_entries = skills_registry.get("skills") or []
     skill_ids: set[str] = set()
@@ -67,7 +67,7 @@ def run(repo: pathlib.Path) -> list[str]:
         if not p.exists():
             errors.append(f"skills/registry.json: missing skill file: {path}")
             continue
-        data = _load_json(p)
+        data = load_json(p)
         if data.get("schema_version") != "scc.skill.v1":
             errors.append(f"{path}: schema_version != scc.skill.v1")
         if data.get("skill_id") != sid:
@@ -86,7 +86,7 @@ def run(repo: pathlib.Path) -> list[str]:
     if not matrix_path.exists():
         errors.append("missing roles/role_skill_matrix.json")
         return errors
-    matrix = _load_json(matrix_path)
+    matrix = load_json(matrix_path)
     roles_map = matrix.get("roles") or {}
     for role, skills in roles_map.items():
         if role not in role_to_policy:
@@ -99,24 +99,24 @@ def run(repo: pathlib.Path) -> list[str]:
                 errors.append(f"roles/role_skill_matrix.json: unknown skill_id {sid} for role {role}")
 
     # Factory policy + eval manifest existence
-    fp = repo / "factory_policy.json"
+    fp = repo / "config" / "factory_policy.json"
     if not fp.exists():
-        errors.append("missing factory_policy.json")
+        errors.append("missing config/factory_policy.json")
     else:
-        data = _load_json(fp)
+        data = load_json(fp)
         if data.get("schema_version") != "scc.factory_policy.v1":
-            errors.append("factory_policy.json: schema_version != scc.factory_policy.v1")
+            errors.append("config/factory_policy.json: schema_version != scc.factory_policy.v1")
         errors += _require_keys(
             data,
             ["updated_at", "wip_limits", "lanes", "budgets", "event_routing", "circuit_breakers", "degradation_matrix", "verification_tiers"],
-            "factory_policy.json",
+            "config/factory_policy.json",
         )
 
     ev = repo / "eval/eval_manifest.json"
     if not ev.exists():
         errors.append("missing eval/eval_manifest.json")
     else:
-        data = _load_json(ev)
+        data = load_json(ev)
         if data.get("schema_version") != "scc.eval_manifest.v1":
             errors.append("eval/eval_manifest.json: schema_version != scc.eval_manifest.v1")
 
@@ -135,7 +135,7 @@ def run(repo: pathlib.Path) -> list[str]:
         errors.append("missing connectors/registry.json")
     else:
         try:
-            data = _load_json(cr)
+            data = load_json(cr)
         except Exception as e:
             errors.append(f"connectors/registry.json: json_parse_failed: {e}")
         else:
@@ -152,7 +152,7 @@ def run(repo: pathlib.Path) -> list[str]:
     if not ssot_reg.exists():
         errors.append("missing docs/SSOT/registry.json")
     else:
-        data = _load_json(ssot_reg)
+        data = load_json(ssot_reg)
         if data.get("schema_version") != "scc.ssot_registry.v1":
             errors.append("docs/SSOT/registry.json: schema_version != scc.ssot_registry.v1")
         facts = data.get("facts") or {}
@@ -175,13 +175,13 @@ def run(repo: pathlib.Path) -> list[str]:
         release_files = sorted(root.glob("rel-*/release.json"))[-80:]
         for rf in release_files:
             try:
-                obj = _load_json(rf)
+                obj = load_json(rf)
             except Exception as e:
-                errors.append(f"{_norm_rel(str(rf.relative_to(repo)))}: json_parse_failed: {e}")
+                errors.append(f"{norm_rel(str(rf.relative_to(repo)))}: json_parse_failed: {e}")
                 continue
             verr = validate_release_record_v1(obj)
             for e in verr[:50]:
-                errors.append(f"{_norm_rel(str(rf.relative_to(repo)))}: {e}")
+                errors.append(f"{norm_rel(str(rf.relative_to(repo)))}: {e}")
 
     # Patterns + playbooks (best-effort structural validation, no full JSONSchema engine required)
     patterns_dir = repo / "patterns"
@@ -191,9 +191,9 @@ def run(repo: pathlib.Path) -> list[str]:
             errors.append("missing patterns/registry.json")
         else:
             try:
-                reg = _load_json(registry_path)
+                reg = load_json(registry_path)
             except Exception as e:
-                errors.append(f"{_norm_rel(str(registry_path.relative_to(repo)))}: json_parse_failed: {e}")
+                errors.append(f"{norm_rel(str(registry_path.relative_to(repo)))}: json_parse_failed: {e}")
             else:
                 if reg.get("schema_version") != "scc.patterns_registry.v1":
                     errors.append("patterns/registry.json: schema_version != scc.patterns_registry.v1")
@@ -209,7 +209,7 @@ def run(repo: pathlib.Path) -> list[str]:
                         if not pid or not pth:
                             errors.append("patterns/registry.json: entry missing pattern_id/path")
                             continue
-                        if not (repo / _norm_rel(str(pth))).exists():
+                        if not (repo / norm_rel(str(pth))).exists():
                             errors.append(f"patterns/registry.json: missing file {pth}")
 
         for p in sorted(patterns_dir.glob("*.json"))[:200]:
@@ -218,15 +218,15 @@ def run(repo: pathlib.Path) -> list[str]:
             if p.name == "registry.json":
                 continue
             try:
-                data = _load_json(p)
+                data = load_json(p)
             except Exception as e:
-                errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
+                errors.append(f"{norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
                 continue
             if data.get("schema_version") != "scc.pattern.v1":
-                errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: schema_version != scc.pattern.v1")
+                errors.append(f"{norm_rel(str(p.relative_to(repo)))}: schema_version != scc.pattern.v1")
             for k in ("pattern_id", "created_at", "match", "stats"):
                 if k not in data:
-                    errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: missing key {k}")
+                    errors.append(f"{norm_rel(str(p.relative_to(repo)))}: missing key {k}")
 
     # Skills drafts registry + basic validation (L8 assets, deterministic)
     drafts_dir = repo / "skills_drafts"
@@ -236,9 +236,9 @@ def run(repo: pathlib.Path) -> list[str]:
             errors.append("missing skills_drafts/registry.json")
         else:
             try:
-                reg = _load_json(reg_path)
+                reg = load_json(reg_path)
             except Exception as e:
-                errors.append(f"{_norm_rel(str(reg_path.relative_to(repo)))}: json_parse_failed: {e}")
+                errors.append(f"{norm_rel(str(reg_path.relative_to(repo)))}: json_parse_failed: {e}")
             else:
                 if reg.get("schema_version") != "scc.skills_drafts_registry.v1":
                     errors.append("skills_drafts/registry.json: schema_version != scc.skills_drafts_registry.v1")
@@ -254,31 +254,31 @@ def run(repo: pathlib.Path) -> list[str]:
                         if not sid or not pth:
                             errors.append("skills_drafts/registry.json: entry missing skill_id/path")
                             continue
-                        if not (repo / _norm_rel(str(pth))).exists():
+                        if not (repo / norm_rel(str(pth))).exists():
                             errors.append(f"skills_drafts/registry.json: missing file {pth}")
 
         for p in sorted(drafts_dir.glob("*.json"))[:200]:
             if p.name == "registry.json":
                 continue
             try:
-                data = _load_json(p)
+                data = load_json(p)
             except Exception as e:
-                errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
+                errors.append(f"{norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
                 continue
             if data.get("schema_version") != "scc.skill.v1":
-                errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: schema_version != scc.skill.v1")
+                errors.append(f"{norm_rel(str(p.relative_to(repo)))}: schema_version != scc.skill.v1")
             for k in ("skill_id", "version", "owner_role", "summary", "contracts", "enablement"):
                 if k not in data:
-                    errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: missing key {k}")
+                    errors.append(f"{norm_rel(str(p.relative_to(repo)))}: missing key {k}")
 
     playbooks_dir = repo / "playbooks"
     if playbooks_dir.exists():
         registry_path = playbooks_dir / "registry.json"
         if registry_path.exists():
             try:
-                reg = _load_json(registry_path)
+                reg = load_json(registry_path)
             except Exception as e:
-                errors.append(f"{_norm_rel(str(registry_path.relative_to(repo)))}: json_parse_failed: {e}")
+                errors.append(f"{norm_rel(str(registry_path.relative_to(repo)))}: json_parse_failed: {e}")
             else:
                 if reg.get("schema_version") != "scc.playbooks_registry.v1":
                     errors.append("playbooks/registry.json: schema_version != scc.playbooks_registry.v1")
@@ -294,35 +294,35 @@ def run(repo: pathlib.Path) -> list[str]:
                         if not pid or not pth:
                             errors.append("playbooks/registry.json: entry missing playbook_id/path")
                             continue
-                        if not (repo / _norm_rel(str(pth))).exists():
+                        if not (repo / norm_rel(str(pth))).exists():
                             errors.append(f"playbooks/registry.json: missing file {pth}")
 
         for p in sorted(playbooks_dir.glob("*.json"))[:200]:
             if p.name == "overrides.json":
                 try:
-                    data = _load_json(p)
+                    data = load_json(p)
                 except Exception as e:
-                    errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
+                    errors.append(f"{norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
                     continue
                 if data.get("schema_version") != "scc.playbook_overrides.v1":
-                    errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: schema_version != scc.playbook_overrides.v1")
+                    errors.append(f"{norm_rel(str(p.relative_to(repo)))}: schema_version != scc.playbook_overrides.v1")
                 if "overrides" not in data:
                     errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: missing key overrides")
                 continue
             if p.name == "registry.json":
                 continue
             try:
-                data = _load_json(p)
+                data = load_json(p)
             except Exception as e:
-                errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
+                errors.append(f"{norm_rel(str(p.relative_to(repo)))}: json_parse_failed: {e}")
                 continue
             if data.get("schema_version") != "scc.playbook.v1":
-                errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: schema_version != scc.playbook.v1")
+                errors.append(f"{norm_rel(str(p.relative_to(repo)))}: schema_version != scc.playbook.v1")
             for k in ("playbook_id", "version", "pattern_id", "enablement", "actions"):
                 if k not in data:
-                    errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: missing key {k}")
+                    errors.append(f"{norm_rel(str(p.relative_to(repo)))}: missing key {k}")
             enablement = data.get("enablement") if isinstance(data, dict) else None
             if isinstance(enablement, dict) and enablement.get("schema_version") != "scc.enablement.v1":
-                errors.append(f"{_norm_rel(str(p.relative_to(repo)))}: enablement.schema_version != scc.enablement.v1")
+                errors.append(f"{norm_rel(str(p.relative_to(repo)))}: enablement.schema_version != scc.enablement.v1")
 
     return errors

@@ -29,7 +29,7 @@ export function writeTraceV1({ repoRoot, taskId, routing }) {
     created_at: now,
     updated_at: now,
     config_hashes: {
-      factory_policy_sha256: sha256FileOrNull(path.join(root, "factory_policy.json")),
+      factory_policy_sha256: sha256FileOrNull(path.join(root, "config", "factory_policy.json")),
       roles_registry_sha256: sha256FileOrNull(path.join(root, "roles", "registry.json")),
       skills_registry_sha256: sha256FileOrNull(path.join(root, "skills", "registry.json")),
     },

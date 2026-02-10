@@ -1,0 +1,14 @@
+# Caddy Configuration for MCP Bus
+
+# 最简配置，让Caddy自动申请Let's Encrypt证书
+mcp.timquant.tech {
+    # 反向代理到MCP服务
+    reverse_proxy mcp:8000
+    
+    # 访问日志
+    log {
+        output stdout
+        format json
+        level info
+    }
+}

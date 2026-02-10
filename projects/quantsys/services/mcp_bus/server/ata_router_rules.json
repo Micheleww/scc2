@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "id": "infra_ops",
+      "keywords": ["server", "ops", "monitor", "deploy", "infra", "mcp"],
+      "owner_role": "infra_ops"
+    },
+    {
+      "id": "data_engineer",
+      "keywords": ["data", "dataset", "pipeline", "etl", "ingest", "download"],
+      "owner_role": "data_engineer"
+    },
+    {
+      "id": "trading",
+      "keywords": ["strategy", "backtest", "freqtrade", "trading", "portfolio"],
+      "owner_role": "trading"
+    },
+    {
+      "id": "doc_writer",
+      "keywords": ["doc", "report", "documentation", "readme", "spec"],
+      "owner_role": "doc_writer"
+    },
+    {
+      "id": "infra_quality",
+      "keywords": ["ci", "gate", "guard", "verdict", "audit"],
+      "owner_role": "infra_quality"
+    }
+  ]
+}

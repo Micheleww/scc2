@@ -2,7 +2,7 @@
   "schema_version": "scc.skill.v1",
   "skill_id": "evidence.verify_triplet",
   "version": "1.0.0",
-  "owner_role": "audit",
+  "owner_role": "auditor",
   "summary": "Verify report.md + selftest.log (EXIT_CODE=0) + evidence/ exist and are consistent with SUBMIT.",
   "applies_to": { "task_class": ["*"] },
   "contracts": {

@@ -98,8 +98,9 @@ class MinimalTask:
 def main() -> int:
     ap = argparse.ArgumentParser(description="System defect hunter (deterministic).")
     ap.add_argument("--base", default=os.environ.get("GATEWAY_BASE") or "http://127.0.0.1:18788")
-    ap.add_argument("--exec-log-dir", default=os.environ.get("EXEC_LOG_DIR") or r"C:\scc\artifacts\executor_logs")
-    ap.add_argument("--out-dir", default=r"C:\scc\scc-top\docs\REPORT\control_plane")
+    default_repo_root = Path(__file__).resolve().parents[4]
+    ap.add_argument("--exec-log-dir", default=os.environ.get("EXEC_LOG_DIR") or str(default_repo_root / "artifacts" / "executor_logs"))
+    ap.add_argument("--out-dir", default=os.environ.get("OUT_DIR") or str(default_repo_root / "scc-top" / "docs" / "REPORT" / "control_plane"))
     ap.add_argument("--version", default="V010")
     args = ap.parse_args()
 

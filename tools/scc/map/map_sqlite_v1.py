@@ -8,18 +8,12 @@ import sqlite3
 import sys
 from typing import Any, Dict, List, Optional
 
+from tools.scc.lib.utils import load_json, norm_rel as _norm_rel
+
 
 def _default_repo_root() -> str:
     # tools/scc/map/*.py -> repo root is 3 levels up
     return str(pathlib.Path(__file__).resolve().parents[3])
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
-
-
-def _norm_rel(p: str) -> str:
-    return str(p or "").replace("\\", "/").lstrip("./")
 
 
 def _connect(out_path: pathlib.Path) -> sqlite3.Connection:
@@ -156,7 +150,7 @@ def build_sqlite(map_obj: Dict[str, Any], out_path: pathlib.Path) -> None:
                 "INSERT OR REPLACE INTO modules(id,root,kind,confidence,signals_json,doc_refs_json) VALUES(?,?,?,?,?,?)",
                 (
                     str(m.get("id") or ""),
-                    _norm_rel(str(m.get("root") or "")),
+                    norm_rel(str(m.get("root") or "")),
                     str(m.get("kind") or ""),
                     float(m.get("confidence") or 0.0),
                     _dumps(m.get("signals") or []),
@@ -226,7 +220,7 @@ def build_sqlite(map_obj: Dict[str, Any], out_path: pathlib.Path) -> None:
                 "INSERT OR REPLACE INTO configs(key,path,line,confidence,reason) VALUES(?,?,?,?,?)",
                 (
                     str(c.get("key") or ""),
-                    _norm_rel(str(c.get("path") or "")),
+                    norm_rel(str(c.get("path") or "")),
                     int(c.get("line") or 1),
                     float(c.get("confidence") or 0.0),
                     str(c.get("reason") or ""),
@@ -240,8 +234,8 @@ def build_sqlite(map_obj: Dict[str, Any], out_path: pathlib.Path) -> None:
             conn.execute(
                 "INSERT OR REPLACE INTO doc_refs(code_path,doc_path,reason) VALUES(?,?,?)",
                 (
-                    _norm_rel(str(d.get("code_path") or "")),
-                    _norm_rel(str(d.get("doc_path") or "")),
+                    norm_rel(str(d.get("code_path") or "")),
+                    norm_rel(str(d.get("doc_path") or "")),
                     str(d.get("reason") or ""),
                 ),
             )
@@ -301,7 +295,7 @@ def main() -> int:
             return 2
 
     try:
-        obj = _load_json(map_path)
+        obj = load_json(map_path)
     except Exception as e:
         print(f"FAIL: bad json: {e}", file=sys.stderr)
         return 2

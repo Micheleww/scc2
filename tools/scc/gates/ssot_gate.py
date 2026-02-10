@@ -2,15 +2,13 @@ import os
 import pathlib
 import re
 
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
+from tools.scc.lib.utils import norm_rel
 
 
 def _extract_index_refs(index_text: str) -> set[str]:
     refs = set()
     for m in re.finditer(r"`([^`]+)`", index_text):
-        ref = _norm_rel(m.group(1))
+        ref = norm_rel(m.group(1))
         if ref.startswith("docs/"):
             refs.add(ref)
     return refs
@@ -33,8 +31,8 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
     def is_exempt_doc(path: str) -> bool:
         return path.startswith("docs/archive/") or path.startswith("docs/adr/ADR-")
 
-    changed = [_norm_rel(x) for x in (submit.get("changed_files") or [])]
-    new_files = [_norm_rel(x) for x in (submit.get("new_files") or [])]
+    changed = [norm_rel(x) for x in (submit.get("changed_files") or [])]
+    new_files = [norm_rel(x) for x in (submit.get("new_files") or [])]
     touched = changed + new_files
 
     for p in touched:
@@ -50,7 +48,7 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
             errors.append(f"docs/INDEX.md references missing file: {ref}")
 
     control_plane_touches = any(
-        p.startswith(prefix) for p in touched for prefix in ("contracts/", "roles/", "skills/", "eval/", "factory_policy.json")
+        p.startswith(prefix) for p in touched for prefix in ("contracts/", "roles/", "skills/", "eval/", "config/factory_policy.json")
     )
     if control_plane_touches and ("docs/INDEX.md" not in changed and "docs/NAVIGATION.md" not in changed):
         errors.append("control-plane changed but docs/INDEX.md or docs/NAVIGATION.md not updated (SSOT drift gate)")

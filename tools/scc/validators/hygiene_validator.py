@@ -13,7 +13,7 @@ _FORBIDDEN_REL_PATTERNS = [
 ]
 
 
-from tools.scc.lib.utils import norm_rel
+from tools.scc.lib.utils import norm_rel as _norm_rel
 
 
 def load_submit(path: pathlib.Path):
@@ -43,7 +43,7 @@ def validate_submit(submit: dict, repo: pathlib.Path) -> list[str]:
         if not art.get(key):
             errors.append(f"missing artifact {key}")
             continue
-        rel = _norm_rel(str(art[key]))
+        rel = norm_rel(str(art[key]))
         expected_prefix = f"artifacts/{task_id}/"
         if not rel.startswith(expected_prefix):
             errors.append(f"artifact {key} must be under {expected_prefix}")
@@ -56,8 +56,8 @@ def validate_submit(submit: dict, repo: pathlib.Path) -> list[str]:
     write_allow = [str(x) for x in (allow.get("write") or []) if isinstance(x, str)]
     if write_allow:
         for f in changed + new_files:
-            rel = _norm_rel(str(f))
-            if not any(rel.startswith(_norm_rel(a)) for a in write_allow):
+            rel = norm_rel(str(f))
+            if not any(rel.startswith(norm_rel(a)) for a in write_allow):
                 errors.append(f"changed file {rel} outside write_allow_paths")
 
     for f in changed + new_files:

@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 
+from tools.scc.lib.utils import load_json
 from tools.scc.runtime.diff_extract import extract_unified_diff
 from tools.scc.runtime.unified_diff_apply import apply_unified_diff
 from tools.scc.runtime.unified_diff_guard import guard_diff
@@ -22,10 +23,6 @@ from tools.scc.runtime.unified_diff_guard import guard_diff
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
 
 
 def _write_json(path: pathlib.Path, obj: Any) -> None:
@@ -110,8 +107,7 @@ def _robocopy_mirror(src: pathlib.Path, dst: pathlib.Path, excludes: List[str]) 
     return int(p.returncode) < 8
 
 
-def _norm_rel(p: str) -> str:
-    return str(p or "").replace("\\", "/").lstrip("./")
+
 
 
 def main() -> int:
@@ -132,7 +128,7 @@ def main() -> int:
     if not child_path.exists():
         print(f"FAIL: missing child {child_path}")
         return 2
-    child = _load_json(child_path)
+    child = load_json(child_path)
     if not isinstance(child, dict):
         print("FAIL: child task not object")
         return 2
@@ -145,7 +141,7 @@ def main() -> int:
     if not role_policy_path.exists():
         print(f"FAIL: missing role policy {role_policy_path}")
         return 2
-    role_policy = _load_json(role_policy_path)
+    role_policy = load_json(role_policy_path)
 
     task_id = str(args.task_id or "").strip() or str(uuid.uuid4())
     art_dir = (REPO_ROOT / "artifacts" / task_id).resolve()
@@ -244,7 +240,7 @@ def main() -> int:
         print(f"FAIL: map:build failed task_id={task_id}")
         return 1
 
-    map_ver = _load_json(REPO_ROOT / "map" / "version.json")
+    map_ver = load_json(REPO_ROOT / "map" / "version.json")
     map_hash = str(map_ver.get("hash") or "").strip()
 
     # PINS: build via node script
@@ -351,7 +347,7 @@ def main() -> int:
         timeout_s=120,
         capture=True,
     )
-    preflight = _load_json(preflight_out_path) if preflight_out_path.exists() else None
+    preflight = load_json(preflight_out_path) if preflight_out_path.exists() else None
     if not (isinstance(preflight, dict) and isinstance(preflight.get("pass"), bool)):
         code = 1
 
@@ -579,7 +575,7 @@ def main() -> int:
 
     # Append global state event for mining (single row per task run).
     try:
-        ev = _load_json(art_dir / "verdict.json") if (art_dir / "verdict.json").exists() else None
+        ev = load_json(art_dir / "verdict.json") if (art_dir / "verdict.json").exists() else None
         _append_jsonl(
             REPO_ROOT / "artifacts" / "executor_logs" / "state_events.jsonl",
             {

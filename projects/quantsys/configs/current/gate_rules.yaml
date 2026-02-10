@@ -1,0 +1,38 @@
+# 快速门禁规则配置
+# TaskCode: GATE-PRECOMMIT-FAILFAST-v0.1
+
+# 禁删扫描配置
+delete_scan:
+  enabled: true
+  protected_globs:
+    - "law/**"
+    - "tools/gatekeeper/**"
+    - "configs/current/**"
+    - ".github/workflows/**"
+    - ".pre-commit-config.yaml"
+
+# Law 反复制扫描配置
+law_replicate_scan:
+  enabled: true
+  law_dir: "law"
+  patterns:
+    - "中华人民共和国"
+    - "民法典"
+    - "刑法"
+    - "证券法"
+    - "期货交易管理条例"
+
+# REPORT 基础字段校验配置
+report_validation:
+  enabled: true
+  report_dir: "docs/REPORT"
+  required_fields:
+    - "title"
+    - "date"
+    - "author"
+    - "version"
+    - "status"
+
+# 迁移记录检查配置
+migration_record_check:
+  enabled: true

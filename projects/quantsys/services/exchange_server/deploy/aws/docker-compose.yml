@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  exchange-server:
+    image: exchange-server:latest
+    build:
+      context: ../../..
+      dockerfile: tools/exchange_server/deploy/aws/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - CONFIG_PATH=/app/tools/exchange_server/config/config.yaml
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/tools/exchange_server/logs/exchange_server.log
+    volumes:
+      - ./config:/app/tools/exchange_server/config
+      - ./logs:/app/tools/exchange_server/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18788/healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

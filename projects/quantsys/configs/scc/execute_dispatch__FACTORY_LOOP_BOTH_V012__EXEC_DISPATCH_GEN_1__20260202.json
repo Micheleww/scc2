@@ -1,0 +1,45 @@
+{
+  "schema_version": "v0.1.0",
+  "generated_by": "tools/scc/ops/dispatch_execute_from_task_tree.py",
+  "max_outstanding": 1,
+  "timeout_s": 1800,
+  "batches": [
+    {
+      "name": "execute_from_task_tree_v0_1_0",
+      "parents": {
+        "parents": [
+          {
+            "id": "EXEC_697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "title": "Execute contract: 697a1500-1e34-8321-ae0f-23f6314f1716_0002",
+            "description": "TASK: CONTRACT_EXECUTE\n\ntask_id: 697a1500-1e34-8321-ae0f-23f6314f1716_0002\ncontract_ref: docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json\n\nGoal:\n- Implement the contract goal by editing only within contract.scope_allow.\n- Do NOT run any shell/PowerShell commands; deterministic verifier will run acceptance checks.\n\nRules (mandatory):\n- MUST stay within allowlisted paths (scope_allow).\n- MUST NOT write under `docs/REPORT/**` (evidence is verifier-owned).\n- MUST NOT create or modify any `*/verdict.json` (verdict is verifier-owned).\n- MUST follow SSOT: read `docs/START_HERE.md` then `docs/ssot/registry.json` when unsure.\n- MUST NOT create a second docs entrypoint.\n- If acceptance is not deterministic, STOP and report (do not guess).\n- You CANNOT edit the repo directly. You MUST either:\n  1) Output EXACTLY `NO_CHANGES` (no other text) if no changes are needed, OR\n  2) Output ONE `git apply` compatible unified diff patch.\n- If outputting a patch:\n  - Output ONLY the patch (no narration, no markdown/code fences).\n  - First line MUST be `diff --git a/<path> b/<path>`.\n  - Patch MUST be valid unified diff hunks and MUST end with a newline.\n\nOutputs (mandatory):\n- Changes must stay within scope_allow; verifier will run acceptance and write verdict/evidence.\n",
+            "role_id": "executor",
+            "skills_required": [
+              "SHELL_READONLY",
+              "SHELL_WRITE",
+              "PATCH_APPLY",
+              "SELFTEST"
+            ],
+            "isolate_worktree": true,
+            "allowed_globs": [
+              "docs/ssot/04_contracts/generated/697a1500-1e34-8321-ae0f-23f6314f1716_0002.json",
+              "docs/INPUTS/WEBGPT/conversations/697a1500-1e34-8321-ae0f-23f6314f1716.md",
+              "docs/DERIVED/task_tree.json"
+            ],
+            "embed_allowlisted_files": true,
+            "embed_paths": [
+              "docs/REPORT/control_plane/artifacts/FACTORY_LOOP_BOTH_V012__EXEC_DISPATCH_GEN_1/snippet_pack__EXEC_697a1500-1e34-8321-ae0f-23f6314f1716_0002.md"
+            ],
+            "context_max_files": 1,
+            "context_max_total_chars": 12000,
+            "context_head_lines": 100,
+            "context_tail_lines": 60,
+            "require_changes": false
+          }
+        ]
+      }
+    }
+  ],
+  "defaults": {
+    "model": "gpt-5.2"
+  }
+}

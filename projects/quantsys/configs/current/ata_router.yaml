@@ -1,0 +1,26 @@
+version: 0.1
+default:
+  primary_executor: ifcli
+  fallback_executor: cursor_codex
+  max_retries: 2
+  cooldown_seconds: 1800   # fallback 连续失败后熔断 30min
+  execution_mode: ifcli_headless
+  available_models: ["qwen3coder-plus"]
+limits:
+  max_files: 2
+  max_diff_lines: 200
+escalation:
+  # 满足任一条件即升级到 fallback_executor
+  on_risk_level: ["high"]
+  on_need_flags_any: ["needs_codebase_search", "needs_tests", "multi_file_change"]
+  on_fail_codes_any:
+    - CMD_NOT_ALLOWED
+    - PATCH_APPLY_FAIL
+    - TEST_FAIL
+    - NEED_MORE_CONTEXT
+    - TOOL_CHAIN_BROKEN
+healthcheck:
+  # 可选：用于 cursor/codex 连接健康探测（短请求）
+  enabled: true
+  timeout_seconds: 8
+  fail_threshold: 2

@@ -1,0 +1,25 @@
+{
+  "live": {
+    "enabled": false,
+    "confirm": false,
+    "exchange": "okx",
+    "symbol": "ETH-USDT",
+    "timeframe": "1h",
+    "symbols_allowlist": [
+      "ETH-USDT"
+    ]
+  },
+  "dry_run": {
+    "enabled": true,
+    "initial_capital": 100000
+  },
+  "risk": {
+    "max_total_usdt": 10.0
+  },
+  "reconciliation": {
+    "reconcile_interval": 3,
+    "balance_threshold": 0.01,
+    "position_threshold": 0.001,
+    "max_allowed_drifts": 3
+  }
+}

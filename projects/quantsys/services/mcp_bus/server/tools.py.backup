@@ -1,0 +1,1038 @@
+import os
+import json
+import subprocess
+from datetime import datetime
+from pathlib import Path
+from typing import Optional, Dict, Set, Any, List
+from pydantic import BaseModel, Field
+import hashlib
+import threading
+import httpx
+
+
+class InboxAppendParams(BaseModel):
+    date: str = Field(..., description="Date in YYYY-MM-DD format")
+    task_code: str = Field(..., description="Task identifier")
+    source: str = Field(..., description="Source identifier (e.g., ChatGPT, TRAE)")
+    text: str = Field(..., description="Content to append")
+
+
+class InboxTailParams(BaseModel):
+    date: str = Field(..., description="Date in YYYY-MM-DD format")
+    n: int = Field(default=50, description="Number of lines to return")
+
+
+class BoardSetStatusParams(BaseModel):
+    task_code: str = Field(..., description="Task identifier")
+    status: str = Field(..., description="New status value")
+    artifacts: Optional[str] = Field(None, description="Artifacts/deliverables path")
+
+
+class EchoParams(BaseModel):
+    text: str = Field(..., description="Text to echo back")
+
+
+class CloudCallParams(BaseModel):
+    tool_name: str = Field(..., description="Name of the cloud tool to call")
+    args: Dict[str, Any] = Field(default_factory=dict, description="Arguments for the cloud tool")
+
+
+class CloudDocGetParams(BaseModel):
+    doc_id: str = Field(..., description="ID of the document to get")
+    fields: Optional[Set[str]] = Field(None, description="Fields to retrieve")
+
+
+class CloudDocPatchParams(BaseModel):
+    doc_id: str = Field(..., description="ID of the document to patch")
+    data: Dict[str, Any] = Field(..., description="Data to patch")
+
+
+class DocGetParams(BaseModel):
+    doc_id: str = Field(..., description="ID of the document to get")
+
+
+class DocPatchParams(BaseModel):
+    doc_id: str = Field(..., description="ID of the document to patch")
+    base_rev: Optional[str] = Field(None, description="Expected current revision of the document")
+    ops: List[Dict[str, Any]] = Field(..., description="List of patch operations")
+
+
+class ExecParams(BaseModel):
+    cmd: str = Field(..., description="Command to execute")
+    cwd: Optional[str] = Field(None, description="Working directory")
+    env: Optional[Dict[str, str]] = Field(None, description="Environment variables")
+
+
+class ToolExecutor:
+    def __init__(self, repo_root: str, inbox_dir: str, board_file: str, security, audit_logger):
+        self.repo_root = Path(repo_root).resolve()
+        self.inbox_dir = self.repo_root / inbox_dir
+        self.board_file = self.repo_root / board_file
+        self.security = security
+        self.audit = audit_logger
+        
+        self.inbox_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Version control - stores current rev for each file
+        self._file_revs: Dict[str, str] = {}
+        
+        # Request idempotency - stores completed request_ids and their results
+        self._completed_requests: Dict[str, Dict] = {}
+        
+        # Concurrency control
+        self._running_run_id: Optional[str] = None
+        self._lock = threading.Lock()
+        
+        # Initialize revs for existing files
+        self._initialize_revs()
+
+    def inbox_append(self, params: InboxAppendParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None, base_rev: Optional[str] = None, request_id: Optional[str] = None, running_run_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Check idempotency
+            existing_result = self._check_request_idempotency(request_id)
+            if existing_result:
+                return existing_result
+            
+            # Check concurrency lock
+            if not self._check_lock(running_run_id):
+                return {"success": False, "error": "Another operation is in progress", "status": 409}
+            
+            date_str = params.date
+            if not self._validate_date_format(date_str):
+                raise ValueError("Invalid date format. Use YYYY-MM-DD")
+            
+            inbox_file = self.inbox_dir / f"{date_str}.md"
+            
+            # Check base rev
+            if not self._check_base_rev(inbox_file, base_rev):
+                current_rev = self._get_file_rev(inbox_file)
+                return {"success": False, "error": f"Revision mismatch: expected {base_rev}, got {current_rev}", "status": 409, "current_rev": current_rev}
+            
+            allowed, message = self.security.check_access(str(inbox_file), 'write')
+            if not allowed:
+                self.audit.log_tool_call(
+                    "inbox_append", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=message,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": message}
+            
+            # Acquire lock
+            self._acquire_lock(running_run_id)
+            
+            timestamp = datetime.now().isoformat()
+            block = f"""
+## [{timestamp}] Task: {params.task_code} | Source: {params.source}
+
+{params.text}
+
+---
+"""
+            
+            with open(inbox_file, 'a', encoding='utf-8') as f:
+                f.write(block)
+            
+            # Update rev
+            new_rev = self._update_file_rev(inbox_file)
+            
+            result = {
+                "success": True,
+                "file_path": str(inbox_file.relative_to(self.repo_root)),
+                "timestamp": timestamp,
+                "rev": new_rev
+            }
+            
+            # Record completed request
+            self._record_completed_request(request_id, result)
+            
+            self.audit.log_tool_call(
+                "inbox_append", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            
+            # Release lock
+            self._release_lock()
+            
+            return result
+            
+        except Exception as e:
+            # Release lock if acquired
+            self._release_lock()
+            
+            error_msg = f"Failed to append to inbox: {str(e)}"
+            self.audit.log_tool_call(
+                "inbox_append", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def inbox_tail(self, params: InboxTailParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            date_str = params.date
+            if not self._validate_date_format(date_str):
+                raise ValueError("Invalid date format. Use YYYY-MM-DD")
+            
+            inbox_file = self.inbox_dir / f"{date_str}.md"
+            
+            allowed, message = self.security.check_access(str(inbox_file), 'read')
+            if not allowed:
+                self.audit.log_tool_call(
+                    "inbox_tail", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=message,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": message}
+            
+            if not inbox_file.exists():
+                result = {
+                    "success": True,
+                    "content": "",
+                    "message": "Inbox file does not exist yet"
+                }
+                self.audit.log_tool_call(
+                    "inbox_tail", 
+                    caller, 
+                    params.dict(), 
+                    True, 
+                    result,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return result
+            
+            with open(inbox_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            n = min(params.n, len(lines))
+            content = ''.join(lines[-n:]) if n > 0 else ""
+            
+            rev = self._get_file_rev(inbox_file)
+            result = {
+                "success": True,
+                "content": content,
+                "lines_returned": n,
+                "rev": rev
+            }
+            self.audit.log_tool_call(
+                "inbox_tail", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+            
+        except Exception as e:
+            error_msg = f"Failed to read inbox: {str(e)}"
+            self.audit.log_tool_call(
+                "inbox_tail", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def board_get(self, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            allowed, message = self.security.check_access(str(self.board_file), 'read')
+            if not allowed:
+                self.audit.log_tool_call(
+                    "board_get", 
+                    caller, 
+                    {}, 
+                    False, 
+                    error=message,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": message}
+            
+            if not self.board_file.exists():
+                result = {
+                    "success": True,
+                    "content": "",
+                    "message": "Program Board file does not exist yet"
+                }
+                self.audit.log_tool_call(
+                    "board_get", 
+                    caller, 
+                    {}, 
+                    True, 
+                    result,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return result
+            
+            with open(self.board_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            rev = self._get_file_rev(self.board_file)
+            result = {
+                "success": True,
+                "content": content,
+                "rev": rev
+            }
+            self.audit.log_tool_call(
+                "board_get", 
+                caller, 
+                {}, 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+            
+        except Exception as e:
+            error_msg = f"Failed to read board: {str(e)}"
+            self.audit.log_tool_call(
+                "board_get", 
+                caller, 
+                {}, 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def board_set_status(self, params: BoardSetStatusParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None, base_rev: Optional[str] = None, request_id: Optional[str] = None, running_run_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Check idempotency
+            existing_result = self._check_request_idempotency(request_id)
+            if existing_result:
+                return existing_result
+            
+            # Check concurrency lock
+            if not self._check_lock(running_run_id):
+                return {"success": False, "error": "Another operation is in progress", "status": 409}
+            
+            allowed, message = self.security.check_access(str(self.board_file), 'write')
+            if not allowed:
+                self.audit.log_tool_call(
+                    "board_set_status", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=message,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": message}
+            
+            # Check base rev
+            if not self._check_base_rev(self.board_file, base_rev):
+                current_rev = self._get_file_rev(self.board_file)
+                return {"success": False, "error": f"Revision mismatch: expected {base_rev}, got {current_rev}", "status": 409, "current_rev": current_rev}
+            
+            # Acquire lock
+            self._acquire_lock(running_run_id)
+            
+            if not self.board_file.exists():
+                self.board_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(self.board_file, 'w', encoding='utf-8') as f:
+                    f.write("# QCC Program Board v0.1\n\n")
+            
+            with open(self.board_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            task_marker = f"**Task Code:** {params.task_code}"
+            
+            if task_marker not in content:
+                error_msg = f"Task {params.task_code} not found in board"
+                self.audit.log_tool_call(
+                    "board_set_status", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=error_msg,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": error_msg}
+            
+            lines = content.split('\n')
+            updated_lines = []
+            task_found = False
+            status_updated = False
+            artifacts_updated = False
+            
+            for i, line in enumerate(lines):
+                updated_lines.append(line)
+                
+                if task_marker in line and not task_found:
+                    task_found = True
+                    for j in range(i+1, min(i+10, len(lines))):
+                        if lines[j].strip().startswith('**Status:**'):
+                            updated_lines[-1] = lines[j]
+                            updated_lines.append(f"**Status:** {params.status}")
+                            status_updated = True
+                        elif lines[j].strip().startswith('**Artifacts:**'):
+                            if params.artifacts:
+                                updated_lines[-1] = lines[j]
+                                updated_lines.append(f"**Artifacts:** {params.artifacts}")
+                                artifacts_updated = True
+                        elif lines[j].strip().startswith('##') or lines[j].strip().startswith('---'):
+                            break
+            
+            if not status_updated:
+                error_msg = f"Could not find Status field for task {params.task_code}"
+                self.audit.log_tool_call(
+                    "board_set_status", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=error_msg,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": error_msg}
+            
+            with open(self.board_file, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(updated_lines))
+            
+            # Update rev
+            new_rev = self._update_file_rev(self.board_file)
+            
+            result = {
+                "success": True,
+                "task_code": params.task_code,
+                "status_updated": status_updated,
+                "artifacts_updated": artifacts_updated,
+                "rev": new_rev
+            }
+            
+            # Record completed request
+            self._record_completed_request(request_id, result)
+            
+            self.audit.log_tool_call(
+                "board_set_status", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            
+            # Release lock
+            self._release_lock()
+            
+            return result
+            
+        except Exception as e:
+            # Release lock if acquired
+            self._release_lock()
+            
+            error_msg = f"Failed to update board: {str(e)}"
+            self.audit.log_tool_call(
+                "board_set_status", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def ping(self, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Simple ping tool that returns current timestamp
+            result = {
+                "success": True,
+                "ok": True
+            }
+            self.audit.log_tool_call(
+                "ping", 
+                caller, 
+                {}, 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+        except Exception as e:
+            error_msg = f"Failed to execute ping: {str(e)}"
+            self.audit.log_tool_call(
+                "ping", 
+                caller, 
+                {}, 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def echo(self, params: EchoParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Simple echo tool that returns the input text
+            result = {
+                "success": True,
+                "text": params.text
+            }
+            self.audit.log_tool_call(
+                "echo", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+        except Exception as e:
+            error_msg = f"Failed to execute echo: {str(e)}"
+            self.audit.log_tool_call(
+                "echo", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+    
+    def doc_get(self, params: DocGetParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Parse doc_id to get file path
+            doc_id = params.doc_id
+            file_path = self._get_file_path_from_doc_id(doc_id)
+            
+            # Debug log
+            print(f"DEBUG: repo_root={self.repo_root}, doc_id={doc_id}, file_path={file_path}")
+            
+            # Check access permission
+            allowed, message = self.security.check_access(str(file_path), 'read')
+            if not allowed:
+                self.audit.log_tool_call(
+                    "doc_get", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=message,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": message}
+            
+            # Check if file exists
+            if not file_path.exists():
+                self.audit.log_tool_call(
+                    "doc_get", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=f"Document not found: {doc_id}. Actual path checked: {file_path}",
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": f"Document not found: {doc_id}. Actual path checked: {file_path}", "status": 404}
+            
+            # Read file content
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Get file revision
+            rev = self._get_file_rev(file_path)
+            
+            result = {
+                "success": True,
+                "content": content,
+                "rev": rev
+            }
+            
+            self.audit.log_tool_call(
+                "doc_get", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+            
+        except Exception as e:
+            error_msg = f"Failed to get document: {str(e)}"
+            self.audit.log_tool_call(
+                "doc_get", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+    
+    def doc_patch(self, params: DocPatchParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None, base_rev: Optional[str] = None, request_id: Optional[str] = None, running_run_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Check idempotency
+            existing_result = self._check_request_idempotency(request_id)
+            if existing_result:
+                return existing_result
+            
+            # Check concurrency lock
+            if not self._check_lock(running_run_id):
+                return {"success": False, "error": "Another operation is in progress", "status": 409}
+            
+            # Parse doc_id to get file path
+            doc_id = params.doc_id
+            file_path = self._get_file_path_from_doc_id(doc_id)
+            
+            # Check access permission
+            allowed, message = self.security.check_access(str(file_path), 'write')
+            if not allowed:
+                self.audit.log_tool_call(
+                    "doc_patch", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=message,
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": message}
+            
+            # Check if file exists
+            if not file_path.exists():
+                self.audit.log_tool_call(
+                    "doc_patch", 
+                    caller, 
+                    params.dict(), 
+                    False, 
+                    error=f"Document not found: {doc_id}",
+                    start_time=start_time,
+                    user_agent=user_agent,
+                    trace_id=trace_id
+                )
+                return {"success": False, "error": f"Document not found: {doc_id}", "status": 404}
+            
+            # Check base rev (if provided)
+            if params.base_rev:
+                current_rev = self._get_file_rev(file_path)
+                if params.base_rev != current_rev:
+                    self.audit.log_tool_call(
+                        "doc_patch", 
+                        caller, 
+                        params.dict(), 
+                        False, 
+                        error=f"Revision mismatch: expected {params.base_rev}, got {current_rev}",
+                        start_time=start_time,
+                        user_agent=user_agent,
+                        trace_id=trace_id
+                    )
+                    return {"success": False, "error": f"Revision mismatch: expected {params.base_rev}, got {current_rev}", "status": 409, "current_rev": current_rev}
+            
+            # Acquire lock
+            self._acquire_lock(running_run_id)
+            
+            # Read current content
+            with open(file_path, 'r', encoding='utf-8') as f:
+                current_content = f.read()
+            
+            # Apply patch operations (simplified implementation)
+            new_content = self._apply_patch_ops(current_content, params.ops)
+            
+            # Write new content to file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            
+            # Update revision
+            new_rev = self._update_file_rev(file_path)
+            
+            # Generate change_id (unique identifier for this change)
+            change_id = hashlib.sha256(f"{doc_id}:{new_rev}:{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+            
+            result = {
+                "success": True,
+                "new_rev": new_rev,
+                "change_id": change_id
+            }
+            
+            # Record completed request
+            self._record_completed_request(request_id, result)
+            
+            self.audit.log_tool_call(
+                "doc_patch", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            
+            # Release lock
+            self._release_lock()
+            
+            return result
+            
+        except Exception as e:
+            # Release lock if acquired
+            self._release_lock()
+            
+            error_msg = f"Failed to patch document: {str(e)}"
+            self.audit.log_tool_call(
+                "doc_patch", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+    
+    def _get_file_path_from_doc_id(self, doc_id: str) -> Path:
+        """Convert doc_id to file path"""
+        # Simple implementation: doc_id is a relative path from repo root
+        return self.repo_root / doc_id
+    
+    def _apply_patch_ops(self, content: str, ops: List[Dict[str, Any]]) -> str:
+        """Apply patch operations to content"""
+        # Simplified implementation: only support "replace" operation for now
+        new_content = content
+        for op in ops:
+            op_type = op.get("type")
+            if op_type == "replace":
+                new_content = op.get("value", "")
+        return new_content
+
+    def cloud_call(self, params: CloudCallParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Get upstream MCP URL from environment
+            upstream_url = os.getenv("UPSTREAM_MCP_URL")
+            if not upstream_url:
+                return {"success": False, "error": "UPSTREAM_MCP_URL not configured"}
+            
+            # Prepare the request to upstream MCP
+            request_body = {
+                "jsonrpc": "2.0",
+                "id": "cloud_call",
+                "method": "tools/call",
+                "params": {
+                    "name": params.tool_name,
+                    "arguments": params.args
+                }
+            }
+            
+            # Send request to upstream MCP
+            response = httpx.post(upstream_url, json=request_body, timeout=30.0)
+            response.raise_for_status()
+            
+            # Parse response
+            response_data = response.json()
+            
+            result = {
+                "success": True,
+                "data": response_data.get("result", {})
+            }
+            
+            self.audit.log_tool_call(
+                "cloud_call", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+        except httpx.RequestError as e:
+            error_msg = f"Failed to call cloud tool: {str(e)}"
+            self.audit.log_tool_call(
+                "cloud_call", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+        except Exception as e:
+            error_msg = f"Failed to execute cloud_call: {str(e)}"
+            self.audit.log_tool_call(
+                "cloud_call", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def cloud_doc_get(self, params: CloudDocGetParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Use cloud_call to get document
+            cloud_params = CloudCallParams(
+                tool_name="doc_get",
+                args={"doc_id": params.doc_id, "fields": params.fields}
+            )
+            result = self.cloud_call(cloud_params, caller, user_agent, trace_id)
+            
+            self.audit.log_tool_call(
+                "cloud_doc_get", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+        except Exception as e:
+            error_msg = f"Failed to execute cloud_doc_get: {str(e)}"
+            self.audit.log_tool_call(
+                "cloud_doc_get", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def cloud_doc_patch(self, params: CloudDocPatchParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Use cloud_call to patch document
+            cloud_params = CloudCallParams(
+                tool_name="doc_patch",
+                args={"doc_id": params.doc_id, "data": params.data}
+            )
+            result = self.cloud_call(cloud_params, caller, user_agent, trace_id)
+            
+            self.audit.log_tool_call(
+                "cloud_doc_patch", 
+                caller, 
+                params.dict(), 
+                True, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+        except Exception as e:
+            error_msg = f"Failed to execute cloud_doc_patch: {str(e)}"
+            self.audit.log_tool_call(
+                "cloud_doc_patch", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def exec(self, params: ExecParams, caller: str = "unknown", user_agent: Optional[str] = None, trace_id: Optional[str] = None) -> dict:
+        start_time = datetime.now()
+        try:
+            # Prepare environment
+            env = os.environ.copy()
+            if params.env:
+                env.update(params.env)
+            
+            # Determine working directory
+            cwd = params.cwd or self.repo_root
+            
+            # Execute command
+            process = subprocess.Popen(
+                params.cmd, 
+                shell=True, 
+                cwd=cwd, 
+                env=env, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, 
+                text=True
+            )
+            
+            stdout, stderr = process.communicate()
+            exit_code = process.returncode
+            
+            result = {
+                "success": exit_code == 0,
+                "exit_code": exit_code,
+                "stdout": stdout,
+                "stderr": stderr
+            }
+            
+            self.audit.log_tool_call(
+                "exec", 
+                caller, 
+                params.dict(), 
+                exit_code == 0, 
+                result,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return result
+        except Exception as e:
+            error_msg = f"Failed to execute command: {str(e)}"
+            self.audit.log_tool_call(
+                "exec", 
+                caller, 
+                params.dict(), 
+                False, 
+                error=error_msg,
+                start_time=start_time,
+                user_agent=user_agent,
+                trace_id=trace_id
+            )
+            return {"success": False, "error": error_msg}
+
+    def _validate_date_format(self, date_str: str) -> bool:
+        try:
+            datetime.strptime(date_str, '%Y-%m-%d')
+            return True
+        except ValueError:
+            return False
+    
+    def _initialize_revs(self):
+        """Initialize revs for existing files"""
+        # Initialize board file rev
+        if self.board_file.exists():
+            rev = self._calculate_file_rev(self.board_file)
+            self._file_revs[str(self.board_file)] = rev
+        
+        # Initialize inbox files rev
+        for file in self.inbox_dir.glob('*.md'):
+            rev = self._calculate_file_rev(file)
+            self._file_revs[str(file)] = rev
+    
+    def _calculate_file_rev(self, file_path: Path) -> str:
+        """Calculate rev for a file based on its content"""
+        if not file_path.exists():
+            return "0"
+        
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        
+        return hashlib.sha256(content).hexdigest()[:16]
+    
+    def _get_file_rev(self, file_path: Path) -> str:
+        """Get current rev for a file"""
+        file_str = str(file_path)
+        if file_str not in self._file_revs:
+            self._file_revs[file_str] = self._calculate_file_rev(file_path)
+        return self._file_revs[file_str]
+    
+    def _update_file_rev(self, file_path: Path) -> str:
+        """Update rev for a file and return the new rev"""
+        file_str = str(file_path)
+        new_rev = self._calculate_file_rev(file_path)
+        self._file_revs[file_str] = new_rev
+        return new_rev
+    
+    def _check_request_idempotency(self, request_id: Optional[str]) -> Optional[Dict]:
+        """Check if request_id has been processed before"""
+        if not request_id:
+            return None
+        return self._completed_requests.get(request_id)
+    
+    def _record_completed_request(self, request_id: Optional[str], result: Dict):
+        """Record a completed request"""
+        if request_id:
+            self._completed_requests[request_id] = result
+    
+    def _check_lock(self, run_id: Optional[str]) -> bool:
+        """Check if there's a running run_id"""
+        with self._lock:
+            if self._running_run_id and self._running_run_id != run_id:
+                return False
+            return True
+    
+    def _acquire_lock(self, run_id: Optional[str]):
+        """Acquire the lock"""
+        with self._lock:
+            self._running_run_id = run_id
+    
+    def _release_lock(self):
+        """Release the lock"""
+        with self._lock:
+            self._running_run_id = None
+    
+    def _check_base_rev(self, file_path: Path, base_rev: Optional[str]) -> bool:
+        """Check if base_rev matches current file rev"""
+        if not base_rev:
+            return True  # No base_rev provided, skip check
+        
+        current_rev = self._get_file_rev(file_path)
+        return base_rev == current_rev

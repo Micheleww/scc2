@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-01-16T00:35:44.959473",
+  "backup_path": "D:\\quantsys\\tools\\a2a_hub\\backup\\a2a_hub_backup_20260116_003544.db",
+  "backup_filename": "a2a_hub_backup_20260116_003544.db",
+  "database_path": "D:\\quantsys\\tools\\a2a_hub\\state\\a2a_hub.db",
+  "tables": [
+    "tasks",
+    "agents",
+    "dlq"
+  ],
+  "size_bytes": 36864,
+  "backup_tool": "backup_hub.py",
+  "version": "v0.1"
+}

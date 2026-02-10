@@ -1,0 +1,34 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8000,
+    "log_level": "info"
+  },
+  "auth": {
+    "type": "bearer",
+    "token_env_var": "MCP_BUS_TOKEN"
+  },
+  "paths": {
+    "repo_root": ".",
+    "inbox_dir": "docs/REPORT/inbox",
+    "board_file": "docs/REPORT/QCC-PROGRAM-BOARD-v0.1.md",
+    "log_dir": "docs/LOG/mcp_bus"
+  },
+  "security": {
+    "whitelist": [
+      "docs/REPORT/inbox/",
+      "docs/REPORT/QCC-PROGRAM-BOARD-v0.1.md",
+      "docs/LOG/mcp_bus/",
+      "docs/REPORT/_control/",
+      "docs/REPORT/ata/",
+      "docs/REPORT/ata/messages/",
+      "docs/REPORT/ata/contexts/",
+      "docs/REPORT/ata/queue/",
+      "docs/REPORT/ata/dialogs/"
+    ],
+    "blacklist": [
+      "law/"
+    ],
+    "fail_closed": true
+  }
+}

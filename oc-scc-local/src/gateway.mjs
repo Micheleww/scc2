@@ -7795,7 +7795,7 @@ function writeTraceArtifact({ taskId, job, boardTask }) {
     const root = SCC_REPO_ROOT
     const now = new Date().toISOString()
 
-    const factoryPolicySha = sha256HexOfFile(path.join(root, "factory_policy.json"))
+    const factoryPolicySha = sha256HexOfFile(path.join(root, "config", "factory_policy.json"))
     const rolesSha = sha256HexOfFile(path.join(root, "roles", "registry.json"))
     const skillsSha = sha256HexOfFile(path.join(root, "skills", "registry.json"))
 
@@ -8539,7 +8539,7 @@ let factoryPolicyCache = null
 let factoryPolicyMtimeMs = 0
 function getFactoryPolicy() {
   try {
-    const file = path.join(SCC_REPO_ROOT, "factory_policy.json")
+    const file = path.join(SCC_REPO_ROOT, "config", "factory_policy.json")
     const st = fs.statSync(file)
     const m = Number(st.mtimeMs ?? 0)
     if (!factoryPolicyCache || (Number.isFinite(m) && m > factoryPolicyMtimeMs)) {

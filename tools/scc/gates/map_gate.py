@@ -5,13 +5,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
-
-
-def _load_json(path: pathlib.Path):
-    return json.loads(path.read_text(encoding="utf-8").lstrip("\ufeff"))
+from tools.scc.lib.utils import load_json, norm_rel as _norm_rel
 
 
 def _sha256_hex(text: str) -> str:
@@ -188,7 +182,7 @@ def run(repo: pathlib.Path) -> list[str]:
         for k in ("map_path", "link_report_path"):
             v = ver_obj.get(k)
             if v:
-                touched.add(_norm_rel(str(v)))
+                touched.add(norm_rel(str(v)))
     except Exception:
         pass
 

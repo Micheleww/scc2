@@ -1,18 +1,9 @@
 from __future__ import annotations
 
-import json
 import pathlib
-from typing import Any
 
+from tools.scc.lib.utils import load_json, norm_rel
 from tools.scc.validators.contract_validator import validate_release_record_v1
-
-
-def _norm_rel(p: str) -> str:
-    return p.replace("\\", "/").lstrip("./")
-
-
-def _load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def run(repo: pathlib.Path, submit: dict) -> list[str]:
@@ -26,7 +17,7 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
     candidates: list[str] = []
     for x in list(changed) + list(new_files) + list(touched):
         if isinstance(x, str) and x.strip():
-            candidates.append(_norm_rel(x))
+            candidates.append(norm_rel(x))
 
     # Gate is conditional: only validate when release records are touched.
     targets = [p for p in sorted(set(candidates)) if p.endswith("/release.json") or p.endswith("release.json")]
@@ -40,7 +31,7 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
             errors.append(f"release_gate: missing release record: {rel}")
             continue
         try:
-            obj = _load_json(p)
+            obj = load_json(p)
         except Exception as e:
             errors.append(f"release_gate: bad json: {rel}: {e}")
             continue
@@ -54,7 +45,7 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
         if isinstance(artifacts, dict):
             rr = artifacts.get("release_record_json")
             if isinstance(rr, str) and rr.strip():
-                rr_p = (repo / _norm_rel(rr)).resolve()
+                rr_p = (repo / norm_rel(rr)).resolve()
                 if not rr_p.exists():
                     errors.append(f"release_gate: release_record_json missing: {rr}")
         sources = obj.get("sources") if isinstance(obj, dict) else None
@@ -65,7 +56,7 @@ def run(repo: pathlib.Path, submit: dict) -> list[str]:
                 for k in ("submit_json", "patch_diff", "pr_bundle"):
                     v = s.get(k)
                     if isinstance(v, str) and v.strip():
-                        sp = (repo / _norm_rel(v)).resolve()
+                        sp = (repo / norm_rel(v)).resolve()
                         if not sp.exists():
                             errors.append(f"release_gate: missing source ref: {k}={v}")
                             break
