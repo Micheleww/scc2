@@ -19,7 +19,7 @@ import process from "node:process"
 const ROLE_INBOX_DIR = process.env.ROLE_INBOX_DIR || "/app/artifacts/role_inbox"
 const JOBS_FILE = process.env.JOBS_FILE || "/app/artifacts/executor_logs/exec_state.json"
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || "3000")
-const OPENCODE_CLI = process.env.OPENCODE_CLI_PATH || "opencode-cli"
+const OPENCODE_CLI = process.env.OPENCODE_CLI_PATH || "opencodecli"
 
 // Role 到执行器的映射
 const ROLE_EXECUTOR_MAP = {
