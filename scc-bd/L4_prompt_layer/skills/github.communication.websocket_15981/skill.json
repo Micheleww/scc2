@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.communication.websocket_15981",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Master websocket with industry-proven patterns",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "communication",
+      "websocket",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2293,
+    "max_files": 56
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "communication",
+    "subcategory": "websocket",
+    "tags": [
+      "communication",
+      "websocket",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "advanced",
+    "downloaded_at": "2026-02-09T20:48:56.632Z",
+    "source_repo": "agent-skills/agent-skills",
+    "popularity_score": 669
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "scc.role_policy.v1",
+  "role": "executor",
+  "context_mode": "blank_cli",
+  "allowed_context_refs": ["pins"],
+  "capabilities": {
+    "can_plan": false,
+    "can_modify_contracts": false,
+    "can_write_code": true,
+    "can_run_tests": true,
+    "can_emit_events": true
+  },
+  "permissions": {
+    "read": { "pins_required": true, "allow_paths": [], "deny_paths": ["**/secrets/**"] },
+    "write": { "allow_paths": ["**"], "deny_paths": ["contracts/**", "roles/**", "skills/**", "**/secrets/**"] },
+    "tools": { "allow": ["git", "rg", "node", "python", "pytest"], "deny": ["network"] }
+  },
+  "required_outputs": { "artifacts": ["artifacts/report.md", "artifacts/selftest.log", "artifacts/evidence/"] },
+  "gates": { "preflight_required": true, "hygiene_required": true, "max_attempts": 2, "stop_conditions": ["PINS_INSUFFICIENT"] },
+  "events": { "must_emit_on_fail": ["PINS_INSUFFICIENT"], "must_emit_on_success": ["SUCCESS"] }
+}
+

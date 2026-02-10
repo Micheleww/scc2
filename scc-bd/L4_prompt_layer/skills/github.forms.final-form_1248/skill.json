@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.forms.final-form_1248",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Production-ready final-form implementation strategies",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "forms",
+      "final-form",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1003,
+    "max_files": 20
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "forms",
+    "subcategory": "final-form",
+    "tags": [
+      "forms",
+      "final-form",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:55.911Z",
+    "source_repo": "ux-writing/ux-writing-skill",
+    "popularity_score": 49
+  }
+}

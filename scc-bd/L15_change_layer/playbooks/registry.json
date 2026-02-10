@@ -1,0 +1,30 @@
+{
+  "schema_version": "scc.playbooks_registry.v1",
+  "updated_at": "2026-02-06T20:09:12.451937+00:00",
+  "playbooks": [
+    {
+      "playbook_id": "pb.auto.ci_failed.opencodecli.35a74495e1.v1",
+      "path": "playbooks/pb.auto.ci_failed.opencodecli.35a74495e1.v1.json"
+    },
+    {
+      "playbook_id": "pb.auto.executor_error.opencodecli.9119c28ac2.v1",
+      "path": "playbooks/pb.auto.executor_error.opencodecli.9119c28ac2.v1.json"
+    },
+    {
+      "playbook_id": "pb.auto.pins_insufficient.codex.45729700ee.v1",
+      "path": "playbooks/pb.auto.pins_insufficient.codex.45729700ee.v1.json"
+    },
+    {
+      "playbook_id": "pb.drill.apply_playbooks_applied_v1",
+      "path": "playbooks/pb.drill.apply_playbooks_applied_v1.json"
+    },
+    {
+      "playbook_id": "pb.timeout.codex.v1",
+      "path": "playbooks/pb.timeout.codex.v1.json"
+    },
+    {
+      "playbook_id": "pb.timeout.opencodecli.v1",
+      "path": "playbooks/pb.timeout.opencodecli.v1.json"
+    }
+  ]
+}

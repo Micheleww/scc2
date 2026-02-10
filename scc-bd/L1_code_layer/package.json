@@ -1,0 +1,46 @@
+{
+  "name": "scc-bd",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SCC Backend - 17层分层架构 - 唯一真本",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node ./L1_code_layer/gateway/gateway.mjs",
+    "start": "node ./L1_code_layer/gateway/gateway.mjs",
+    "test": "node --test",
+    "smoke": "node ./L1_code_layer/gateway/smoke.mjs",
+    "selfcheck:role-system": "node ./scripts/selfcheck_role_system.mjs",
+    "selfcheck:map-v1": "node ./scripts/selfcheck_map_v1.mjs",
+    "selfcheck:map-sqlite-v1": "node ./scripts/selfcheck_map_sqlite_v1.mjs",
+    "selfcheck:pins-preflight-v1": "node ./scripts/selfcheck_pins_preflight_v1.mjs",
+    "selfcheck:factory-policy-v1": "node ./scripts/selfcheck_factory_policy_v1.mjs",
+    "selfcheck:verdict-v1": "node ./scripts/selfcheck_verdict_v1.mjs",
+    "selfcheck:preflight-commands-v1": "node ./scripts/selfcheck_preflight_commands_v1.mjs",
+    "selfcheck:contracts-gate-fallback-v1": "node ./scripts/selfcheck_contracts_gate_fallback_v1.mjs",
+    "selfcheck:ci-gates-strict-v1": "node ./scripts/selfcheck_ci_gates_strict_v1.mjs",
+    "selfcheck:events-migrate-v1": "node ./scripts/selfcheck_events_migrate_v1.mjs",
+    "selfcheck:factory-e2e-v1": "node ./scripts/selfcheck_factory_e2e_v1.mjs",
+    "selfcheck:release-integrate-v1": "node ./scripts/selfcheck_release_integrate_v1.mjs",
+    "selfcheck:parent-flow-v1": "node ./scripts/selfcheck_parent_flow_v1.mjs",
+    "selfcheck:board-maintenance-v1": "node ./scripts/selfcheck_board_maintenance_v1.mjs",
+    "selfcheck:eval-sample-failed-v1": "node ./scripts/selfcheck_eval_sample_failed_v1.mjs",
+    "selfcheck:eval-samples-v1": "node ./scripts/selfcheck_eval_samples_v1.mjs",
+    "selfcheck:runtime-v1": "node ./scripts/selfcheck_runtime_v1.mjs",
+    "selfcheck:orchestrator-v1": "node ./scripts/selfcheck_orchestrator_v1.mjs",
+    "map:build": "node ./scripts/map_build_v1.mjs",
+    "map:query": "node ./scripts/map_query_v1.mjs",
+    "map:sqlite": "python ./L17_ontology_layer/map/map_sqlite_v1.py --repo-root .. --force",
+    "map:query-sqlite": "python ./L17_ontology_layer/map/map_query_sqlite_v1.py --repo-root ..",
+    "pins:build": "node ./scripts/pins_build_v1.mjs",
+    "preflight:check": "node ./L13_security_layer/preflight/preflight_v1.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "http-proxy": "^1.18.1"
+  }
+}

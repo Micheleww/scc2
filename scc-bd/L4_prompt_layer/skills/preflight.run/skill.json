@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "preflight.run",
+  "version": "1.0.0",
+  "owner_role": "preflight_gate",
+  "summary": "Run preflight checks (pins coverage, allowedTests presence, scope clarity) and output preflight.json.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/preflight/preflight.schema.json"
+  },
+  "budgets": { "timeout_ms": 600000 },
+  "quality_gates": { "must_fail_closed": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

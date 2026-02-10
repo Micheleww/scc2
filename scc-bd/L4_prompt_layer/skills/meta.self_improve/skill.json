@@ -1,0 +1,61 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "meta.self_improve",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "分析技能使用效果并自动优化技能定义",
+  "description": "## 功能\n- 收集技能使用指标\n- 分析成功/失败率\n- 自动调整参数\n- A/B 测试技能变体\n- 生成改进建议\n\n## 使用场景\n- 技能性能优化\n- 持续改进\n- 自适应系统",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 3000,
+    "max_files": 50
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "capabilities": [
+    "collect_metrics",
+    "analyze_performance",
+    "auto_tune_params",
+    "ab_test_variants",
+    "generate_suggestions"
+  ],
+  "metadata": {
+    "category": "meta",
+    "subcategory": "self_improve",
+    "display_name": "技能自改进",
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced",
+      "core"
+    ],
+    "complexity": "advanced",
+    "created_at": "2026-02-09T20:48:43.806Z",
+    "source": "scc_meta_library",
+    "is_meta_skill": true
+  }
+}

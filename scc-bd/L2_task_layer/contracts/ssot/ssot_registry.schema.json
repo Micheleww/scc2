@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/ssot/ssot_registry.schema.json",
+  "title": "SCC SSOT Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "updated_at", "facts"],
+  "properties": {
+    "schema_version": { "const": "scc.ssot_registry.v1" },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "map_path": { "type": "string", "minLength": 1 },
+        "map_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "facts_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modules", "entry_points", "contracts"],
+      "properties": {
+        "modules": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "entry_points": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "contracts": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
+

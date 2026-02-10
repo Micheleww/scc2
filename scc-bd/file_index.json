@@ -1,0 +1,3731 @@
+{
+  "version": "1.0.0",
+  "created": "2026-02-10T01:35:37.428Z",
+  "layers": {
+    "L1": {
+      "name": "code_layer",
+      "desc": "代码层",
+      "path": "L1_code_layer",
+      "modules": [
+        "config"
+      ]
+    },
+    "L2": {
+      "name": "task_layer",
+      "desc": "任务层",
+      "path": "L2_task_layer",
+      "modules": [
+        "context_pack",
+        "contracts"
+      ]
+    },
+    "L3": {
+      "name": "documentation_layer",
+      "desc": "文档层",
+      "path": "L3_documentation_layer",
+      "modules": [
+        "docs_governance"
+      ]
+    },
+    "L4": {
+      "name": "prompt_layer",
+      "desc": "提示词层",
+      "path": "L4_prompt_layer",
+      "modules": [
+        "prompts"
+      ]
+    },
+    "L5": {
+      "name": "model_layer",
+      "desc": "模型层",
+      "path": "L5_model_layer",
+      "modules": [
+        "models"
+      ]
+    },
+    "L6": {
+      "name": "agent_layer",
+      "desc": "Agent层",
+      "path": "L6_agent_layer",
+      "modules": [
+        "executors",
+        "orchestrators",
+        "runtime"
+      ]
+    },
+    "L7": {
+      "name": "tool_layer",
+      "desc": "工具层",
+      "path": "L7_tool_layer",
+      "modules": [
+        "capabilities",
+        "lib"
+      ]
+    },
+    "L8": {
+      "name": "evidence_layer",
+      "desc": "证据层",
+      "path": "L8_evidence_layer",
+      "modules": [
+        "verdict"
+      ]
+    },
+    "L9": {
+      "name": "state_layer",
+      "desc": "状态层",
+      "path": "L9_state_layer",
+      "modules": [
+        "state_stores"
+      ]
+    },
+    "L11": {
+      "name": "routing_layer",
+      "desc": "路由层",
+      "path": "L11_routing_layer",
+      "modules": [
+        "routing"
+      ]
+    },
+    "L13": {
+      "name": "security_layer",
+      "desc": "安全层",
+      "path": "L13_security_layer",
+      "modules": [
+        "circuit_breaker",
+        "gatekeeper"
+      ]
+    },
+    "L14": {
+      "name": "quality_layer",
+      "desc": "质量层",
+      "path": "L14_quality_layer",
+      "modules": [
+        "eval"
+      ]
+    },
+    "L15": {
+      "name": "change_layer",
+      "desc": "变更层",
+      "path": "L15_change_layer",
+      "modules": [
+        "playbooks"
+      ]
+    },
+    "L16": {
+      "name": "observability_layer",
+      "desc": "观测层",
+      "path": "L16_observability_layer",
+      "modules": [
+        "artifacts"
+      ]
+    },
+    "L17": {
+      "name": "ontology_layer",
+      "desc": "本体层",
+      "path": "L17_ontology_layer",
+      "modules": [
+        "archive"
+      ]
+    }
+  },
+  "files": [
+    {
+      "path": "L1_code_layer\\config\\cmdline.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L1_code_layer\\config\\cmdline.mjs",
+      "name": "cmdline.mjs",
+      "ext": ".mjs",
+      "layer": "L1",
+      "module": "config",
+      "size": 856,
+      "modified": "2026-02-08T05:52:18.548Z",
+      "keywords": [
+        "cmdline"
+      ],
+      "category": "doc"
+    },
+    {
+      "path": "L1_code_layer\\config\\config.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L1_code_layer\\config\\config.mjs",
+      "name": "config.mjs",
+      "ext": ".mjs",
+      "layer": "L1",
+      "module": "config",
+      "size": 2018,
+      "modified": "2026-02-09T20:30:03.585Z",
+      "keywords": [
+        "config"
+      ],
+      "category": "config"
+    },
+    {
+      "path": "L2_task_layer\\context_pack\\context_pack_v1.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L2_task_layer\\context_pack\\context_pack_v1.mjs",
+      "name": "context_pack_v1.mjs",
+      "ext": ".mjs",
+      "layer": "L2",
+      "module": "context_pack",
+      "size": 17038,
+      "modified": "2026-02-09T20:47:32.860Z",
+      "keywords": [
+        "context",
+        "pack",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L2_task_layer\\context_pack\\context_pack_v1.test.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L2_task_layer\\context_pack\\context_pack_v1.test.mjs",
+      "name": "context_pack_v1.test.mjs",
+      "ext": ".mjs",
+      "layer": "L2",
+      "module": "context_pack",
+      "size": 2688,
+      "modified": "2026-02-09T20:27:15.169Z",
+      "keywords": [
+        "context",
+        "pack",
+        "v",
+        "test"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "L2_task_layer\\contracts\\hygiene_checks.v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L2_task_layer\\contracts\\hygiene_checks.v1.json",
+      "name": "hygiene_checks.v1.json",
+      "ext": ".json",
+      "layer": "L2",
+      "module": "contracts",
+      "size": 1113,
+      "modified": "2026-02-09T09:33:19.754Z",
+      "keywords": [
+        "hygiene",
+        "checks",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\check_dashboard_resources.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\check_dashboard_resources.py",
+      "name": "check_dashboard_resources.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 2853,
+      "modified": "2026-02-09T09:33:20.166Z",
+      "keywords": [
+        "check",
+        "dashboard",
+        "resources"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\check_docs.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\check_docs.py",
+      "name": "check_docs.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 27550,
+      "modified": "2026-02-09T09:33:20.168Z",
+      "keywords": [
+        "check",
+        "docs"
+      ],
+      "category": "doc"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\check_root_directory_violations.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\check_root_directory_violations.py",
+      "name": "check_root_directory_violations.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 5923,
+      "modified": "2026-02-09T09:33:20.168Z",
+      "keywords": [
+        "check",
+        "root",
+        "directory",
+        "violations"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\check_web_apps.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\check_web_apps.py",
+      "name": "check_web_apps.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 6414,
+      "modified": "2026-02-09T09:33:20.168Z",
+      "keywords": [
+        "check",
+        "web",
+        "apps"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\docs_scanner.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\docs_scanner.py",
+      "name": "docs_scanner.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 6345,
+      "modified": "2026-02-09T09:33:20.169Z",
+      "keywords": [
+        "docs",
+        "scanner"
+      ],
+      "category": "doc"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\final_dashboard_check.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\final_dashboard_check.py",
+      "name": "final_dashboard_check.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 3615,
+      "modified": "2026-02-09T09:33:20.169Z",
+      "keywords": [
+        "final",
+        "dashboard",
+        "check"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\find_encoding_issues.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\find_encoding_issues.py",
+      "name": "find_encoding_issues.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 1565,
+      "modified": "2026-02-09T09:33:20.169Z",
+      "keywords": [
+        "find",
+        "encoding",
+        "issues"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\fix_arch_references.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\fix_arch_references.py",
+      "name": "fix_arch_references.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 2513,
+      "modified": "2026-02-09T09:33:20.169Z",
+      "keywords": [
+        "fix",
+        "arch",
+        "references"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\fix_dashboard_html_paths.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\fix_dashboard_html_paths.py",
+      "name": "fix_dashboard_html_paths.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 3574,
+      "modified": "2026-02-09T09:33:20.171Z",
+      "keywords": [
+        "fix",
+        "dashboard",
+        "html",
+        "paths"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\fix_dashboard_iframe.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\fix_dashboard_iframe.py",
+      "name": "fix_dashboard_iframe.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 2264,
+      "modified": "2026-02-09T09:33:20.171Z",
+      "keywords": [
+        "fix",
+        "dashboard",
+        "iframe"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\fix_dashboard_port.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\fix_dashboard_port.py",
+      "name": "fix_dashboard_port.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 4658,
+      "modified": "2026-02-09T09:33:20.171Z",
+      "keywords": [
+        "fix",
+        "dashboard",
+        "port"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\fix_encoding_issues.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\fix_encoding_issues.py",
+      "name": "fix_encoding_issues.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 2929,
+      "modified": "2026-02-09T09:33:20.172Z",
+      "keywords": [
+        "fix",
+        "encoding",
+        "issues"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\fix_single_file.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\fix_single_file.py",
+      "name": "fix_single_file.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 869,
+      "modified": "2026-02-09T09:33:20.172Z",
+      "keywords": [
+        "fix",
+        "single",
+        "file"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\generate_static_board.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\generate_static_board.py",
+      "name": "generate_static_board.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 14719,
+      "modified": "2026-02-09T09:33:20.172Z",
+      "keywords": [
+        "generate",
+        "static",
+        "board"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\nav_check.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\nav_check.py",
+      "name": "nav_check.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 4177,
+      "modified": "2026-02-09T09:33:20.172Z",
+      "keywords": [
+        "nav",
+        "check"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\organize_root_directory.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\organize_root_directory.py",
+      "name": "organize_root_directory.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 9892,
+      "modified": "2026-02-09T09:33:20.174Z",
+      "keywords": [
+        "organize",
+        "root",
+        "directory"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\rules.yaml",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\rules.yaml",
+      "name": "rules.yaml",
+      "ext": ".yaml",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 995,
+      "modified": "2026-02-09T09:33:20.174Z",
+      "keywords": [
+        "rules"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\schema_ata_context.json",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\schema_ata_context.json",
+      "name": "schema_ata_context.json",
+      "ext": ".json",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 1165,
+      "modified": "2026-02-09T09:33:20.174Z",
+      "keywords": [
+        "schema",
+        "ata",
+        "context"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\schema_report_metadata.json",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\schema_report_metadata.json",
+      "name": "schema_report_metadata.json",
+      "ext": ".json",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 1562,
+      "modified": "2026-02-09T09:33:20.174Z",
+      "keywords": [
+        "schema",
+        "report",
+        "metadata"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\start_all_services.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\start_all_services.py",
+      "name": "start_all_services.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 3980,
+      "modified": "2026-02-09T09:33:20.175Z",
+      "keywords": [
+        "start",
+        "all",
+        "services"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\test_all_web_services.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\test_all_web_services.py",
+      "name": "test_all_web_services.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 3928,
+      "modified": "2026-02-09T09:33:20.175Z",
+      "keywords": [
+        "test",
+        "all",
+        "web",
+        "services"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\test_negative_cases.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\test_negative_cases.py",
+      "name": "test_negative_cases.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 5284,
+      "modified": "2026-02-09T09:33:20.175Z",
+      "keywords": [
+        "test",
+        "negative",
+        "cases"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\test_web_apps.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\test_web_apps.py",
+      "name": "test_web_apps.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 6002,
+      "modified": "2026-02-09T09:33:20.177Z",
+      "keywords": [
+        "test",
+        "web",
+        "apps"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\unique_entry_guard.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\unique_entry_guard.py",
+      "name": "unique_entry_guard.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 6113,
+      "modified": "2026-02-09T09:33:20.178Z",
+      "keywords": [
+        "unique",
+        "entry",
+        "guard"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\validate_artifacts.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\validate_artifacts.py",
+      "name": "validate_artifacts.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 6107,
+      "modified": "2026-02-09T09:33:20.178Z",
+      "keywords": [
+        "validate",
+        "artifacts"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L3_documentation_layer\\docs_governance\\verify_dashboard_ui.py",
+      "absolute": "c:\\scc\\scc-bd\\L3_documentation_layer\\docs_governance\\verify_dashboard_ui.py",
+      "name": "verify_dashboard_ui.py",
+      "ext": ".py",
+      "layer": "L3",
+      "module": "docs_governance",
+      "size": 3646,
+      "modified": "2026-02-09T09:33:20.180Z",
+      "keywords": [
+        "verify",
+        "dashboard",
+        "ui"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L4_prompt_layer\\prompts\\registry.json",
+      "absolute": "c:\\scc\\scc-bd\\L4_prompt_layer\\prompts\\registry.json",
+      "name": "registry.json",
+      "ext": ".json",
+      "layer": "L4",
+      "module": "prompts",
+      "size": 7559,
+      "modified": "2026-02-08T04:24:56.075Z",
+      "keywords": [
+        "registry"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L5_model_layer\\models\\adapters.py",
+      "absolute": "c:\\scc\\scc-bd\\L5_model_layer\\models\\adapters.py",
+      "name": "adapters.py",
+      "ext": ".py",
+      "layer": "L5",
+      "module": "models",
+      "size": 2999,
+      "modified": "2026-02-09T21:35:07.111Z",
+      "keywords": [
+        "adapters"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L5_model_layer\\models\\cli.py",
+      "absolute": "c:\\scc\\scc-bd\\L5_model_layer\\models\\cli.py",
+      "name": "cli.py",
+      "ext": ".py",
+      "layer": "L5",
+      "module": "models",
+      "size": 7565,
+      "modified": "2026-02-09T21:35:59.804Z",
+      "keywords": [
+        "cli"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L5_model_layer\\models\\model_types.py",
+      "absolute": "c:\\scc\\scc-bd\\L5_model_layer\\models\\model_types.py",
+      "name": "model_types.py",
+      "ext": ".py",
+      "layer": "L5",
+      "module": "models",
+      "size": 1032,
+      "modified": "2026-02-09T21:36:06.813Z",
+      "keywords": [
+        "model",
+        "types"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L5_model_layer\\models\\router.py",
+      "absolute": "c:\\scc\\scc-bd\\L5_model_layer\\models\\router.py",
+      "name": "router.py",
+      "ext": ".py",
+      "layer": "L5",
+      "module": "models",
+      "size": 3752,
+      "modified": "2026-02-09T21:36:15.831Z",
+      "keywords": [
+        "router"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L5_model_layer\\models\\sources.py",
+      "absolute": "c:\\scc\\scc-bd\\L5_model_layer\\models\\sources.py",
+      "name": "sources.py",
+      "ext": ".py",
+      "layer": "L5",
+      "module": "models",
+      "size": 7163,
+      "modified": "2026-02-09T21:35:31.085Z",
+      "keywords": [
+        "sources"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L5_model_layer\\models\\__init__.py",
+      "absolute": "c:\\scc\\scc-bd\\L5_model_layer\\models\\__init__.py",
+      "name": "__init__.py",
+      "ext": ".py",
+      "layer": "L5",
+      "module": "models",
+      "size": 267,
+      "modified": "2026-02-09T21:36:25.067Z",
+      "keywords": [
+        "init"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L5_model_layer\\models\\__main__.py",
+      "absolute": "c:\\scc\\scc-bd\\L5_model_layer\\models\\__main__.py",
+      "name": "__main__.py",
+      "ext": ".py",
+      "layer": "L5",
+      "module": "models",
+      "size": 103,
+      "modified": "2026-02-09T09:33:20.488Z",
+      "keywords": [
+        "main"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\executors\\index.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\executors\\index.mjs",
+      "name": "index.mjs",
+      "ext": ".mjs",
+      "layer": "L6",
+      "module": "executors",
+      "size": 881,
+      "modified": "2026-02-10T00:18:13.202Z",
+      "keywords": [
+        "index"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\executors\\openclaw_executor.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\executors\\openclaw_executor.mjs",
+      "name": "openclaw_executor.mjs",
+      "ext": ".mjs",
+      "layer": "L6",
+      "module": "executors",
+      "size": 10754,
+      "modified": "2026-02-10T00:18:13.221Z",
+      "keywords": [
+        "openclaw",
+        "executor"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "L6_agent_layer\\executors\\opencode_executor.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\executors\\opencode_executor.mjs",
+      "name": "opencode_executor.mjs",
+      "ext": ".mjs",
+      "layer": "L6",
+      "module": "executors",
+      "size": 8076,
+      "modified": "2026-02-09T20:19:40.914Z",
+      "keywords": [
+        "opencode",
+        "executor"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "L6_agent_layer\\executors\\opencode_wrapper.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\executors\\opencode_wrapper.mjs",
+      "name": "opencode_wrapper.mjs",
+      "ext": ".mjs",
+      "layer": "L6",
+      "module": "executors",
+      "size": 4449,
+      "modified": "2026-02-09T20:21:00.884Z",
+      "keywords": [
+        "opencode",
+        "wrapper"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\executors\\registry.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\executors\\registry.mjs",
+      "name": "registry.mjs",
+      "ext": ".mjs",
+      "layer": "L6",
+      "module": "executors",
+      "size": 2864,
+      "modified": "2026-02-10T00:17:49.248Z",
+      "keywords": [
+        "registry"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\executors\\webgpt_executor.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\executors\\webgpt_executor.mjs",
+      "name": "webgpt_executor.mjs",
+      "ext": ".mjs",
+      "layer": "L6",
+      "module": "executors",
+      "size": 8795,
+      "modified": "2026-02-10T00:18:13.240Z",
+      "keywords": [
+        "webgpt",
+        "executor"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\cc_like.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\cc_like.py",
+      "name": "cc_like.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 6887,
+      "modified": "2026-02-09T09:33:20.346Z",
+      "keywords": [
+        "cc",
+        "like"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\cc_orchestrator_v0.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\cc_orchestrator_v0.py",
+      "name": "cc_orchestrator_v0.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 3219,
+      "modified": "2026-02-09T09:33:20.347Z",
+      "keywords": [
+        "cc",
+        "orchestrator",
+        "v"
+      ],
+      "category": "orchestrator"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\codexcli_behavior_report.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\codexcli_behavior_report.py",
+      "name": "codexcli_behavior_report.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 5244,
+      "modified": "2026-02-09T09:33:20.347Z",
+      "keywords": [
+        "codexcli",
+        "behavior",
+        "report"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\codexcli_trace_demo.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\codexcli_trace_demo.py",
+      "name": "codexcli_trace_demo.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 7838,
+      "modified": "2026-02-09T09:33:20.348Z",
+      "keywords": [
+        "codexcli",
+        "trace",
+        "demo"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\continuation_context.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\continuation_context.py",
+      "name": "continuation_context.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 7264,
+      "modified": "2026-02-09T09:33:20.348Z",
+      "keywords": [
+        "continuation",
+        "context"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\execution_plan.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\execution_plan.py",
+      "name": "execution_plan.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 5454,
+      "modified": "2026-02-10T00:31:18.110Z",
+      "keywords": [
+        "execution",
+        "plan"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\fullagent_loop.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\fullagent_loop.py",
+      "name": "fullagent_loop.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 20984,
+      "modified": "2026-02-09T09:33:20.350Z",
+      "keywords": [
+        "fullagent",
+        "loop"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\interface.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\interface.py",
+      "name": "interface.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 2310,
+      "modified": "2026-02-09T09:33:20.351Z",
+      "keywords": [
+        "interface"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\profiles.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\profiles.py",
+      "name": "profiles.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 2373,
+      "modified": "2026-02-09T09:33:20.351Z",
+      "keywords": [
+        "profiles"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\registry.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\registry.py",
+      "name": "registry.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 585,
+      "modified": "2026-02-09T09:33:20.352Z",
+      "keywords": [
+        "registry"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\reminders.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\reminders.py",
+      "name": "reminders.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 1490,
+      "modified": "2026-02-09T09:33:20.352Z",
+      "keywords": [
+        "reminders"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\state_store.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\state_store.py",
+      "name": "state_store.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 4661,
+      "modified": "2026-02-09T09:33:20.353Z",
+      "keywords": [
+        "state",
+        "store"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\subtask_index.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\subtask_index.py",
+      "name": "subtask_index.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 2871,
+      "modified": "2026-02-09T09:33:20.353Z",
+      "keywords": [
+        "subtask",
+        "index"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\subtask_pool.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\subtask_pool.py",
+      "name": "subtask_pool.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 3370,
+      "modified": "2026-02-09T09:33:20.354Z",
+      "keywords": [
+        "subtask",
+        "pool"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\subtask_summary.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\subtask_summary.py",
+      "name": "subtask_summary.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 4263,
+      "modified": "2026-02-09T09:33:20.355Z",
+      "keywords": [
+        "subtask",
+        "summary"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\todo_state.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\todo_state.py",
+      "name": "todo_state.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 4182,
+      "modified": "2026-02-09T09:33:20.355Z",
+      "keywords": [
+        "todo",
+        "state"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L6_agent_layer\\orchestrators\\__init__.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\orchestrators\\__init__.py",
+      "name": "__init__.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "orchestrators",
+      "size": 251,
+      "modified": "2026-02-09T09:33:20.345Z",
+      "keywords": [
+        "init"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\runtime\\diff_extract.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\runtime\\diff_extract.py",
+      "name": "diff_extract.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "runtime",
+      "size": 2983,
+      "modified": "2026-02-10T00:30:37.757Z",
+      "keywords": [
+        "diff",
+        "extract"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\runtime\\orchestrator_v1.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\runtime\\orchestrator_v1.py",
+      "name": "orchestrator_v1.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "runtime",
+      "size": 8870,
+      "modified": "2026-02-10T00:30:08.716Z",
+      "keywords": [
+        "orchestrator",
+        "v"
+      ],
+      "category": "orchestrator"
+    },
+    {
+      "path": "L6_agent_layer\\runtime\\run_child_task.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\runtime\\run_child_task.py",
+      "name": "run_child_task.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "runtime",
+      "size": 30537,
+      "modified": "2026-02-09T09:33:20.500Z",
+      "keywords": [
+        "run",
+        "child",
+        "task"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\runtime\\unified_diff_apply.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\runtime\\unified_diff_apply.py",
+      "name": "unified_diff_apply.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "runtime",
+      "size": 5540,
+      "modified": "2026-02-09T09:33:20.502Z",
+      "keywords": [
+        "unified",
+        "diff",
+        "apply"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L6_agent_layer\\runtime\\unified_diff_guard.py",
+      "absolute": "c:\\scc\\scc-bd\\L6_agent_layer\\runtime\\unified_diff_guard.py",
+      "name": "unified_diff_guard.py",
+      "ext": ".py",
+      "layer": "L6",
+      "module": "runtime",
+      "size": 5579,
+      "modified": "2026-02-10T00:29:59.212Z",
+      "keywords": [
+        "unified",
+        "diff",
+        "guard"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\context_pack.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\context_pack.py",
+      "name": "context_pack.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 8795,
+      "modified": "2026-02-09T09:33:20.262Z",
+      "keywords": [
+        "context",
+        "pack"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\context_pins.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\context_pins.py",
+      "name": "context_pins.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 4364,
+      "modified": "2026-02-09T09:33:20.262Z",
+      "keywords": [
+        "context",
+        "pins"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\file_lock.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\file_lock.py",
+      "name": "file_lock.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 7196,
+      "modified": "2026-02-09T09:33:20.264Z",
+      "keywords": [
+        "file",
+        "lock"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\mentions.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\mentions.py",
+      "name": "mentions.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 3441,
+      "modified": "2026-02-09T09:33:20.264Z",
+      "keywords": [
+        "mentions"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\patch_pipeline.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\patch_pipeline.py",
+      "name": "patch_pipeline.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 34749,
+      "modified": "2026-02-09T09:33:20.264Z",
+      "keywords": [
+        "patch",
+        "pipeline"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\permission_floor.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\permission_floor.py",
+      "name": "permission_floor.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 20088,
+      "modified": "2026-02-09T09:33:20.266Z",
+      "keywords": [
+        "permission",
+        "floor"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\skills_catalog.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\skills_catalog.py",
+      "name": "skills_catalog.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 4746,
+      "modified": "2026-02-09T09:33:20.266Z",
+      "keywords": [
+        "skills",
+        "catalog"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\tool_spans.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\tool_spans.py",
+      "name": "tool_spans.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 1612,
+      "modified": "2026-02-09T09:33:20.266Z",
+      "keywords": [
+        "tool",
+        "spans"
+      ],
+      "category": "tool"
+    },
+    {
+      "path": "L7_tool_layer\\capabilities\\__init__.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\capabilities\\__init__.py",
+      "name": "__init__.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "capabilities",
+      "size": 307,
+      "modified": "2026-02-09T09:33:20.262Z",
+      "keywords": [
+        "init"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\lib\\utils.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\lib\\utils.py",
+      "name": "utils.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "lib",
+      "size": 773,
+      "modified": "2026-02-09T09:33:20.485Z",
+      "keywords": [
+        "utils"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L7_tool_layer\\lib\\__init__.py",
+      "absolute": "c:\\scc\\scc-bd\\L7_tool_layer\\lib\\__init__.py",
+      "name": "__init__.py",
+      "ext": ".py",
+      "layer": "L7",
+      "module": "lib",
+      "size": 0,
+      "modified": "2026-02-09T09:33:20.484Z",
+      "keywords": [
+        "init"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L8_evidence_layer\\verdict\\verifier_judge_v1.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L8_evidence_layer\\verdict\\verifier_judge_v1.mjs",
+      "name": "verifier_judge_v1.mjs",
+      "ext": ".mjs",
+      "layer": "L8",
+      "module": "verdict",
+      "size": 3966,
+      "modified": "2026-02-08T04:24:56.104Z",
+      "keywords": [
+        "verifier",
+        "judge",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L9_state_layer\\state_stores\\board.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L9_state_layer\\state_stores\\board.mjs",
+      "name": "board.mjs",
+      "ext": ".mjs",
+      "layer": "L9",
+      "module": "state_stores",
+      "size": 2436,
+      "modified": "2026-02-08T05:46:10.342Z",
+      "keywords": [
+        "board"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L9_state_layer\\state_stores\\flow_state_store.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L9_state_layer\\state_stores\\flow_state_store.mjs",
+      "name": "flow_state_store.mjs",
+      "ext": ".mjs",
+      "layer": "L9",
+      "module": "state_stores",
+      "size": 2049,
+      "modified": "2026-02-08T06:00:25.959Z",
+      "keywords": [
+        "flow",
+        "state",
+        "store"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L9_state_layer\\state_stores\\jobs_store.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L9_state_layer\\state_stores\\jobs_store.mjs",
+      "name": "jobs_store.mjs",
+      "ext": ".mjs",
+      "layer": "L9",
+      "module": "state_stores",
+      "size": 579,
+      "modified": "2026-02-09T21:22:28.866Z",
+      "keywords": [
+        "jobs",
+        "store"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L9_state_layer\\state_stores\\state_store.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L9_state_layer\\state_stores\\state_store.mjs",
+      "name": "state_store.mjs",
+      "ext": ".mjs",
+      "layer": "L9",
+      "module": "state_stores",
+      "size": 2969,
+      "modified": "2026-02-08T05:40:19.877Z",
+      "keywords": [
+        "state",
+        "store"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router.mjs",
+      "name": "router.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 5189,
+      "modified": "2026-02-09T21:21:40.955Z",
+      "keywords": [
+        "router"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_board.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_board.mjs",
+      "name": "router_board.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 9532,
+      "modified": "2026-02-10T00:16:19.179Z",
+      "keywords": [
+        "router",
+        "board"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_config.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_config.mjs",
+      "name": "router_config.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 4975,
+      "modified": "2026-02-08T12:05:28.073Z",
+      "keywords": [
+        "router",
+        "config"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_core.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_core.mjs",
+      "name": "router_core.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 6582,
+      "modified": "2026-02-08T10:47:25.276Z",
+      "keywords": [
+        "router",
+        "core"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_executor.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_executor.mjs",
+      "name": "router_executor.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 7495,
+      "modified": "2026-02-10T00:16:19.208Z",
+      "keywords": [
+        "router",
+        "executor"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_factory.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_factory.mjs",
+      "name": "router_factory.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 2389,
+      "modified": "2026-02-09T01:09:02.786Z",
+      "keywords": [
+        "router",
+        "factory"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_map.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_map.mjs",
+      "name": "router_map.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 5569,
+      "modified": "2026-02-09T21:10:51.750Z",
+      "keywords": [
+        "router",
+        "map"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_models.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_models.mjs",
+      "name": "router_models.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 4062,
+      "modified": "2026-02-08T12:05:54.563Z",
+      "keywords": [
+        "router",
+        "models"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_nav.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_nav.mjs",
+      "name": "router_nav.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 2834,
+      "modified": "2026-02-08T10:57:10.769Z",
+      "keywords": [
+        "router",
+        "nav"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_pins.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_pins.mjs",
+      "name": "router_pins.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 3072,
+      "modified": "2026-02-09T21:12:43.517Z",
+      "keywords": [
+        "router",
+        "pins"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_plugins.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_plugins.mjs",
+      "name": "router_plugins.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 12854,
+      "modified": "2026-02-10T00:18:13.153Z",
+      "keywords": [
+        "router",
+        "plugins"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_portal.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_portal.mjs",
+      "name": "router_portal.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 22668,
+      "modified": "2026-02-09T21:13:03.423Z",
+      "keywords": [
+        "router",
+        "portal"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_prompts.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_prompts.mjs",
+      "name": "router_prompts.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 1185,
+      "modified": "2026-02-08T12:06:06.731Z",
+      "keywords": [
+        "router",
+        "prompts"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L11_routing_layer\\routing\\router_sccdev.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L11_routing_layer\\routing\\router_sccdev.mjs",
+      "name": "router_sccdev.mjs",
+      "ext": ".mjs",
+      "layer": "L11",
+      "module": "routing",
+      "size": 3323,
+      "modified": "2026-02-08T10:57:37.065Z",
+      "keywords": [
+        "router",
+        "sccdev"
+      ],
+      "category": "gateway"
+    },
+    {
+      "path": "L13_security_layer\\circuit_breaker\\circuit_breaker_store.mjs",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\circuit_breaker\\circuit_breaker_store.mjs",
+      "name": "circuit_breaker_store.mjs",
+      "ext": ".mjs",
+      "layer": "L13",
+      "module": "circuit_breaker",
+      "size": 1238,
+      "modified": "2026-02-09T20:46:32.106Z",
+      "keywords": [
+        "circuit",
+        "breaker",
+        "store"
+      ],
+      "category": "state"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\ata_hashchain.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\ata_hashchain.py",
+      "name": "ata_hashchain.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 6173,
+      "modified": "2026-02-09T09:33:20.181Z",
+      "keywords": [
+        "ata",
+        "hashchain"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\conftest_runner.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\conftest_runner.py",
+      "name": "conftest_runner.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 2264,
+      "modified": "2026-02-09T09:33:20.183Z",
+      "keywords": [
+        "conftest",
+        "runner"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\control_plane_detect.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\control_plane_detect.py",
+      "name": "control_plane_detect.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 2769,
+      "modified": "2026-02-09T09:33:20.184Z",
+      "keywords": [
+        "control",
+        "plane",
+        "detect"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\demo_signature_verification.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\demo_signature_verification.py",
+      "name": "demo_signature_verification.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 2608,
+      "modified": "2026-02-09T09:33:20.184Z",
+      "keywords": [
+        "demo",
+        "signature",
+        "verification"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\detect_control_plane_changes.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\detect_control_plane_changes.py",
+      "name": "detect_control_plane_changes.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 2039,
+      "modified": "2026-02-09T09:33:20.184Z",
+      "keywords": [
+        "detect",
+        "control",
+        "plane",
+        "changes"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\dual_drift_sensor.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\dual_drift_sensor.py",
+      "name": "dual_drift_sensor.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 6835,
+      "modified": "2026-02-09T09:33:20.185Z",
+      "keywords": [
+        "dual",
+        "drift",
+        "sensor"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\dual_gate.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\dual_gate.py",
+      "name": "dual_gate.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 6525,
+      "modified": "2026-02-09T09:33:20.185Z",
+      "keywords": [
+        "dual",
+        "gate"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\entry_file_scan.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\entry_file_scan.py",
+      "name": "entry_file_scan.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 5917,
+      "modified": "2026-02-09T09:33:20.185Z",
+      "keywords": [
+        "entry",
+        "file",
+        "scan"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\fast_gate.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\fast_gate.py",
+      "name": "fast_gate.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 100979,
+      "modified": "2026-02-09T20:34:00.365Z",
+      "keywords": [
+        "fast",
+        "gate"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\hardness_selfcheck.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\hardness_selfcheck.py",
+      "name": "hardness_selfcheck.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 12304,
+      "modified": "2026-02-09T20:33:52.676Z",
+      "keywords": [
+        "hardness",
+        "selfcheck"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\import_scan.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\import_scan.py",
+      "name": "import_scan.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 8614,
+      "modified": "2026-02-09T09:33:20.187Z",
+      "keywords": [
+        "import",
+        "scan"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\l0_gate_hook.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\l0_gate_hook.py",
+      "name": "l0_gate_hook.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 5515,
+      "modified": "2026-02-09T09:33:20.188Z",
+      "keywords": [
+        "l",
+        "gate",
+        "hook"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\law_pointer_scan.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\law_pointer_scan.py",
+      "name": "law_pointer_scan.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 5546,
+      "modified": "2026-02-09T09:33:20.188Z",
+      "keywords": [
+        "law",
+        "pointer",
+        "scan"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\manifest.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\manifest.py",
+      "name": "manifest.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 7264,
+      "modified": "2026-02-09T09:33:20.188Z",
+      "keywords": [
+        "manifest"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\mutation_runner.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\mutation_runner.py",
+      "name": "mutation_runner.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 36584,
+      "modified": "2026-02-09T20:33:51.330Z",
+      "keywords": [
+        "mutation",
+        "runner"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\no_absolute_path.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\no_absolute_path.py",
+      "name": "no_absolute_path.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 6777,
+      "modified": "2026-02-09T09:33:20.190Z",
+      "keywords": [
+        "no",
+        "absolute",
+        "path"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\reason_codes.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\reason_codes.py",
+      "name": "reason_codes.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 12661,
+      "modified": "2026-02-09T09:33:20.191Z",
+      "keywords": [
+        "reason",
+        "codes"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\ruleset_sha_protection.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\ruleset_sha_protection.py",
+      "name": "ruleset_sha_protection.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 14717,
+      "modified": "2026-02-09T09:33:20.191Z",
+      "keywords": [
+        "ruleset",
+        "sha",
+        "protection"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\run_ruleset_sha_protection.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\run_ruleset_sha_protection.py",
+      "name": "run_ruleset_sha_protection.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 1883,
+      "modified": "2026-02-09T20:34:56.628Z",
+      "keywords": [
+        "run",
+        "ruleset",
+        "sha",
+        "protection"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\self_check.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\self_check.py",
+      "name": "self_check.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 6957,
+      "modified": "2026-02-09T20:33:41.949Z",
+      "keywords": [
+        "self",
+        "check"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\signature_verifier.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\signature_verifier.py",
+      "name": "signature_verifier.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 7105,
+      "modified": "2026-02-09T20:33:40.771Z",
+      "keywords": [
+        "signature",
+        "verifier"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\strict_submit_parser.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\strict_submit_parser.py",
+      "name": "strict_submit_parser.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 12263,
+      "modified": "2026-02-09T09:33:20.193Z",
+      "keywords": [
+        "strict",
+        "submit",
+        "parser"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\submit_txt.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\submit_txt.py",
+      "name": "submit_txt.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 9654,
+      "modified": "2026-02-09T09:33:20.194Z",
+      "keywords": [
+        "submit",
+        "txt"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\test_protected_file.txt",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\test_protected_file.txt",
+      "name": "test_protected_file.txt",
+      "ext": ".txt",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 30,
+      "modified": "2026-02-09T09:33:20.194Z",
+      "keywords": [
+        "test",
+        "protected",
+        "file"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\test_ruleset_sha_protection.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\test_ruleset_sha_protection.py",
+      "name": "test_ruleset_sha_protection.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 6798,
+      "modified": "2026-02-09T09:33:20.195Z",
+      "keywords": [
+        "test",
+        "ruleset",
+        "sha",
+        "protection"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\verify_hardness.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\verify_hardness.py",
+      "name": "verify_hardness.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 12717,
+      "modified": "2026-02-09T09:33:20.203Z",
+      "keywords": [
+        "verify",
+        "hardness"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\__init__.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\__init__.py",
+      "name": "__init__.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 124,
+      "modified": "2026-02-09T09:33:20.181Z",
+      "keywords": [
+        "init"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L13_security_layer\\gatekeeper\\__main__.py",
+      "absolute": "c:\\scc\\scc-bd\\L13_security_layer\\gatekeeper\\__main__.py",
+      "name": "__main__.py",
+      "ext": ".py",
+      "layer": "L13",
+      "module": "gatekeeper",
+      "size": 20898,
+      "modified": "2026-02-09T09:33:20.181Z",
+      "keywords": [
+        "main"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L14_quality_layer\\eval\\eval_manifest.json",
+      "absolute": "c:\\scc\\scc-bd\\L14_quality_layer\\eval\\eval_manifest.json",
+      "name": "eval_manifest.json",
+      "ext": ".json",
+      "layer": "L14",
+      "module": "eval",
+      "size": 270,
+      "modified": "2026-02-09T09:33:19.807Z",
+      "keywords": [
+        "eval",
+        "manifest"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L14_quality_layer\\eval\\README.md",
+      "absolute": "c:\\scc\\scc-bd\\L14_quality_layer\\eval\\README.md",
+      "name": "README.md",
+      "ext": ".md",
+      "layer": "L14",
+      "module": "eval",
+      "size": 282,
+      "modified": "2026-02-09T09:33:19.807Z",
+      "keywords": [
+        "readme"
+      ],
+      "category": "doc"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\overrides.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\overrides.json",
+      "name": "overrides.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 128,
+      "modified": "2026-02-09T09:33:19.895Z",
+      "keywords": [
+        "overrides"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "name": "pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 1113,
+      "modified": "2026-02-09T09:33:19.895Z",
+      "keywords": [
+        "pb",
+        "auto",
+        "ci",
+        "failed",
+        "opencodecli",
+        "a",
+        "e",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "name": "pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 1069,
+      "modified": "2026-02-09T09:33:19.895Z",
+      "keywords": [
+        "pb",
+        "auto",
+        "executor",
+        "error",
+        "opencodecli",
+        "c",
+        "ac",
+        "v"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "name": "pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 1029,
+      "modified": "2026-02-09T09:33:19.896Z",
+      "keywords": [
+        "pb",
+        "auto",
+        "pins",
+        "insufficient",
+        "codex",
+        "ee",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json",
+      "name": "pb.drill.apply_playbooks_applied_v1.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 838,
+      "modified": "2026-02-09T09:33:19.896Z",
+      "keywords": [
+        "pb",
+        "drill",
+        "apply",
+        "playbooks",
+        "applied",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\pb.timeout.codex.v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\pb.timeout.codex.v1.json",
+      "name": "pb.timeout.codex.v1.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 1171,
+      "modified": "2026-02-09T09:33:19.896Z",
+      "keywords": [
+        "pb",
+        "timeout",
+        "codex",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\pb.timeout.opencodecli.v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\pb.timeout.opencodecli.v1.json",
+      "name": "pb.timeout.opencodecli.v1.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 1229,
+      "modified": "2026-02-09T09:33:19.896Z",
+      "keywords": [
+        "pb",
+        "timeout",
+        "opencodecli",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\README.md",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\README.md",
+      "name": "README.md",
+      "ext": ".md",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 190,
+      "modified": "2026-02-09T09:33:19.892Z",
+      "keywords": [
+        "readme"
+      ],
+      "category": "doc"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\registry.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\registry.json",
+      "name": "registry.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 1005,
+      "modified": "2026-02-09T09:33:19.898Z",
+      "keywords": [
+        "registry"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "absolute": "c:\\scc\\scc-bd\\L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "name": "pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "ext": ".json",
+      "layer": "L15",
+      "module": "playbooks",
+      "size": 1113,
+      "modified": "2026-02-09T09:33:19.895Z",
+      "keywords": [
+        "pb",
+        "auto",
+        "ci",
+        "failed",
+        "opencodecli",
+        "a",
+        "e",
+        "v"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "all_skills.txt",
+      "absolute": "c:\\scc\\scc-bd\\all_skills.txt",
+      "name": "all_skills.txt",
+      "ext": ".txt",
+      "layer": "root",
+      "module": "root",
+      "size": 59,
+      "modified": "2026-02-09T22:43:09.100Z",
+      "keywords": [
+        "all",
+        "skills"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "LAYER_MAPPING.md",
+      "absolute": "c:\\scc\\scc-bd\\LAYER_MAPPING.md",
+      "name": "LAYER_MAPPING.md",
+      "ext": ".md",
+      "layer": "root",
+      "module": "root",
+      "size": 7713,
+      "modified": "2026-02-10T01:16:47.380Z",
+      "keywords": [
+        "layer",
+        "mapping"
+      ],
+      "category": "doc"
+    },
+    {
+      "path": "llm_config.json",
+      "absolute": "c:\\scc\\scc-bd\\llm_config.json",
+      "name": "llm_config.json",
+      "ext": ".json",
+      "layer": "root",
+      "module": "root",
+      "size": 167,
+      "modified": "2026-02-10T00:16:20.486Z",
+      "keywords": [
+        "llm",
+        "config"
+      ],
+      "category": "config"
+    },
+    {
+      "path": "llm_opencode_plugin.py",
+      "absolute": "c:\\scc\\scc-bd\\llm_opencode_plugin.py",
+      "name": "llm_opencode_plugin.py",
+      "ext": ".py",
+      "layer": "root",
+      "module": "root",
+      "size": 589,
+      "modified": "2026-02-10T00:16:20.506Z",
+      "keywords": [
+        "llm",
+        "opencode",
+        "plugin"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "nul",
+      "absolute": "c:\\scc\\scc-bd\\nul",
+      "name": "nul",
+      "ext": "",
+      "layer": "root",
+      "module": "root",
+      "size": 0,
+      "modified": "2026-02-09T23:18:15.775Z",
+      "keywords": [
+        "nul"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "START_HERE.md",
+      "absolute": "c:\\scc\\scc-bd\\START_HERE.md",
+      "name": "START_HERE.md",
+      "ext": ".md",
+      "layer": "root",
+      "module": "root",
+      "size": 5455,
+      "modified": "2026-02-10T01:16:47.433Z",
+      "keywords": [
+        "start",
+        "here"
+      ],
+      "category": "doc"
+    },
+    {
+      "path": "start_scc_with_olt.bat",
+      "absolute": "c:\\scc\\scc-bd\\start_scc_with_olt.bat",
+      "name": "start_scc_with_olt.bat",
+      "ext": ".bat",
+      "layer": "root",
+      "module": "root",
+      "size": 900,
+      "modified": "2026-02-10T00:16:20.552Z",
+      "keywords": [
+        "start",
+        "scc",
+        "with",
+        "olt"
+      ],
+      "category": "other"
+    },
+    {
+      "path": "test_bridge.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_bridge.mjs",
+      "name": "test_bridge.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 458,
+      "modified": "2026-02-10T00:16:20.571Z",
+      "keywords": [
+        "test",
+        "bridge"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_bridge_v2.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_bridge_v2.mjs",
+      "name": "test_bridge_v2.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 847,
+      "modified": "2026-02-10T00:16:20.583Z",
+      "keywords": [
+        "test",
+        "bridge",
+        "v"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_correct_tool.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_correct_tool.mjs",
+      "name": "test_correct_tool.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 2374,
+      "modified": "2026-02-10T00:16:20.609Z",
+      "keywords": [
+        "test",
+        "correct",
+        "tool"
+      ],
+      "category": "tool"
+    },
+    {
+      "path": "test_debug.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_debug.mjs",
+      "name": "test_debug.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1758,
+      "modified": "2026-02-10T00:16:20.623Z",
+      "keywords": [
+        "test",
+        "debug"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_debug_full.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_debug_full.mjs",
+      "name": "test_debug_full.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1188,
+      "modified": "2026-02-10T00:16:20.630Z",
+      "keywords": [
+        "test",
+        "debug",
+        "full"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_debug_raw.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_debug_raw.mjs",
+      "name": "test_debug_raw.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 2029,
+      "modified": "2026-02-10T00:16:20.648Z",
+      "keywords": [
+        "test",
+        "debug",
+        "raw"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_debug_raw2.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_debug_raw2.mjs",
+      "name": "test_debug_raw2.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 2056,
+      "modified": "2026-02-10T00:16:20.658Z",
+      "keywords": [
+        "test",
+        "debug",
+        "raw"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_direct.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_direct.mjs",
+      "name": "test_direct.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 994,
+      "modified": "2026-02-10T00:16:20.681Z",
+      "keywords": [
+        "test",
+        "direct"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_error.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_error.mjs",
+      "name": "test_error.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 834,
+      "modified": "2026-02-10T00:16:20.687Z",
+      "keywords": [
+        "test",
+        "error"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_executor.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_executor.mjs",
+      "name": "test_executor.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 823,
+      "modified": "2026-02-09T23:13:21.995Z",
+      "keywords": [
+        "test",
+        "executor"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "test_full_flow.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_full_flow.mjs",
+      "name": "test_full_flow.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1989,
+      "modified": "2026-02-10T00:16:20.715Z",
+      "keywords": [
+        "test",
+        "full",
+        "flow"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_minimal.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_minimal.mjs",
+      "name": "test_minimal.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 874,
+      "modified": "2026-02-10T00:16:20.728Z",
+      "keywords": [
+        "test",
+        "minimal"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_multi_round.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_multi_round.mjs",
+      "name": "test_multi_round.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1188,
+      "modified": "2026-02-10T00:16:20.735Z",
+      "keywords": [
+        "test",
+        "multi",
+        "round"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_multi_round_final.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_multi_round_final.mjs",
+      "name": "test_multi_round_final.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1039,
+      "modified": "2026-02-10T00:16:20.754Z",
+      "keywords": [
+        "test",
+        "multi",
+        "round",
+        "final"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_no_auto_tools.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_no_auto_tools.mjs",
+      "name": "test_no_auto_tools.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 2191,
+      "modified": "2026-02-10T00:16:20.772Z",
+      "keywords": [
+        "test",
+        "no",
+        "auto",
+        "tools"
+      ],
+      "category": "tool"
+    },
+    {
+      "path": "test_ps.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_ps.mjs",
+      "name": "test_ps.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1234,
+      "modified": "2026-02-10T00:16:20.778Z",
+      "keywords": [
+        "test",
+        "ps"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_scc_api.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_scc_api.mjs",
+      "name": "test_scc_api.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1676,
+      "modified": "2026-02-10T00:16:20.803Z",
+      "keywords": [
+        "test",
+        "scc",
+        "api"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_simple.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_simple.mjs",
+      "name": "test_simple.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 906,
+      "modified": "2026-02-10T01:27:07.460Z",
+      "keywords": [
+        "test",
+        "simple"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_tool_call.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_tool_call.mjs",
+      "name": "test_tool_call.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 2611,
+      "modified": "2026-02-10T00:16:20.827Z",
+      "keywords": [
+        "test",
+        "tool",
+        "call"
+      ],
+      "category": "tool"
+    },
+    {
+      "path": "test_trace.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_trace.mjs",
+      "name": "test_trace.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 1293,
+      "modified": "2026-02-10T00:16:20.838Z",
+      "keywords": [
+        "test",
+        "trace"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_trae_executor.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_trae_executor.mjs",
+      "name": "test_trae_executor.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 808,
+      "modified": "2026-02-10T00:16:20.845Z",
+      "keywords": [
+        "test",
+        "trae",
+        "executor"
+      ],
+      "category": "executor"
+    },
+    {
+      "path": "test_with_bash.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_with_bash.mjs",
+      "name": "test_with_bash.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 688,
+      "modified": "2026-02-10T00:16:20.880Z",
+      "keywords": [
+        "test",
+        "with",
+        "bash"
+      ],
+      "category": "test"
+    },
+    {
+      "path": "test_with_debug.mjs",
+      "absolute": "c:\\scc\\scc-bd\\test_with_debug.mjs",
+      "name": "test_with_debug.mjs",
+      "ext": ".mjs",
+      "layer": "root",
+      "module": "root",
+      "size": 895,
+      "modified": "2026-02-10T00:16:20.915Z",
+      "keywords": [
+        "test",
+        "with",
+        "debug"
+      ],
+      "category": "test"
+    }
+  ],
+  "byType": {
+    ".mjs": [
+      "L1_code_layer\\config\\cmdline.mjs",
+      "L1_code_layer\\config\\config.mjs",
+      "L2_task_layer\\context_pack\\context_pack_v1.mjs",
+      "L2_task_layer\\context_pack\\context_pack_v1.test.mjs",
+      "L6_agent_layer\\executors\\index.mjs",
+      "L6_agent_layer\\executors\\openclaw_executor.mjs",
+      "L6_agent_layer\\executors\\opencode_executor.mjs",
+      "L6_agent_layer\\executors\\opencode_wrapper.mjs",
+      "L6_agent_layer\\executors\\registry.mjs",
+      "L6_agent_layer\\executors\\webgpt_executor.mjs",
+      "L8_evidence_layer\\verdict\\verifier_judge_v1.mjs",
+      "L9_state_layer\\state_stores\\board.mjs",
+      "L9_state_layer\\state_stores\\flow_state_store.mjs",
+      "L9_state_layer\\state_stores\\jobs_store.mjs",
+      "L9_state_layer\\state_stores\\state_store.mjs",
+      "L11_routing_layer\\routing\\router.mjs",
+      "L11_routing_layer\\routing\\router_board.mjs",
+      "L11_routing_layer\\routing\\router_config.mjs",
+      "L11_routing_layer\\routing\\router_core.mjs",
+      "L11_routing_layer\\routing\\router_executor.mjs",
+      "L11_routing_layer\\routing\\router_factory.mjs",
+      "L11_routing_layer\\routing\\router_map.mjs",
+      "L11_routing_layer\\routing\\router_models.mjs",
+      "L11_routing_layer\\routing\\router_nav.mjs",
+      "L11_routing_layer\\routing\\router_pins.mjs",
+      "L11_routing_layer\\routing\\router_plugins.mjs",
+      "L11_routing_layer\\routing\\router_portal.mjs",
+      "L11_routing_layer\\routing\\router_prompts.mjs",
+      "L11_routing_layer\\routing\\router_sccdev.mjs",
+      "L13_security_layer\\circuit_breaker\\circuit_breaker_store.mjs",
+      "test_bridge.mjs",
+      "test_bridge_v2.mjs",
+      "test_correct_tool.mjs",
+      "test_debug.mjs",
+      "test_debug_full.mjs",
+      "test_debug_raw.mjs",
+      "test_debug_raw2.mjs",
+      "test_direct.mjs",
+      "test_error.mjs",
+      "test_executor.mjs",
+      "test_full_flow.mjs",
+      "test_minimal.mjs",
+      "test_multi_round.mjs",
+      "test_multi_round_final.mjs",
+      "test_no_auto_tools.mjs",
+      "test_ps.mjs",
+      "test_scc_api.mjs",
+      "test_simple.mjs",
+      "test_tool_call.mjs",
+      "test_trace.mjs",
+      "test_trae_executor.mjs",
+      "test_with_bash.mjs",
+      "test_with_debug.mjs"
+    ],
+    ".json": [
+      "L2_task_layer\\contracts\\hygiene_checks.v1.json",
+      "L3_documentation_layer\\docs_governance\\schema_ata_context.json",
+      "L3_documentation_layer\\docs_governance\\schema_report_metadata.json",
+      "L4_prompt_layer\\prompts\\registry.json",
+      "L14_quality_layer\\eval\\eval_manifest.json",
+      "L15_change_layer\\playbooks\\overrides.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.codex.v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.opencodecli.v1.json",
+      "L15_change_layer\\playbooks\\registry.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "llm_config.json"
+    ],
+    ".py": [
+      "L3_documentation_layer\\docs_governance\\check_dashboard_resources.py",
+      "L3_documentation_layer\\docs_governance\\check_docs.py",
+      "L3_documentation_layer\\docs_governance\\check_root_directory_violations.py",
+      "L3_documentation_layer\\docs_governance\\check_web_apps.py",
+      "L3_documentation_layer\\docs_governance\\docs_scanner.py",
+      "L3_documentation_layer\\docs_governance\\final_dashboard_check.py",
+      "L3_documentation_layer\\docs_governance\\find_encoding_issues.py",
+      "L3_documentation_layer\\docs_governance\\fix_arch_references.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_html_paths.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_iframe.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_port.py",
+      "L3_documentation_layer\\docs_governance\\fix_encoding_issues.py",
+      "L3_documentation_layer\\docs_governance\\fix_single_file.py",
+      "L3_documentation_layer\\docs_governance\\generate_static_board.py",
+      "L3_documentation_layer\\docs_governance\\nav_check.py",
+      "L3_documentation_layer\\docs_governance\\organize_root_directory.py",
+      "L3_documentation_layer\\docs_governance\\start_all_services.py",
+      "L3_documentation_layer\\docs_governance\\test_all_web_services.py",
+      "L3_documentation_layer\\docs_governance\\test_negative_cases.py",
+      "L3_documentation_layer\\docs_governance\\test_web_apps.py",
+      "L3_documentation_layer\\docs_governance\\unique_entry_guard.py",
+      "L3_documentation_layer\\docs_governance\\validate_artifacts.py",
+      "L3_documentation_layer\\docs_governance\\verify_dashboard_ui.py",
+      "L5_model_layer\\models\\adapters.py",
+      "L5_model_layer\\models\\cli.py",
+      "L5_model_layer\\models\\model_types.py",
+      "L5_model_layer\\models\\router.py",
+      "L5_model_layer\\models\\sources.py",
+      "L5_model_layer\\models\\__init__.py",
+      "L5_model_layer\\models\\__main__.py",
+      "L6_agent_layer\\orchestrators\\cc_like.py",
+      "L6_agent_layer\\orchestrators\\cc_orchestrator_v0.py",
+      "L6_agent_layer\\orchestrators\\codexcli_behavior_report.py",
+      "L6_agent_layer\\orchestrators\\codexcli_trace_demo.py",
+      "L6_agent_layer\\orchestrators\\continuation_context.py",
+      "L6_agent_layer\\orchestrators\\execution_plan.py",
+      "L6_agent_layer\\orchestrators\\fullagent_loop.py",
+      "L6_agent_layer\\orchestrators\\interface.py",
+      "L6_agent_layer\\orchestrators\\profiles.py",
+      "L6_agent_layer\\orchestrators\\registry.py",
+      "L6_agent_layer\\orchestrators\\reminders.py",
+      "L6_agent_layer\\orchestrators\\state_store.py",
+      "L6_agent_layer\\orchestrators\\subtask_index.py",
+      "L6_agent_layer\\orchestrators\\subtask_pool.py",
+      "L6_agent_layer\\orchestrators\\subtask_summary.py",
+      "L6_agent_layer\\orchestrators\\todo_state.py",
+      "L6_agent_layer\\orchestrators\\__init__.py",
+      "L6_agent_layer\\runtime\\diff_extract.py",
+      "L6_agent_layer\\runtime\\orchestrator_v1.py",
+      "L6_agent_layer\\runtime\\run_child_task.py",
+      "L6_agent_layer\\runtime\\unified_diff_apply.py",
+      "L6_agent_layer\\runtime\\unified_diff_guard.py",
+      "L7_tool_layer\\capabilities\\context_pack.py",
+      "L7_tool_layer\\capabilities\\context_pins.py",
+      "L7_tool_layer\\capabilities\\file_lock.py",
+      "L7_tool_layer\\capabilities\\mentions.py",
+      "L7_tool_layer\\capabilities\\patch_pipeline.py",
+      "L7_tool_layer\\capabilities\\permission_floor.py",
+      "L7_tool_layer\\capabilities\\skills_catalog.py",
+      "L7_tool_layer\\capabilities\\tool_spans.py",
+      "L7_tool_layer\\capabilities\\__init__.py",
+      "L7_tool_layer\\lib\\utils.py",
+      "L7_tool_layer\\lib\\__init__.py",
+      "L13_security_layer\\gatekeeper\\ata_hashchain.py",
+      "L13_security_layer\\gatekeeper\\conftest_runner.py",
+      "L13_security_layer\\gatekeeper\\control_plane_detect.py",
+      "L13_security_layer\\gatekeeper\\demo_signature_verification.py",
+      "L13_security_layer\\gatekeeper\\detect_control_plane_changes.py",
+      "L13_security_layer\\gatekeeper\\dual_drift_sensor.py",
+      "L13_security_layer\\gatekeeper\\dual_gate.py",
+      "L13_security_layer\\gatekeeper\\entry_file_scan.py",
+      "L13_security_layer\\gatekeeper\\fast_gate.py",
+      "L13_security_layer\\gatekeeper\\hardness_selfcheck.py",
+      "L13_security_layer\\gatekeeper\\import_scan.py",
+      "L13_security_layer\\gatekeeper\\l0_gate_hook.py",
+      "L13_security_layer\\gatekeeper\\law_pointer_scan.py",
+      "L13_security_layer\\gatekeeper\\manifest.py",
+      "L13_security_layer\\gatekeeper\\mutation_runner.py",
+      "L13_security_layer\\gatekeeper\\no_absolute_path.py",
+      "L13_security_layer\\gatekeeper\\reason_codes.py",
+      "L13_security_layer\\gatekeeper\\ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\run_ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\self_check.py",
+      "L13_security_layer\\gatekeeper\\signature_verifier.py",
+      "L13_security_layer\\gatekeeper\\strict_submit_parser.py",
+      "L13_security_layer\\gatekeeper\\submit_txt.py",
+      "L13_security_layer\\gatekeeper\\test_ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\verify_hardness.py",
+      "L13_security_layer\\gatekeeper\\__init__.py",
+      "L13_security_layer\\gatekeeper\\__main__.py",
+      "llm_opencode_plugin.py"
+    ],
+    ".yaml": [
+      "L3_documentation_layer\\docs_governance\\rules.yaml"
+    ],
+    ".txt": [
+      "L13_security_layer\\gatekeeper\\test_protected_file.txt",
+      "all_skills.txt"
+    ],
+    ".md": [
+      "L14_quality_layer\\eval\\README.md",
+      "L15_change_layer\\playbooks\\README.md",
+      "LAYER_MAPPING.md",
+      "START_HERE.md"
+    ],
+    "": [
+      "nul"
+    ],
+    ".bat": [
+      "start_scc_with_olt.bat"
+    ]
+  },
+  "byKeyword": {
+    "cmdline": [
+      "L1_code_layer\\config\\cmdline.mjs"
+    ],
+    "config": [
+      "L1_code_layer\\config\\config.mjs",
+      "L11_routing_layer\\routing\\router_config.mjs",
+      "llm_config.json"
+    ],
+    "context": [
+      "L2_task_layer\\context_pack\\context_pack_v1.mjs",
+      "L2_task_layer\\context_pack\\context_pack_v1.test.mjs",
+      "L3_documentation_layer\\docs_governance\\schema_ata_context.json",
+      "L6_agent_layer\\orchestrators\\continuation_context.py",
+      "L7_tool_layer\\capabilities\\context_pack.py",
+      "L7_tool_layer\\capabilities\\context_pins.py"
+    ],
+    "pack": [
+      "L2_task_layer\\context_pack\\context_pack_v1.mjs",
+      "L2_task_layer\\context_pack\\context_pack_v1.test.mjs",
+      "L7_tool_layer\\capabilities\\context_pack.py"
+    ],
+    "v": [
+      "L2_task_layer\\context_pack\\context_pack_v1.mjs",
+      "L2_task_layer\\context_pack\\context_pack_v1.test.mjs",
+      "L2_task_layer\\contracts\\hygiene_checks.v1.json",
+      "L6_agent_layer\\orchestrators\\cc_orchestrator_v0.py",
+      "L6_agent_layer\\runtime\\orchestrator_v1.py",
+      "L8_evidence_layer\\verdict\\verifier_judge_v1.mjs",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.codex.v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.opencodecli.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "test_bridge_v2.mjs"
+    ],
+    "test": [
+      "L2_task_layer\\context_pack\\context_pack_v1.test.mjs",
+      "L3_documentation_layer\\docs_governance\\test_all_web_services.py",
+      "L3_documentation_layer\\docs_governance\\test_negative_cases.py",
+      "L3_documentation_layer\\docs_governance\\test_web_apps.py",
+      "L13_security_layer\\gatekeeper\\test_protected_file.txt",
+      "L13_security_layer\\gatekeeper\\test_ruleset_sha_protection.py",
+      "test_bridge.mjs",
+      "test_bridge_v2.mjs",
+      "test_correct_tool.mjs",
+      "test_debug.mjs",
+      "test_debug_full.mjs",
+      "test_debug_raw.mjs",
+      "test_debug_raw2.mjs",
+      "test_direct.mjs",
+      "test_error.mjs",
+      "test_executor.mjs",
+      "test_full_flow.mjs",
+      "test_minimal.mjs",
+      "test_multi_round.mjs",
+      "test_multi_round_final.mjs",
+      "test_no_auto_tools.mjs",
+      "test_ps.mjs",
+      "test_scc_api.mjs",
+      "test_simple.mjs",
+      "test_tool_call.mjs",
+      "test_trace.mjs",
+      "test_trae_executor.mjs",
+      "test_with_bash.mjs",
+      "test_with_debug.mjs"
+    ],
+    "hygiene": [
+      "L2_task_layer\\contracts\\hygiene_checks.v1.json"
+    ],
+    "checks": [
+      "L2_task_layer\\contracts\\hygiene_checks.v1.json"
+    ],
+    "check": [
+      "L3_documentation_layer\\docs_governance\\check_dashboard_resources.py",
+      "L3_documentation_layer\\docs_governance\\check_docs.py",
+      "L3_documentation_layer\\docs_governance\\check_root_directory_violations.py",
+      "L3_documentation_layer\\docs_governance\\check_web_apps.py",
+      "L3_documentation_layer\\docs_governance\\final_dashboard_check.py",
+      "L3_documentation_layer\\docs_governance\\nav_check.py",
+      "L13_security_layer\\gatekeeper\\self_check.py"
+    ],
+    "dashboard": [
+      "L3_documentation_layer\\docs_governance\\check_dashboard_resources.py",
+      "L3_documentation_layer\\docs_governance\\final_dashboard_check.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_html_paths.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_iframe.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_port.py",
+      "L3_documentation_layer\\docs_governance\\verify_dashboard_ui.py"
+    ],
+    "resources": [
+      "L3_documentation_layer\\docs_governance\\check_dashboard_resources.py"
+    ],
+    "docs": [
+      "L3_documentation_layer\\docs_governance\\check_docs.py",
+      "L3_documentation_layer\\docs_governance\\docs_scanner.py"
+    ],
+    "root": [
+      "L3_documentation_layer\\docs_governance\\check_root_directory_violations.py",
+      "L3_documentation_layer\\docs_governance\\organize_root_directory.py"
+    ],
+    "directory": [
+      "L3_documentation_layer\\docs_governance\\check_root_directory_violations.py",
+      "L3_documentation_layer\\docs_governance\\organize_root_directory.py"
+    ],
+    "violations": [
+      "L3_documentation_layer\\docs_governance\\check_root_directory_violations.py"
+    ],
+    "web": [
+      "L3_documentation_layer\\docs_governance\\check_web_apps.py",
+      "L3_documentation_layer\\docs_governance\\test_all_web_services.py",
+      "L3_documentation_layer\\docs_governance\\test_web_apps.py"
+    ],
+    "apps": [
+      "L3_documentation_layer\\docs_governance\\check_web_apps.py",
+      "L3_documentation_layer\\docs_governance\\test_web_apps.py"
+    ],
+    "scanner": [
+      "L3_documentation_layer\\docs_governance\\docs_scanner.py"
+    ],
+    "final": [
+      "L3_documentation_layer\\docs_governance\\final_dashboard_check.py",
+      "test_multi_round_final.mjs"
+    ],
+    "find": [
+      "L3_documentation_layer\\docs_governance\\find_encoding_issues.py"
+    ],
+    "encoding": [
+      "L3_documentation_layer\\docs_governance\\find_encoding_issues.py",
+      "L3_documentation_layer\\docs_governance\\fix_encoding_issues.py"
+    ],
+    "issues": [
+      "L3_documentation_layer\\docs_governance\\find_encoding_issues.py",
+      "L3_documentation_layer\\docs_governance\\fix_encoding_issues.py"
+    ],
+    "fix": [
+      "L3_documentation_layer\\docs_governance\\fix_arch_references.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_html_paths.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_iframe.py",
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_port.py",
+      "L3_documentation_layer\\docs_governance\\fix_encoding_issues.py",
+      "L3_documentation_layer\\docs_governance\\fix_single_file.py"
+    ],
+    "arch": [
+      "L3_documentation_layer\\docs_governance\\fix_arch_references.py"
+    ],
+    "references": [
+      "L3_documentation_layer\\docs_governance\\fix_arch_references.py"
+    ],
+    "html": [
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_html_paths.py"
+    ],
+    "paths": [
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_html_paths.py"
+    ],
+    "iframe": [
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_iframe.py"
+    ],
+    "port": [
+      "L3_documentation_layer\\docs_governance\\fix_dashboard_port.py"
+    ],
+    "single": [
+      "L3_documentation_layer\\docs_governance\\fix_single_file.py"
+    ],
+    "file": [
+      "L3_documentation_layer\\docs_governance\\fix_single_file.py",
+      "L7_tool_layer\\capabilities\\file_lock.py",
+      "L13_security_layer\\gatekeeper\\entry_file_scan.py",
+      "L13_security_layer\\gatekeeper\\test_protected_file.txt"
+    ],
+    "generate": [
+      "L3_documentation_layer\\docs_governance\\generate_static_board.py"
+    ],
+    "static": [
+      "L3_documentation_layer\\docs_governance\\generate_static_board.py"
+    ],
+    "board": [
+      "L3_documentation_layer\\docs_governance\\generate_static_board.py",
+      "L9_state_layer\\state_stores\\board.mjs",
+      "L11_routing_layer\\routing\\router_board.mjs"
+    ],
+    "nav": [
+      "L3_documentation_layer\\docs_governance\\nav_check.py",
+      "L11_routing_layer\\routing\\router_nav.mjs"
+    ],
+    "organize": [
+      "L3_documentation_layer\\docs_governance\\organize_root_directory.py"
+    ],
+    "rules": [
+      "L3_documentation_layer\\docs_governance\\rules.yaml"
+    ],
+    "schema": [
+      "L3_documentation_layer\\docs_governance\\schema_ata_context.json",
+      "L3_documentation_layer\\docs_governance\\schema_report_metadata.json"
+    ],
+    "ata": [
+      "L3_documentation_layer\\docs_governance\\schema_ata_context.json",
+      "L13_security_layer\\gatekeeper\\ata_hashchain.py"
+    ],
+    "report": [
+      "L3_documentation_layer\\docs_governance\\schema_report_metadata.json",
+      "L6_agent_layer\\orchestrators\\codexcli_behavior_report.py"
+    ],
+    "metadata": [
+      "L3_documentation_layer\\docs_governance\\schema_report_metadata.json"
+    ],
+    "start": [
+      "L3_documentation_layer\\docs_governance\\start_all_services.py",
+      "START_HERE.md",
+      "start_scc_with_olt.bat"
+    ],
+    "all": [
+      "L3_documentation_layer\\docs_governance\\start_all_services.py",
+      "L3_documentation_layer\\docs_governance\\test_all_web_services.py",
+      "all_skills.txt"
+    ],
+    "services": [
+      "L3_documentation_layer\\docs_governance\\start_all_services.py",
+      "L3_documentation_layer\\docs_governance\\test_all_web_services.py"
+    ],
+    "negative": [
+      "L3_documentation_layer\\docs_governance\\test_negative_cases.py"
+    ],
+    "cases": [
+      "L3_documentation_layer\\docs_governance\\test_negative_cases.py"
+    ],
+    "unique": [
+      "L3_documentation_layer\\docs_governance\\unique_entry_guard.py"
+    ],
+    "entry": [
+      "L3_documentation_layer\\docs_governance\\unique_entry_guard.py",
+      "L13_security_layer\\gatekeeper\\entry_file_scan.py"
+    ],
+    "guard": [
+      "L3_documentation_layer\\docs_governance\\unique_entry_guard.py",
+      "L6_agent_layer\\runtime\\unified_diff_guard.py"
+    ],
+    "validate": [
+      "L3_documentation_layer\\docs_governance\\validate_artifacts.py"
+    ],
+    "artifacts": [
+      "L3_documentation_layer\\docs_governance\\validate_artifacts.py"
+    ],
+    "verify": [
+      "L3_documentation_layer\\docs_governance\\verify_dashboard_ui.py",
+      "L13_security_layer\\gatekeeper\\verify_hardness.py"
+    ],
+    "ui": [
+      "L3_documentation_layer\\docs_governance\\verify_dashboard_ui.py"
+    ],
+    "registry": [
+      "L4_prompt_layer\\prompts\\registry.json",
+      "L6_agent_layer\\executors\\registry.mjs",
+      "L6_agent_layer\\orchestrators\\registry.py",
+      "L15_change_layer\\playbooks\\registry.json"
+    ],
+    "adapters": [
+      "L5_model_layer\\models\\adapters.py"
+    ],
+    "cli": [
+      "L5_model_layer\\models\\cli.py"
+    ],
+    "model": [
+      "L5_model_layer\\models\\model_types.py"
+    ],
+    "types": [
+      "L5_model_layer\\models\\model_types.py"
+    ],
+    "router": [
+      "L5_model_layer\\models\\router.py",
+      "L11_routing_layer\\routing\\router.mjs",
+      "L11_routing_layer\\routing\\router_board.mjs",
+      "L11_routing_layer\\routing\\router_config.mjs",
+      "L11_routing_layer\\routing\\router_core.mjs",
+      "L11_routing_layer\\routing\\router_executor.mjs",
+      "L11_routing_layer\\routing\\router_factory.mjs",
+      "L11_routing_layer\\routing\\router_map.mjs",
+      "L11_routing_layer\\routing\\router_models.mjs",
+      "L11_routing_layer\\routing\\router_nav.mjs",
+      "L11_routing_layer\\routing\\router_pins.mjs",
+      "L11_routing_layer\\routing\\router_plugins.mjs",
+      "L11_routing_layer\\routing\\router_portal.mjs",
+      "L11_routing_layer\\routing\\router_prompts.mjs",
+      "L11_routing_layer\\routing\\router_sccdev.mjs"
+    ],
+    "sources": [
+      "L5_model_layer\\models\\sources.py"
+    ],
+    "init": [
+      "L5_model_layer\\models\\__init__.py",
+      "L6_agent_layer\\orchestrators\\__init__.py",
+      "L7_tool_layer\\capabilities\\__init__.py",
+      "L7_tool_layer\\lib\\__init__.py",
+      "L13_security_layer\\gatekeeper\\__init__.py"
+    ],
+    "main": [
+      "L5_model_layer\\models\\__main__.py",
+      "L13_security_layer\\gatekeeper\\__main__.py"
+    ],
+    "index": [
+      "L6_agent_layer\\executors\\index.mjs",
+      "L6_agent_layer\\orchestrators\\subtask_index.py"
+    ],
+    "openclaw": [
+      "L6_agent_layer\\executors\\openclaw_executor.mjs"
+    ],
+    "executor": [
+      "L6_agent_layer\\executors\\openclaw_executor.mjs",
+      "L6_agent_layer\\executors\\opencode_executor.mjs",
+      "L6_agent_layer\\executors\\webgpt_executor.mjs",
+      "L11_routing_layer\\routing\\router_executor.mjs",
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "test_executor.mjs",
+      "test_trae_executor.mjs"
+    ],
+    "opencode": [
+      "L6_agent_layer\\executors\\opencode_executor.mjs",
+      "L6_agent_layer\\executors\\opencode_wrapper.mjs",
+      "llm_opencode_plugin.py"
+    ],
+    "wrapper": [
+      "L6_agent_layer\\executors\\opencode_wrapper.mjs"
+    ],
+    "webgpt": [
+      "L6_agent_layer\\executors\\webgpt_executor.mjs"
+    ],
+    "cc": [
+      "L6_agent_layer\\orchestrators\\cc_like.py",
+      "L6_agent_layer\\orchestrators\\cc_orchestrator_v0.py"
+    ],
+    "like": [
+      "L6_agent_layer\\orchestrators\\cc_like.py"
+    ],
+    "orchestrator": [
+      "L6_agent_layer\\orchestrators\\cc_orchestrator_v0.py",
+      "L6_agent_layer\\runtime\\orchestrator_v1.py"
+    ],
+    "codexcli": [
+      "L6_agent_layer\\orchestrators\\codexcli_behavior_report.py",
+      "L6_agent_layer\\orchestrators\\codexcli_trace_demo.py"
+    ],
+    "behavior": [
+      "L6_agent_layer\\orchestrators\\codexcli_behavior_report.py"
+    ],
+    "trace": [
+      "L6_agent_layer\\orchestrators\\codexcli_trace_demo.py",
+      "test_trace.mjs"
+    ],
+    "demo": [
+      "L6_agent_layer\\orchestrators\\codexcli_trace_demo.py",
+      "L13_security_layer\\gatekeeper\\demo_signature_verification.py"
+    ],
+    "continuation": [
+      "L6_agent_layer\\orchestrators\\continuation_context.py"
+    ],
+    "execution": [
+      "L6_agent_layer\\orchestrators\\execution_plan.py"
+    ],
+    "plan": [
+      "L6_agent_layer\\orchestrators\\execution_plan.py"
+    ],
+    "fullagent": [
+      "L6_agent_layer\\orchestrators\\fullagent_loop.py"
+    ],
+    "loop": [
+      "L6_agent_layer\\orchestrators\\fullagent_loop.py"
+    ],
+    "interface": [
+      "L6_agent_layer\\orchestrators\\interface.py"
+    ],
+    "profiles": [
+      "L6_agent_layer\\orchestrators\\profiles.py"
+    ],
+    "reminders": [
+      "L6_agent_layer\\orchestrators\\reminders.py"
+    ],
+    "state": [
+      "L6_agent_layer\\orchestrators\\state_store.py",
+      "L6_agent_layer\\orchestrators\\todo_state.py",
+      "L9_state_layer\\state_stores\\flow_state_store.mjs",
+      "L9_state_layer\\state_stores\\state_store.mjs"
+    ],
+    "store": [
+      "L6_agent_layer\\orchestrators\\state_store.py",
+      "L9_state_layer\\state_stores\\flow_state_store.mjs",
+      "L9_state_layer\\state_stores\\jobs_store.mjs",
+      "L9_state_layer\\state_stores\\state_store.mjs",
+      "L13_security_layer\\circuit_breaker\\circuit_breaker_store.mjs"
+    ],
+    "subtask": [
+      "L6_agent_layer\\orchestrators\\subtask_index.py",
+      "L6_agent_layer\\orchestrators\\subtask_pool.py",
+      "L6_agent_layer\\orchestrators\\subtask_summary.py"
+    ],
+    "pool": [
+      "L6_agent_layer\\orchestrators\\subtask_pool.py"
+    ],
+    "summary": [
+      "L6_agent_layer\\orchestrators\\subtask_summary.py"
+    ],
+    "todo": [
+      "L6_agent_layer\\orchestrators\\todo_state.py"
+    ],
+    "diff": [
+      "L6_agent_layer\\runtime\\diff_extract.py",
+      "L6_agent_layer\\runtime\\unified_diff_apply.py",
+      "L6_agent_layer\\runtime\\unified_diff_guard.py"
+    ],
+    "extract": [
+      "L6_agent_layer\\runtime\\diff_extract.py"
+    ],
+    "run": [
+      "L6_agent_layer\\runtime\\run_child_task.py",
+      "L13_security_layer\\gatekeeper\\run_ruleset_sha_protection.py"
+    ],
+    "child": [
+      "L6_agent_layer\\runtime\\run_child_task.py"
+    ],
+    "task": [
+      "L6_agent_layer\\runtime\\run_child_task.py"
+    ],
+    "unified": [
+      "L6_agent_layer\\runtime\\unified_diff_apply.py",
+      "L6_agent_layer\\runtime\\unified_diff_guard.py"
+    ],
+    "apply": [
+      "L6_agent_layer\\runtime\\unified_diff_apply.py",
+      "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json"
+    ],
+    "pins": [
+      "L7_tool_layer\\capabilities\\context_pins.py",
+      "L11_routing_layer\\routing\\router_pins.mjs",
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json"
+    ],
+    "lock": [
+      "L7_tool_layer\\capabilities\\file_lock.py"
+    ],
+    "mentions": [
+      "L7_tool_layer\\capabilities\\mentions.py"
+    ],
+    "patch": [
+      "L7_tool_layer\\capabilities\\patch_pipeline.py"
+    ],
+    "pipeline": [
+      "L7_tool_layer\\capabilities\\patch_pipeline.py"
+    ],
+    "permission": [
+      "L7_tool_layer\\capabilities\\permission_floor.py"
+    ],
+    "floor": [
+      "L7_tool_layer\\capabilities\\permission_floor.py"
+    ],
+    "skills": [
+      "L7_tool_layer\\capabilities\\skills_catalog.py",
+      "all_skills.txt"
+    ],
+    "catalog": [
+      "L7_tool_layer\\capabilities\\skills_catalog.py"
+    ],
+    "tool": [
+      "L7_tool_layer\\capabilities\\tool_spans.py",
+      "test_correct_tool.mjs",
+      "test_tool_call.mjs"
+    ],
+    "spans": [
+      "L7_tool_layer\\capabilities\\tool_spans.py"
+    ],
+    "utils": [
+      "L7_tool_layer\\lib\\utils.py"
+    ],
+    "verifier": [
+      "L8_evidence_layer\\verdict\\verifier_judge_v1.mjs",
+      "L13_security_layer\\gatekeeper\\signature_verifier.py"
+    ],
+    "judge": [
+      "L8_evidence_layer\\verdict\\verifier_judge_v1.mjs"
+    ],
+    "flow": [
+      "L9_state_layer\\state_stores\\flow_state_store.mjs",
+      "test_full_flow.mjs"
+    ],
+    "jobs": [
+      "L9_state_layer\\state_stores\\jobs_store.mjs"
+    ],
+    "core": [
+      "L11_routing_layer\\routing\\router_core.mjs"
+    ],
+    "factory": [
+      "L11_routing_layer\\routing\\router_factory.mjs"
+    ],
+    "map": [
+      "L11_routing_layer\\routing\\router_map.mjs"
+    ],
+    "models": [
+      "L11_routing_layer\\routing\\router_models.mjs"
+    ],
+    "plugins": [
+      "L11_routing_layer\\routing\\router_plugins.mjs"
+    ],
+    "portal": [
+      "L11_routing_layer\\routing\\router_portal.mjs"
+    ],
+    "prompts": [
+      "L11_routing_layer\\routing\\router_prompts.mjs"
+    ],
+    "sccdev": [
+      "L11_routing_layer\\routing\\router_sccdev.mjs"
+    ],
+    "circuit": [
+      "L13_security_layer\\circuit_breaker\\circuit_breaker_store.mjs"
+    ],
+    "breaker": [
+      "L13_security_layer\\circuit_breaker\\circuit_breaker_store.mjs"
+    ],
+    "hashchain": [
+      "L13_security_layer\\gatekeeper\\ata_hashchain.py"
+    ],
+    "conftest": [
+      "L13_security_layer\\gatekeeper\\conftest_runner.py"
+    ],
+    "runner": [
+      "L13_security_layer\\gatekeeper\\conftest_runner.py",
+      "L13_security_layer\\gatekeeper\\mutation_runner.py"
+    ],
+    "control": [
+      "L13_security_layer\\gatekeeper\\control_plane_detect.py",
+      "L13_security_layer\\gatekeeper\\detect_control_plane_changes.py"
+    ],
+    "plane": [
+      "L13_security_layer\\gatekeeper\\control_plane_detect.py",
+      "L13_security_layer\\gatekeeper\\detect_control_plane_changes.py"
+    ],
+    "detect": [
+      "L13_security_layer\\gatekeeper\\control_plane_detect.py",
+      "L13_security_layer\\gatekeeper\\detect_control_plane_changes.py"
+    ],
+    "signature": [
+      "L13_security_layer\\gatekeeper\\demo_signature_verification.py",
+      "L13_security_layer\\gatekeeper\\signature_verifier.py"
+    ],
+    "verification": [
+      "L13_security_layer\\gatekeeper\\demo_signature_verification.py"
+    ],
+    "changes": [
+      "L13_security_layer\\gatekeeper\\detect_control_plane_changes.py"
+    ],
+    "dual": [
+      "L13_security_layer\\gatekeeper\\dual_drift_sensor.py",
+      "L13_security_layer\\gatekeeper\\dual_gate.py"
+    ],
+    "drift": [
+      "L13_security_layer\\gatekeeper\\dual_drift_sensor.py"
+    ],
+    "sensor": [
+      "L13_security_layer\\gatekeeper\\dual_drift_sensor.py"
+    ],
+    "gate": [
+      "L13_security_layer\\gatekeeper\\dual_gate.py",
+      "L13_security_layer\\gatekeeper\\fast_gate.py",
+      "L13_security_layer\\gatekeeper\\l0_gate_hook.py"
+    ],
+    "scan": [
+      "L13_security_layer\\gatekeeper\\entry_file_scan.py",
+      "L13_security_layer\\gatekeeper\\import_scan.py",
+      "L13_security_layer\\gatekeeper\\law_pointer_scan.py"
+    ],
+    "fast": [
+      "L13_security_layer\\gatekeeper\\fast_gate.py"
+    ],
+    "hardness": [
+      "L13_security_layer\\gatekeeper\\hardness_selfcheck.py",
+      "L13_security_layer\\gatekeeper\\verify_hardness.py"
+    ],
+    "selfcheck": [
+      "L13_security_layer\\gatekeeper\\hardness_selfcheck.py"
+    ],
+    "import": [
+      "L13_security_layer\\gatekeeper\\import_scan.py"
+    ],
+    "l": [
+      "L13_security_layer\\gatekeeper\\l0_gate_hook.py"
+    ],
+    "hook": [
+      "L13_security_layer\\gatekeeper\\l0_gate_hook.py"
+    ],
+    "law": [
+      "L13_security_layer\\gatekeeper\\law_pointer_scan.py"
+    ],
+    "pointer": [
+      "L13_security_layer\\gatekeeper\\law_pointer_scan.py"
+    ],
+    "manifest": [
+      "L13_security_layer\\gatekeeper\\manifest.py",
+      "L14_quality_layer\\eval\\eval_manifest.json"
+    ],
+    "mutation": [
+      "L13_security_layer\\gatekeeper\\mutation_runner.py"
+    ],
+    "no": [
+      "L13_security_layer\\gatekeeper\\no_absolute_path.py",
+      "test_no_auto_tools.mjs"
+    ],
+    "absolute": [
+      "L13_security_layer\\gatekeeper\\no_absolute_path.py"
+    ],
+    "path": [
+      "L13_security_layer\\gatekeeper\\no_absolute_path.py"
+    ],
+    "reason": [
+      "L13_security_layer\\gatekeeper\\reason_codes.py"
+    ],
+    "codes": [
+      "L13_security_layer\\gatekeeper\\reason_codes.py"
+    ],
+    "ruleset": [
+      "L13_security_layer\\gatekeeper\\ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\run_ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\test_ruleset_sha_protection.py"
+    ],
+    "sha": [
+      "L13_security_layer\\gatekeeper\\ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\run_ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\test_ruleset_sha_protection.py"
+    ],
+    "protection": [
+      "L13_security_layer\\gatekeeper\\ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\run_ruleset_sha_protection.py",
+      "L13_security_layer\\gatekeeper\\test_ruleset_sha_protection.py"
+    ],
+    "self": [
+      "L13_security_layer\\gatekeeper\\self_check.py"
+    ],
+    "strict": [
+      "L13_security_layer\\gatekeeper\\strict_submit_parser.py"
+    ],
+    "submit": [
+      "L13_security_layer\\gatekeeper\\strict_submit_parser.py",
+      "L13_security_layer\\gatekeeper\\submit_txt.py"
+    ],
+    "parser": [
+      "L13_security_layer\\gatekeeper\\strict_submit_parser.py"
+    ],
+    "txt": [
+      "L13_security_layer\\gatekeeper\\submit_txt.py"
+    ],
+    "protected": [
+      "L13_security_layer\\gatekeeper\\test_protected_file.txt"
+    ],
+    "eval": [
+      "L14_quality_layer\\eval\\eval_manifest.json"
+    ],
+    "readme": [
+      "L14_quality_layer\\eval\\README.md",
+      "L15_change_layer\\playbooks\\README.md"
+    ],
+    "overrides": [
+      "L15_change_layer\\playbooks\\overrides.json"
+    ],
+    "pb": [
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.codex.v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.opencodecli.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json"
+    ],
+    "auto": [
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "test_no_auto_tools.mjs"
+    ],
+    "ci": [
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json"
+    ],
+    "failed": [
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json"
+    ],
+    "opencodecli": [
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.opencodecli.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json"
+    ],
+    "a": [
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json"
+    ],
+    "e": [
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json",
+      "L15_change_layer\\playbooks\\pb.auto.ci_failed.opencodecli.35a74495e1.v1.json"
+    ],
+    "error": [
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json",
+      "test_error.mjs"
+    ],
+    "c": [
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json"
+    ],
+    "ac": [
+      "L15_change_layer\\playbooks\\pb.auto.executor_error.opencodecli.9119c28ac2.v1.json"
+    ],
+    "insufficient": [
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json"
+    ],
+    "codex": [
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.codex.v1.json"
+    ],
+    "ee": [
+      "L15_change_layer\\playbooks\\pb.auto.pins_insufficient.codex.45729700ee.v1.json"
+    ],
+    "drill": [
+      "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json"
+    ],
+    "playbooks": [
+      "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json"
+    ],
+    "applied": [
+      "L15_change_layer\\playbooks\\pb.drill.apply_playbooks_applied_v1.json"
+    ],
+    "timeout": [
+      "L15_change_layer\\playbooks\\pb.timeout.codex.v1.json",
+      "L15_change_layer\\playbooks\\pb.timeout.opencodecli.v1.json"
+    ],
+    "layer": [
+      "LAYER_MAPPING.md"
+    ],
+    "mapping": [
+      "LAYER_MAPPING.md"
+    ],
+    "llm": [
+      "llm_config.json",
+      "llm_opencode_plugin.py"
+    ],
+    "plugin": [
+      "llm_opencode_plugin.py"
+    ],
+    "nul": [
+      "nul"
+    ],
+    "here": [
+      "START_HERE.md"
+    ],
+    "scc": [
+      "start_scc_with_olt.bat",
+      "test_scc_api.mjs"
+    ],
+    "with": [
+      "start_scc_with_olt.bat",
+      "test_with_bash.mjs",
+      "test_with_debug.mjs"
+    ],
+    "olt": [
+      "start_scc_with_olt.bat"
+    ],
+    "bridge": [
+      "test_bridge.mjs",
+      "test_bridge_v2.mjs"
+    ],
+    "correct": [
+      "test_correct_tool.mjs"
+    ],
+    "debug": [
+      "test_debug.mjs",
+      "test_debug_full.mjs",
+      "test_debug_raw.mjs",
+      "test_debug_raw2.mjs",
+      "test_with_debug.mjs"
+    ],
+    "full": [
+      "test_debug_full.mjs",
+      "test_full_flow.mjs"
+    ],
+    "raw": [
+      "test_debug_raw.mjs",
+      "test_debug_raw2.mjs"
+    ],
+    "direct": [
+      "test_direct.mjs"
+    ],
+    "minimal": [
+      "test_minimal.mjs"
+    ],
+    "multi": [
+      "test_multi_round.mjs",
+      "test_multi_round_final.mjs"
+    ],
+    "round": [
+      "test_multi_round.mjs",
+      "test_multi_round_final.mjs"
+    ],
+    "tools": [
+      "test_no_auto_tools.mjs"
+    ],
+    "ps": [
+      "test_ps.mjs"
+    ],
+    "api": [
+      "test_scc_api.mjs"
+    ],
+    "simple": [
+      "test_simple.mjs"
+    ],
+    "call": [
+      "test_tool_call.mjs"
+    ],
+    "trae": [
+      "test_trae_executor.mjs"
+    ],
+    "bash": [
+      "test_with_bash.mjs"
+    ]
+  }
+}

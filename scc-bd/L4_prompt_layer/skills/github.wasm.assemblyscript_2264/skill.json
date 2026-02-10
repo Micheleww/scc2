@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.wasm.assemblyscript_2264",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Master assemblyscript with industry-proven patterns",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "wasm",
+      "assemblyscript",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2062,
+    "max_files": 57
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "wasm",
+    "subcategory": "assemblyscript",
+    "tags": [
+      "wasm",
+      "assemblyscript",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "advanced",
+    "downloaded_at": "2026-02-09T20:48:55.924Z",
+    "source_repo": "excalidraw/excalidraw-skill",
+    "popularity_score": 8
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "meta.skill_analytics",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "全面的 skills 使用分析和洞察",
+  "description": "## 功能\n- 使用统计\n- 性能分析\n- 趋势预测\n- 异常检测\n- 报告生成\n\n## 使用场景\n- 系统监控\n- 决策支持\n- 优化指导",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 3000,
+    "max_files": 50
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "capabilities": [
+    "usage_stats",
+    "performance_analysis",
+    "trend_prediction",
+    "anomaly_detection",
+    "report_generation"
+  ],
+  "metadata": {
+    "category": "meta",
+    "subcategory": "skill_analytics",
+    "display_name": "技能分析",
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced",
+      "core"
+    ],
+    "complexity": "advanced",
+    "created_at": "2026-02-09T20:48:43.807Z",
+    "source": "scc_meta_library",
+    "is_meta_skill": true
+  }
+}

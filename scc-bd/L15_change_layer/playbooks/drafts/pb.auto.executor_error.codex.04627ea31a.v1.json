@@ -1,0 +1,43 @@
+{
+  "schema_version": "scc.playbook.v1",
+  "playbook_id": "pb.auto.executor_error.codex.04627ea31a.v1",
+  "version": "1.0.0",
+  "pattern_id": "auto.executor_error.codex.04627ea31a",
+  "enablement": {
+    "schema_version": "scc.enablement.v1",
+    "status": "draft",
+    "rollout": {
+      "mode": "percent",
+      "percent": 0
+    },
+    "rollback_conditions": [
+      {
+        "metric": "ci_failed_rate_15m",
+        "op": ">",
+        "threshold": 0.2
+      },
+      {
+        "metric": "avg_retries",
+        "op": ">",
+        "threshold": 3
+      }
+    ]
+  },
+  "actions": [
+    {
+      "type": "note",
+      "params": {
+        "message": "Auto-draft playbook for pattern auto.executor_error.codex.04627ea31a (EXECUTOR_ERROR)."
+      }
+    },
+    {
+      "type": "route",
+      "params": {
+        "preferred_executor": "opencodecli",
+        "fallback_executor": "codex",
+        "note": "tooling_error_fallback"
+      }
+    }
+  ],
+  "notes": "Auto-generated draft; must pass eval_replay before publish."
+}

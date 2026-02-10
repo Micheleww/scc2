@@ -1,0 +1,174 @@
+{
+  "task_id": "frontend-build-001",
+  "title": "SCC 前端构建任务",
+  "description": "构建 SCC 系统的 Web 前端界面，包含 UI 组件、样式和交互逻辑",
+  "type": "frontend_build",
+  "priority": "high",
+  "status": "pending",
+  "created_at": "2026-02-10T08:00:00Z",
+  "assignee": "scc-agent-team",
+  
+  "requirements": {
+    "tech_stack": {
+      "framework": "React 18",
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "state_management": "Zustand",
+      "ui_components": "Headless UI + Radix UI"
+    },
+    "features": [
+      "任务管理面板",
+      "Agent 协作监控",
+      "代码编辑器集成",
+      "实时日志查看",
+      "系统状态监控"
+    ],
+    "pages": [
+      {
+        "name": "Dashboard",
+        "path": "/",
+        "description": "主控制台，显示系统概览"
+      },
+      {
+        "name": "Tasks",
+        "path": "/tasks",
+        "description": "任务管理页面"
+      },
+      {
+        "name": "Agents",
+        "path": "/agents",
+        "description": "Agent 协作监控"
+      },
+      {
+        "name": "Code",
+        "path": "/code",
+        "description": "代码编辑器"
+      },
+      {
+        "name": "Logs",
+        "path": "/logs",
+        "description": "系统日志"
+      },
+      {
+        "name": "Settings",
+        "path": "/settings",
+        "description": "系统设置"
+      }
+    ]
+  },
+  
+  "subtasks": [
+    {
+      "id": "fe-001",
+      "title": "项目初始化和依赖安装",
+      "description": "创建 Vite + React 项目，安装必要依赖",
+      "status": "pending",
+      "agent": "setup-agent",
+      "estimated_time": "30min"
+    },
+    {
+      "id": "fe-002",
+      "title": "设计系统搭建",
+      "description": "配置 Tailwind CSS，创建基础 UI 组件库",
+      "status": "pending",
+      "agent": "ui-agent",
+      "dependencies": ["fe-001"],
+      "estimated_time": "1h"
+    },
+    {
+      "id": "fe-003",
+      "title": "路由和布局实现",
+      "description": "实现 React Router，创建主布局组件",
+      "status": "pending",
+      "agent": "frontend-agent",
+      "dependencies": ["fe-002"],
+      "estimated_time": "45min"
+    },
+    {
+      "id": "fe-004",
+      "title": "Dashboard 页面",
+      "description": "构建主控制台页面，显示系统概览",
+      "status": "pending",
+      "agent": "frontend-agent",
+      "dependencies": ["fe-003"],
+      "estimated_time": "1h"
+    },
+    {
+      "id": "fe-005",
+      "title": "Tasks 页面",
+      "description": "构建任务管理页面",
+      "status": "pending",
+      "agent": "frontend-agent",
+      "dependencies": ["fe-003"],
+      "estimated_time": "1.5h"
+    },
+    {
+      "id": "fe-006",
+      "title": "Agents 页面",
+      "description": "构建 Agent 协作监控页面",
+      "status": "pending",
+      "agent": "frontend-agent",
+      "dependencies": ["fe-003"],
+      "estimated_time": "1.5h"
+    },
+    {
+      "id": "fe-007",
+      "title": "Code 编辑器页面",
+      "description": "集成代码编辑器组件",
+      "status": "pending",
+      "agent": "frontend-agent",
+      "dependencies": ["fe-003"],
+      "estimated_time": "2h"
+    },
+    {
+      "id": "fe-008",
+      "title": "Logs 页面",
+      "description": "构建实时日志查看页面",
+      "status": "pending",
+      "agent": "frontend-agent",
+      "dependencies": ["fe-003"],
+      "estimated_time": "1h"
+    },
+    {
+      "id": "fe-009",
+      "title": "Settings 页面",
+      "description": "构建设置页面",
+      "status": "pending",
+      "agent": "frontend-agent",
+      "dependencies": ["fe-003"],
+      "estimated_time": "45min"
+    },
+    {
+      "id": "fe-010",
+      "title": "API 集成",
+      "description": "集成 SCC Backend API，实现数据交互",
+      "status": "pending",
+      "agent": "api-agent",
+      "dependencies": ["fe-004", "fe-005", "fe-006"],
+      "estimated_time": "2h"
+    },
+    {
+      "id": "fe-011",
+      "title": "构建和优化",
+      "description": "生产构建，性能优化",
+      "status": "pending",
+      "agent": "build-agent",
+      "dependencies": ["fe-007", "fe-008", "fe-009", "fe-010"],
+      "estimated_time": "1h"
+    }
+  ],
+  
+  "output": {
+    "directory": "ui/frontend",
+    "build_directory": "ui/frontend/dist",
+    "entry_point": "ui/frontend/dist/index.html"
+  },
+  
+  "acceptance_criteria": [
+    "所有页面可以正常访问",
+    "构建成功，无错误",
+    "响应式设计，支持移动端",
+    "代码通过 ESLint 检查",
+    "性能评分 > 90"
+  ]
+}

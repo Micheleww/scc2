@@ -1,0 +1,241 @@
+{
+  "registry_version": "1.0.0",
+  "updated_at": "2026-02-05",
+  "globals": {
+    "default_language": "zh-CN",
+    "pointer_pack": {
+      "law_ref": "http://127.0.0.1:18788/docs/AI_CONTEXT.md",
+      "nav_ref": "http://127.0.0.1:18788/docs/NAVIGATION.md",
+      "rules_ref": "http://127.0.0.1:18788/docs/PROMPTING.md",
+      "exec_ref": "http://127.0.0.1:18788/docs/EXECUTOR.md"
+    }
+  },
+  "blocks": [
+    {
+      "id": "blk.header.3pointers",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/header_3pointers_v1.txt",
+      "params": ["law_ref", "nav_ref", "rules_ref", "exec_ref"]
+    },
+    {
+      "id": "blk.split.parent.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/split_parent_v1.txt",
+      "params": ["parent_goal", "schema_json", "good_example_json", "bad_example_json", "strict_model"]
+    },
+    {
+      "id": "blk.split.failed_atomic.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/split_failed_atomic_v1.txt",
+      "params": ["task_id", "task_title", "task_role", "task_goal", "failed_reason"]
+    },
+    {
+      "id": "blk.fm.flow_bottleneck.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_flow_bottleneck_v1.txt",
+      "params": ["trigger_event_json", "summary_text", "local_plan_json"]
+    },
+    {
+      "id": "blk.fm.learned_patterns.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_learned_patterns_v1.txt",
+      "params": ["summary_json"]
+    },
+    {
+      "id": "blk.fm.token_cfo.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_token_cfo_v1.txt",
+      "params": ["snapshot_json"]
+    },
+    {
+      "id": "blk.fm.feedback.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_feedback_v1.txt",
+      "params": ["event_json", "summary_json"]
+    },
+    {
+      "id": "blk.fm.instinct_builder.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_instinct_builder_v1.txt",
+      "params": ["top_pattern_json", "snapshot_trimmed_json"]
+    },
+    {
+      "id": "blk.fm.five_whys.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_five_whys_v1.txt",
+      "params": ["taxonomy_summary_json"]
+    },
+    {
+      "id": "blk.fm.radius_audit.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_radius_audit_v1.txt",
+      "params": ["audit_json"]
+    },
+    {
+      "id": "blk.fm.audit_followup.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/fm_audit_followup_v1.txt",
+      "params": ["source_task_id"]
+    },
+    {
+      "id": "blk.status_review.audit.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/status_review_audit_v1.txt",
+      "params": ["batch_id", "report_path", "tasks_lines", "json_summary_example"]
+    },
+    {
+      "id": "blk.ci.fixup.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "text",
+      "src": "blocks/ci_fixup_v1.txt",
+      "params": ["ci_gate_json", "original_task_json"]
+    },
+    {
+      "id": "blk.pins.fill_prompt.v1",
+      "version": "1.0.0",
+      "status": "active",
+      "type": "json",
+      "src": "blocks/pins_fill_prompt_v1.json",
+      "params": [
+        "pf_task_id",
+        "parent_task_id",
+        "task_class",
+        "child_title",
+        "child_goal",
+        "child_acceptance",
+        "child_allowed_tests",
+        "patch_scope_allow_paths",
+        "patch_scope_deny_paths",
+        "signals_ci_failures",
+        "signals_error_snippets",
+        "original_task_id",
+        "original_task_role",
+        "original_task_files",
+        "original_task_current_pins",
+        "original_task_failure_reason"
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "role_id": "planner.split_parent",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.split.parent.v1"] },
+      "required_params": ["parent_goal", "schema_json", "good_example_json", "bad_example_json", "strict_model"]
+    },
+    {
+      "role_id": "designer.split_failed_atomic",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.split.failed_atomic.v1"] },
+      "required_params": ["task_id", "task_title", "task_role", "task_goal", "failed_reason"]
+    },
+    {
+      "role_id": "factory_manager.flow_bottleneck_response_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.flow_bottleneck.v1"] }
+    },
+    {
+      "role_id": "factory_manager.learned_patterns_response_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.learned_patterns.v1"] }
+    },
+    {
+      "role_id": "factory_manager.token_cfo_response_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.token_cfo.v1"] }
+    },
+    {
+      "role_id": "factory_manager.feedback_response_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.feedback.v1"] }
+    },
+    {
+      "role_id": "factory_manager.instinct_builder_response_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.instinct_builder.v1"] }
+    },
+    {
+      "role_id": "factory_manager.five_whys_response_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.five_whys.v1"] }
+    },
+    {
+      "role_id": "factory_manager.radius_audit_response_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.radius_audit.v1"] }
+    },
+    {
+      "role_id": "factory_manager.audit_fix_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.fm.audit_followup.v1"] }
+    },
+    {
+      "role_id": "status_review.audit_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.status_review.audit.v1"] }
+    },
+    {
+      "role_id": "qa.ci_fixup_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "text",
+      "composition": { "blocks": ["blk.header.3pointers", "blk.ci.fixup.v1"] }
+    },
+    {
+      "role_id": "pinser.pins_fill_prompt_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "render_kind": "json_string",
+      "composition": { "blocks": ["blk.pins.fill_prompt.v1"] }
+    }
+  ],
+  "presets": []
+}
+

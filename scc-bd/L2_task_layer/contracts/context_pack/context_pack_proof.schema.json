@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scc.contract.context_pack_proof.v1",
+  "title": "SCC Context Pack v1 Proof (Attestation)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "t"],
+  "properties": {
+    "schema_version": { "const": "scc.context_pack_v1_proof.v1" },
+    "t": { "type": "string" },
+
+    "context_pack_v1_id_job": { "type": ["string", "null"] },
+    "context_pack_v1_id_payload": { "type": ["string", "null"] },
+
+    "attestation_nonce_job": { "type": ["string", "null"] },
+    "attestation_nonce_payload": { "type": ["string", "null"] },
+
+    "pack_json_sha256_payload": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
+    "pack_json_attest_sha256_payload": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
+
+    "task_bundle_manifest_sha256_payload": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
+    "task_bundle_files_sha256_payload": {
+      "type": ["object", "null"],
+      "additionalProperties": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" }
+    },
+    "task_bundle_files_attest_sha256_payload": {
+      "type": ["object", "null"],
+      "additionalProperties": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" }
+    },
+
+    "computed_by": { "type": ["string", "null"] },
+    "error": { "type": ["string", "null"] },
+    "message": { "type": ["string", "null"] }
+  }
+}
+

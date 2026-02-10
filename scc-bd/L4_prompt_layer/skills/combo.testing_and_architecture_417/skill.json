@@ -1,0 +1,50 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "combo.testing_and_architecture_417",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Expert-level testing_architecture_integration capabilities for integration in combo contexts",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "combo",
+      "integration",
+      "testing_architecture_integration"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1198,
+    "max_files": 23
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "combo",
+    "subcategory": "integration",
+    "tags": [
+      "combo",
+      "integration",
+      "testing_architecture_integration",
+      "imported",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "imported_at": "2026-02-09T20:39:53.354Z",
+    "popularity_score": 9
+  }
+}

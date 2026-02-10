@@ -1,0 +1,151 @@
+{
+  "$schema": "./opencode.schema.json",
+  "version": "1.0.0",
+  "description": "SCC OpenCode Executor Configuration - 仅使用OpenCode内置免费模型",
+  "executor": {
+    "name": "opencode",
+    "type": "cli",
+    "enabled": true,
+    "concurrency": 6,
+    "priority": 1,
+    "timeout": {
+      "default": 300000,
+      "max": 600000
+    }
+  },
+  "opencode": {
+    "binary": "C:\\scc\\plugin\\opencode\\opencode-cli.exe",
+    "workingDirectory": "C:\\scc",
+    "configPath": "C:\\scc\\scc-bd\\config\\.opencode.json",
+    "autoApprove": true,
+    "nonInteractive": true,
+    "outputFormat": "json",
+    "env": {
+      "AGENTS_SKILLS_PATH": "C:\\scc\\empty_skills"
+    }
+  },
+  "models": {
+    "default": "opencode/kimi-k2.5-free",
+    "available": [
+      {
+        "id": "opencode/kimi-k2.5-free",
+        "provider": "opencode",
+        "maxTokens": 8000,
+        "costTier": "free",
+        "description": "Moonshot Kimi K2.5 Free - 超长上下文，中文优化"
+      },
+      {
+        "id": "opencode/minimax-m2.1-free",
+        "provider": "opencode",
+        "maxTokens": 8000,
+        "costTier": "free",
+        "description": "MiniMax M2.1 Free - 多模态大模型"
+      },
+      {
+        "id": "opencode/trinity-large-preview-free",
+        "provider": "opencode",
+        "maxTokens": 8000,
+        "costTier": "free",
+        "description": "Trinity Large Preview Free - 代码优化"
+      }
+    ],
+    "freeModels": [
+      "opencode/kimi-k2.5-free",
+      "opencode/minimax-m2.1-free",
+      "opencode/trinity-large-preview-free"
+    ]
+  },
+  "agents": {
+    "coder": {
+      "model": "opencode/kimi-k2.5-free",
+      "maxTokens": 8000,
+      "skills": ["implementation", "patch_only", "code_review"]
+    },
+    "task": {
+      "model": "opencode/kimi-k2.5-free",
+      "maxTokens": 8000,
+      "skills": ["task_decomposition", "glue_code", "min_diff"]
+    },
+    "verifier": {
+      "model": "opencode/kimi-k2.5-free",
+      "maxTokens": 8000,
+      "skills": ["evidence_check", "verify_triplet"]
+    }
+  },
+  "tools": {
+    "enabled": [
+      "bash",
+      "glob",
+      "grep",
+      "ls",
+      "view",
+      "write",
+      "edit",
+      "patch",
+      "diagnostics"
+    ],
+    "restricted": {
+      "bash": {
+        "allowedCommands": [
+          "git",
+          "npm",
+          "node",
+          "python",
+          "pip",
+          "cat",
+          "ls",
+          "grep",
+          "find",
+          "mkdir",
+          "cp",
+          "mv",
+          "rm",
+          "echo",
+          "cd",
+          "pwd",
+          "head",
+          "tail",
+          "wc",
+          "sort",
+          "uniq",
+          "diff",
+          "jq"
+        ],
+        "blockedPatterns": [
+          "rm -rf /",
+          "rm -rf ~",
+          "> /dev",
+          "mkfs",
+          "dd if",
+          "curl.*|.*sh",
+          "wget.*|.*sh"
+        ]
+      }
+    }
+  },
+  "scc": {
+    "integration": {
+      "gatewayEndpoint": "http://localhost:18788",
+      "roleMapping": {
+        "engineer": "coder",
+        "integrator": "task",
+        "verifier_judge": "verifier"
+      },
+      "contextPack": {
+        "enabled": true,
+        "autoLoad": true,
+        "maxSize": 100000
+      },
+      "submitFormat": "scc.submit.v1"
+    }
+  },
+  "logging": {
+    "level": "info",
+    "destination": "C:\\scc\\scc-bd\\artifacts\\executor_logs\\opencode",
+    "rotation": {
+      "enabled": true,
+      "maxFiles": 10,
+      "maxSize": "100MB"
+    }
+  }
+}

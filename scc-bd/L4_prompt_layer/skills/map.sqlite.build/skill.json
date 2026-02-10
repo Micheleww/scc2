@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "map.sqlite.build",
+  "version": "1.0.0",
+  "owner_role": "map_curator",
+  "summary": "Build map/map.sqlite from map/map.json and embed map/version.json hash metadata for stale detection.",
+  "applies_to": { "task_class": ["batchlane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/map/map.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "timeout_ms": 600000 },
+  "quality_gates": { "must_match_version_hash": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

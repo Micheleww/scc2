@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "smoke_tests",
+  "version": "1.0.0",
+  "owner_role": "qa",
+  "summary": "Define smoke tests and quick checks for regressions.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": { "input_schema": "contracts/envelope/envelope.schema.json", "output_schema": "contracts/envelope/envelope.schema.json" },
+  "budgets": { "max_commands": 10 },
+  "quality_gates": { "must_be_executable": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

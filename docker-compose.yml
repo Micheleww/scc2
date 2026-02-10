@@ -1,0 +1,72 @@
+# SCC Backend Docker Compose - 文件挂载版本
+# 废弃 git 中转，直接使用 volume 挂载实现实时同步
+
+version: '3.8'
+
+services:
+  scc-server:
+    build:
+      context: ..
+      dockerfile: scc-bd/L1_code_layer/docker/Dockerfile
+    image: scc-backend:latest
+    container_name: scc-server
+    
+    # 端口映射
+    ports:
+      - "18788:18788"
+    
+    # 环境变量
+    environment:
+      - NODE_ENV=production
+      - GATEWAY_PORT=18788
+      - LOG_LEVEL=info
+      - REPO_ROOT=/app
+      - SCC_REPO_ROOT=/app
+    
+    # 关键：使用 volume 挂载实现实时文件同步
+    # 本地修改立即反映到容器，无需 git 中转
+    volumes:
+      # 挂载 scc-bd 代码目录到 /app（与 Dockerfile 中的 COPY 目标一致）
+      # 使用只读模式防止容器修改影响本地
+      - ./scc-bd:/app:ro
+      
+      # 挂载 artifacts 目录（读写，用于存储状态）
+      - ./artifacts:/app/artifacts:rw
+      
+      # 挂载日志目录
+      - ./logs:/app/logs:rw
+      
+      # 挂载数据目录
+      - ./data:/app/data:rw
+    
+    # 工作目录
+    working_dir: /app
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:18788/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 网络配置
+    networks:
+      - scc-network
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  scc-network:
+    driver: bridge

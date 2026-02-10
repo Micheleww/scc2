@@ -1,0 +1,67 @@
+{
+  "data": {
+    "directory": "C:\\scc\\scc-bd\\.opencode"
+  },
+  "providers": {
+    "anthropic": {
+      "apiKey": "${ANTHROPIC_API_KEY}",
+      "disabled": true
+    },
+    "openai": {
+      "apiKey": "${OPENAI_API_KEY}",
+      "disabled": true
+    },
+    "google": {
+      "apiKey": "${GEMINI_API_KEY}",
+      "disabled": true
+    },
+    "copilot": {
+      "disabled": true
+    },
+    "groq": {
+      "apiKey": "${GROQ_API_KEY}",
+      "disabled": false
+    },
+    "openrouter": {
+      "apiKey": "${OPENROUTER_API_KEY}",
+      "disabled": false
+    }
+  },
+  "agents": {
+    "coder": {
+      "model": "openrouter/kimi-k2.5:free",
+      "maxTokens": 8000
+    },
+    "task": {
+      "model": "openrouter/kimi-k2.5:free",
+      "maxTokens": 8000
+    },
+    "title": {
+      "model": "openrouter/kimi-k2.5:free",
+      "maxTokens": 80
+    }
+  },
+  "shell": {
+    "path": "powershell.exe",
+    "args": ["-NoProfile", "-Command"]
+  },
+  "mcpServers": {},
+  "lsp": {
+    "go": {
+      "disabled": true,
+      "command": "gopls"
+    },
+    "typescript": {
+      "disabled": false,
+      "command": "typescript-language-server",
+      "args": ["--stdio"]
+    },
+    "python": {
+      "disabled": false,
+      "command": "pylsp"
+    }
+  },
+  "debug": false,
+  "debugLSP": false,
+  "autoCompact": true
+}

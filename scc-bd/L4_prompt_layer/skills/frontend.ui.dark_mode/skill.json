@@ -1,0 +1,50 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "frontend.ui.dark_mode",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Production-ready dark_mode patterns for ui development",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "frontend",
+      "ui",
+      "dark_mode"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1721,
+    "max_files": 26
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "frontend",
+    "subcategory": "ui",
+    "tags": [
+      "frontend",
+      "ui",
+      "dark_mode",
+      "imported",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "imported_at": "2026-02-09T20:39:53.328Z",
+    "popularity_score": 5
+  }
+}

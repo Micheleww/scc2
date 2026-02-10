@@ -1,0 +1,33 @@
+{
+  "schema_version": "scc.roles_registry.v1",
+  "updated_at": "2026-02-05",
+  "roles": [
+    { "role": "architect", "policy": "roles/architect.json" },
+    { "role": "auditor", "policy": "roles/auditor.json" },
+    { "role": "ci_fixup", "policy": "roles/ci_fixup.json" },
+    { "role": "designer", "policy": "roles/designer.json" },
+    { "role": "doc", "policy": "roles/doc.json" },
+    { "role": "doc_adr_scribe", "policy": "roles/doc_adr_scribe.json" },
+    { "role": "engineer", "policy": "roles/engineer.json" },
+    { "role": "eval_curator", "policy": "roles/eval_curator.json" },
+    { "role": "executor", "policy": "roles/executor.json" },
+    { "role": "factory_manager", "policy": "roles/factory_manager.json" },
+    { "role": "integrator", "policy": "roles/integrator.json" },
+    { "role": "lessons_miner", "policy": "roles/lessons_miner.json" },
+    { "role": "map_curator", "policy": "roles/map_curator.json" },
+    { "role": "pins", "policy": "roles/pins.json" },
+    { "role": "pinser", "policy": "roles/pinser.json" },
+    { "role": "planner", "policy": "roles/planner.json" },
+    { "role": "playbook_publisher", "policy": "roles/playbook_publisher.json" },
+    { "role": "preflight_gate", "policy": "roles/preflight_gate.json" },
+    { "role": "qa", "policy": "roles/qa.json" },
+    { "role": "retry_orchestrator", "policy": "roles/retry_orchestrator.json" },
+    { "role": "workbench_dev", "policy": "roles/workbench_dev.json" },
+    { "role": "release_integrator", "policy": "roles/release_integrator.json" },
+    { "role": "split", "policy": "roles/split.json" },
+    { "role": "ssot_curator", "policy": "roles/ssot_curator.json" },
+    { "role": "status_review", "policy": "roles/status_review.json" },
+    { "role": "stability_controller", "policy": "roles/stability_controller.json" },
+    { "role": "verifier_judge", "policy": "roles/verifier_judge.json" }
+  ]
+}

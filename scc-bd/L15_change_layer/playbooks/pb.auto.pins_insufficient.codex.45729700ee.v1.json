@@ -1,0 +1,43 @@
+{
+  "schema_version": "scc.playbook.v1",
+  "playbook_id": "pb.auto.pins_insufficient.codex.45729700ee.v1",
+  "version": "1.0.0",
+  "pattern_id": "auto.pins_insufficient.codex.45729700ee",
+  "enablement": {
+    "schema_version": "scc.enablement.v1",
+    "status": "gray",
+    "rollout": {
+      "mode": "percent",
+      "percent": 5
+    },
+    "rollback_conditions": [
+      {
+        "metric": "ci_failed_rate_15m",
+        "op": ">",
+        "threshold": 0.2
+      },
+      {
+        "metric": "avg_retries",
+        "op": ">",
+        "threshold": 3
+      }
+    ]
+  },
+  "actions": [
+    {
+      "type": "note",
+      "params": {
+        "message": "Auto-draft playbook for pattern auto.pins_insufficient.codex.45729700ee (PINS_INSUFFICIENT)."
+      }
+    },
+    {
+      "type": "route",
+      "lane": "fastlane",
+      "role": "pinser",
+      "params": {
+        "reason": "auto_pins_fix"
+      }
+    }
+  ],
+  "notes": "Auto-generated draft; must pass eval_replay before publish."
+}

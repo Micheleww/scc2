@@ -1,0 +1,43 @@
+{
+  "schema_version": "scc.playbook.v1",
+  "playbook_id": "pb.auto.preflight_failed.unknown.8fbfce8f88.v1",
+  "version": "1.0.0",
+  "pattern_id": "auto.preflight_failed.unknown.8fbfce8f88",
+  "enablement": {
+    "schema_version": "scc.enablement.v1",
+    "status": "draft",
+    "rollout": {
+      "mode": "percent",
+      "percent": 0
+    },
+    "rollback_conditions": [
+      {
+        "metric": "ci_failed_rate_15m",
+        "op": ">",
+        "threshold": 0.2
+      },
+      {
+        "metric": "avg_retries",
+        "op": ">",
+        "threshold": 3
+      }
+    ]
+  },
+  "actions": [
+    {
+      "type": "note",
+      "params": {
+        "message": "Auto-draft playbook for pattern auto.preflight_failed.unknown.8fbfce8f88 (PREFLIGHT_FAILED)."
+      }
+    },
+    {
+      "type": "route",
+      "lane": "fastlane",
+      "role": "pinser",
+      "params": {
+        "reason": "auto_pins_fix"
+      }
+    }
+  ],
+  "notes": "Auto-generated draft; must pass eval_replay before publish."
+}

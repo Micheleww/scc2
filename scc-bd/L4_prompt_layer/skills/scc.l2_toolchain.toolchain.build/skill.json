@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "scc.l2_toolchain.toolchain.build",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "配置和优化构建系统",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "scc.l2_toolchain",
+      "toolchain.build",
+      "scc",
+      "core"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1500,
+    "max_files": 30
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "scc.l2_toolchain",
+    "subcategory": "toolchain.build",
+    "display_name": "构建系统",
+    "tags": [
+      "scc.l2_toolchain",
+      "toolchain.build",
+      "scc",
+      "core",
+      "scc_library"
+    ],
+    "complexity": "intermediate",
+    "created_at": "2026-02-09T20:42:26.444Z",
+    "source": "scc_library"
+  }
+}

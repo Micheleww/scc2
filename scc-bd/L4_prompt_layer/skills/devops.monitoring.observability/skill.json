@@ -1,0 +1,50 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "devops.monitoring.observability",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced observability techniques and best practices for monitoring",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "devops",
+      "monitoring",
+      "observability"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1915,
+    "max_files": 36
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "devops",
+    "subcategory": "monitoring",
+    "tags": [
+      "devops",
+      "monitoring",
+      "observability",
+      "imported",
+      "community"
+    ],
+    "complexity": "beginner",
+    "imported_at": "2026-02-09T20:39:53.329Z",
+    "popularity_score": 89
+  }
+}

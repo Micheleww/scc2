@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "min_diff",
+  "version": "1.0.0",
+  "owner_role": "integrator",
+  "summary": "Prefer small diffs; avoid sweeping refactors; preserve behavior.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": { "input_schema": "contracts/child_task/child_task.schema.json", "output_schema": "contracts/submit/submit.schema.json" },
+  "budgets": { "max_changed_files": 30 },
+  "quality_gates": { "must_limit_change_radius": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

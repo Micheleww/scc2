@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SCC Hygiene Checks v1",
+  "type": "object",
+  "required": ["task_id", "artifacts", "allow_paths", "changed_files"],
+  "properties": {
+    "task_id": { "type": "string" },
+    "artifacts": {
+      "type": "object",
+      "required": ["report_md", "selftest_log", "evidence_dir", "patch_diff", "submit_json"],
+      "properties": {
+        "report_md": { "type": "string" },
+        "selftest_log": { "type": "string" },
+        "evidence_dir": { "type": "string" },
+        "patch_diff": { "type": "string" },
+        "submit_json": { "type": "string" }
+      }
+    },
+    "allow_paths": {
+      "type": "object",
+      "properties": {
+        "write": { "type": "array", "items": { "type": "string" } },
+        "read": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "changed_files": { "type": "array", "items": { "type": "string" } },
+    "new_files": { "type": "array", "items": { "type": "string" } },
+    "forbidden_patterns": { "type": "array", "items": { "type": "string" } }
+  }
+}
+

@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "pins_only",
+  "version": "1.0.0",
+  "owner_role": "pinser",
+  "summary": "Output only pins JSON; no patches or commands.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": { "input_schema": "contracts/pins/pins_request.schema.json", "output_schema": "contracts/pins/pins_result.schema.json" },
+  "budgets": { "max_files": 20 },
+  "quality_gates": { "must_not_include_patch": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

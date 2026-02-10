@@ -1,0 +1,61 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "meta.lazy_loader",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "智能延迟加载 skills，仅在需要时加载，优化启动性能",
+  "description": "## 功能\n- 智能预测技能使用\n- 按需加载策略\n- 内存管理\n- 加载优先级队列\n- 预加载热门技能\n\n## 使用场景\n- 启动性能优化\n- 内存受限环境\n- 大型 skills 库",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 3000,
+    "max_files": 50
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "capabilities": [
+    "predict_skill_usage",
+    "lazy_load_skill",
+    "manage_memory_pool",
+    "priority_load_queue",
+    "preload_hot_skills"
+  ],
+  "metadata": {
+    "category": "meta",
+    "subcategory": "lazy_loader",
+    "display_name": "延迟加载器",
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced",
+      "core"
+    ],
+    "complexity": "advanced",
+    "created_at": "2026-02-09T20:48:43.806Z",
+    "source": "scc_meta_library",
+    "is_meta_skill": true
+  }
+}

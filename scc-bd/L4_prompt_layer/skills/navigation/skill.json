@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "navigation",
+  "version": "1.0.0",
+  "owner_role": "doc",
+  "summary": "Maintain navigation docs and single authoritative entry points.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": { "input_schema": "contracts/envelope/envelope.schema.json", "output_schema": "contracts/envelope/envelope.schema.json" },
+  "budgets": { "max_files": 30 },
+  "quality_gates": { "must_update_nav": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.cloud.fastly_18322",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Production-ready fastly implementation strategies",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "cloud",
+      "fastly",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2201,
+    "max_files": 40
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "cloud",
+    "subcategory": "fastly",
+    "tags": [
+      "cloud",
+      "fastly",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:56.876Z",
+    "source_repo": "agent-skills/agent-skills",
+    "popularity_score": 669
+  }
+}

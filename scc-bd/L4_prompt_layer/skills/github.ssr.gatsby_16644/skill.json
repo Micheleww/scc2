@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.ssr.gatsby_16644",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Expert-level gatsby capabilities for ssr development",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "ssr",
+      "gatsby",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2924,
+    "max_files": 32
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "ssr",
+    "subcategory": "gatsby",
+    "tags": [
+      "ssr",
+      "gatsby",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:56.698Z",
+    "source_repo": "neo4j/neo4j-skills",
+    "popularity_score": 4
+  }
+}

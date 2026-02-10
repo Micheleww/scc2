@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.config.node-config_15323",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Comprehensive node-config guidance for production use",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "config",
+      "node-config",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1351,
+    "max_files": 52
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "config",
+    "subcategory": "node-config",
+    "tags": [
+      "config",
+      "node-config",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:56.576Z",
+    "source_repo": "ux-writing/ux-writing-skill",
+    "popularity_score": 49
+  }
+}

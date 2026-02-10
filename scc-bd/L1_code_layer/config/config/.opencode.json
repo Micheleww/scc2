@@ -1,0 +1,81 @@
+{
+  "data": {
+    "directory": "C:\\scc\\scc-bd\\.opencode"
+  },
+  "providers": {
+    "anthropic": {
+      "apiKey": "",
+      "disabled": true
+    },
+    "openai": {
+      "apiKey": "",
+      "disabled": true
+    },
+    "google": {
+      "apiKey": "",
+      "disabled": true
+    },
+    "copilot": {
+      "disabled": true
+    },
+    "groq": {
+      "apiKey": "",
+      "disabled": true
+    },
+    "openrouter": {
+      "apiKey": "",
+      "disabled": true
+    },
+    "opencode": {
+      "apiKey": "sk-H631B8CDPPP9XQsc4RT5pHsMlyD4sNQiCYbot6pGg3QcnuPQyXrkGyEFY0iVjqoc",
+      "disabled": false
+    }
+  },
+  "agents": {
+    "coder": {
+      "model": "opencode/kimi-k2.5-free",
+      "maxTokens": 4000
+    },
+    "task": {
+      "model": "opencode/kimi-k2.5-free",
+      "maxTokens": 4000
+    },
+    "title": {
+      "model": "opencode/kimi-k2.5-free",
+      "maxTokens": 500
+    }
+  },
+  "shell": {
+    "path": "powershell.exe",
+    "args": ["-NoProfile", "-Command"]
+  },
+  "mcpServers": {
+    "scc-tools": {
+      "command": "node",
+      "args": ["C:\\scc\\scc-bd\\L6_execution_layer\\mcp_server\\scc_mcp_server.mjs"],
+      "disabled": false
+    }
+  },
+  "lsp": {
+    "go": {
+      "disabled": true,
+      "command": "gopls"
+    },
+    "typescript": {
+      "disabled": true,
+      "command": "typescript-language-server",
+      "args": ["--stdio"]
+    },
+    "python": {
+      "disabled": true,
+      "command": "pylsp"
+    }
+  },
+  "tools": {
+    "enabled": ["read", "write", "edit", "bash", "glob", "grep", "ls"],
+    "disabled": []
+  },
+  "debug": false,
+  "debugLSP": false,
+  "autoCompact": true
+}

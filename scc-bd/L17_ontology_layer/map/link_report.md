@@ -1,0 +1,134 @@
+# Map Link Report (v1)
+
+- generated_at: 2026-02-08T23:11:30.633Z
+- map_hash: sha256:ba8d50351159782a78ae202061d101ece8b5bb1faba76c9bc00c02242a23ad23
+
+## Missing doc_refs counts
+- modules_missing: 45
+- entry_points_missing: 38
+- key_symbols_missing: 2000
+
+## Samples (capped)
+### modules
+- `contracts`
+- `docs`
+- `oc-scc-local`
+- `roles`
+- `scc-top`
+- `scc-top/_docker_ctx_scc/tools/a2a_hub`
+- `scc-top/_docker_ctx_scc/tools/chatgpt_chat_archive_mvp`
+- `scc-top/_docker_ctx_scc/tools/exchange_server`
+- `scc-top/_docker_ctx_scc/tools/mcp_bus`
+- `scc-top/_docker_ctx_scc/tools/scc_ui`
+- `scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser`
+- `scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master`
+- `scc-top/_docker_ctx_scc/tools/unified_server`
+- `scc-top/docs/INPUTS/yme_restaurant/model_code/yme_backend`
+- `scc-top/factor_mining_service`
+- `scc-top/opencode-dev/opencode-dev`
+- `scc-top/opencode-dev/opencode-dev/github`
+- `scc-top/opencode-dev/opencode-dev/packages/app`
+- `scc-top/opencode-dev/opencode-dev/packages/console/app`
+- `scc-top/packages/strategies/eth_perp_trend_1h`
+- `scc-top/packages/strategies/test_mean_reversion`
+- `scc-top/packages/strategies/test_trend_strategy`
+- `scc-top/tools/a2a_hub`
+- `scc-top/tools/ai_cli`
+- `scc-top/tools/aws_relay`
+- `scc-top/tools/chatgpt_chat_archive_mvp`
+- `scc-top/tools/config_manager`
+- `scc-top/tools/desktop`
+- `scc-top/tools/exchange_server`
+- `scc-top/tools/freqtrade_ui_streamlit`
+- `scc-top/tools/local_agent`
+- `scc-top/tools/mcp_bus`
+- `scc-top/tools/oc-scc-local`
+- `scc-top/tools/scc_dev_electron`
+- `scc-top/tools/scc_ui`
+- `scc-top/tools/scc/apps/browser/scc-chatgpt-browser`
+- `scc-top/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master`
+- `scc-top/tools/trae_native_wrapper`
+- `scc-top/tools/unified_server`
+- `scc-top/tools/vscode-scc`
+
+### entry_points
+- `pkg:oc-scc-local/package.json:dev`
+- `pkg:oc-scc-local/package.json:map:build`
+- `pkg:oc-scc-local/package.json:map:query`
+- `pkg:oc-scc-local/package.json:map:query-sqlite`
+- `pkg:oc-scc-local/package.json:map:sqlite`
+- `pkg:oc-scc-local/package.json:pins:build`
+- `pkg:oc-scc-local/package.json:preflight:check`
+- `pkg:oc-scc-local/package.json:smoke`
+- `pkg:oc-scc-local/package.json:start`
+- `pkg:oc-scc-local/package.json:test`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc_ui/package.json:build`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc_ui/package.json:dev`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser/package.json:start`
+- `pkg:scc-top/_docker_ctx_scc/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/package.json:test`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:build`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:start`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/app/package.json:test`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/console/app/package.json:build`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/console/app/package.json:dev`
+- `pkg:scc-top/opencode-dev/opencode-dev/packages/console/app/package.json:start`
+- `pkg:scc-top/package.json:test`
+- `pkg:scc-top/tools/oc-scc-local/package.json:dev`
+- `pkg:scc-top/tools/oc-scc-local/package.json:smoke`
+- `pkg:scc-top/tools/oc-scc-local/package.json:start`
+- `pkg:scc-top/tools/scc_dev_electron/package.json:start`
+- `pkg:scc-top/tools/scc_ui/package.json:build`
+- `pkg:scc-top/tools/scc_ui/package.json:dev`
+- `pkg:scc-top/tools/scc/apps/browser/scc-chatgpt-browser/package.json:start`
+- `pkg:scc-top/tools/scc/apps/browser/scc-chatgpt-browser/upstream/electron-quick-start-master/package.json:dev`
+- `pkg:scc-top/tools/trae_native_wrapper/package.json:build`
+- `pkg:scc-top/tools/trae_native_wrapper/package.json:test`
+- `pkg:scc-top/tools/vscode-scc/package.json:build`
+- `pkg:scc-top/tools/web_console/package.json:build`
+- `pkg:scc-top/tools/web_console/package.json:dev`
+- `pkg:scc-top/tools/web_console/package.json:start`
+
+### key_symbols
+- `extract_content@docs/merge_batch1.py:39`
+- `insert_into_target@docs/merge_batch1.py:60`
+- `merge_fail_codes@docs/merge_batch2.py:7`
+- `merge_glossary@docs/merge_batch2.py:38`
+- `__dirname@oc-scc-local/scripts/compile_prompts.mjs:18`
+- `ROOT_DIR@oc-scc-local/scripts/compile_prompts.mjs:19`
+- `SOURCE_DIR@oc-scc-local/scripts/compile_prompts.mjs:20`
+- `OUTPUT_DIR@oc-scc-local/scripts/compile_prompts.mjs:21`
+- `CONFIG@oc-scc-local/scripts/compile_prompts.mjs:24`
+- `constitution@oc-scc-local/scripts/compile_prompts.mjs:66`
+- `hardPolicies@oc-scc-local/scripts/compile_prompts.mjs:67`
+- `conflictOrder@oc-scc-local/scripts/compile_prompts.mjs:68`
+- `legalPrefix@oc-scc-local/scripts/compile_prompts.mjs:70`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:93`
+- `hash@oc-scc-local/scripts/compile_prompts.mjs:96`
+- `refs@oc-scc-local/scripts/compile_prompts.mjs:107`
+- `sourceFiles@oc-scc-local/scripts/compile_prompts.mjs:110`
+- `content@oc-scc-local/scripts/compile_prompts.mjs:113`
+- `metadata@oc-scc-local/scripts/compile_prompts.mjs:114`
+- `refsIndex@oc-scc-local/scripts/compile_prompts.mjs:128`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:142`
+- `schemas@oc-scc-local/scripts/compile_prompts.mjs:155`
+- `failCodes@oc-scc-local/scripts/compile_prompts.mjs:156`
+- `evidenceSpec@oc-scc-local/scripts/compile_prompts.mjs:157`
+- `ioDigest@oc-scc-local/scripts/compile_prompts.mjs:159`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:180`
+- `toolCatalog@oc-scc-local/scripts/compile_prompts.mjs:192`
+- `toolDigest@oc-scc-local/scripts/compile_prompts.mjs:194`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:213`
+- `failCodes@oc-scc-local/scripts/compile_prompts.mjs:225`
+- `failDigest@oc-scc-local/scripts/compile_prompts.mjs:227`
+- `outputPath@oc-scc-local/scripts/compile_prompts.mjs:246`
+- `fullPath@oc-scc-local/scripts/compile_prompts.mjs:259`
+- `files@oc-scc-local/scripts/compile_prompts.mjs:271`
+- `entries@oc-scc-local/scripts/compile_prompts.mjs:274`
+- `relativePath@oc-scc-local/scripts/compile_prompts.mjs:277`
+- `fullPath@oc-scc-local/scripts/compile_prompts.mjs:278`
+- `computeHash@oc-scc-local/scripts/compile_prompts.mjs:295`
+- `extractMetadata@oc-scc-local/scripts/compile_prompts.mjs:302`
+- `metadata@oc-scc-local/scripts/compile_prompts.mjs:303`

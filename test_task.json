@@ -1,0 +1,1 @@
+{"type":"parent_task","description":"验证完整工作流6","title":"端到端测试6","role":"executor","files":["docs/INDEX.md"],"executor":"opencodecli","timestamp":"2026-02-10T10:00:00","status":"pending"}

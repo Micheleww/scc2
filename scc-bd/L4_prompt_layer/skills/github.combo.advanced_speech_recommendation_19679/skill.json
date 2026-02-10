@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.combo.advanced_speech_recommendation_19679",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Production-ready advanced_speech_recommendation_19679 implementation strategies",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "combo",
+      "advanced_speech_recommendation_19679",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2554,
+    "max_files": 26
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "combo",
+    "subcategory": "advanced_speech_recommendation_19679",
+    "tags": [
+      "combo",
+      "advanced_speech_recommendation_19679",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "beginner",
+    "downloaded_at": "2026-02-09T20:48:57.020Z",
+    "source_repo": null,
+    "popularity_score": 0
+  }
+}

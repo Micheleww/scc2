@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.pwa.nuxt-pwa_3826",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Master nuxt-pwa with industry-proven patterns",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "pwa",
+      "nuxt-pwa",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1402,
+    "max_files": 59
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "pwa",
+    "subcategory": "nuxt-pwa",
+    "tags": [
+      "pwa",
+      "nuxt-pwa",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "beginner",
+    "downloaded_at": "2026-02-09T20:48:55.957Z",
+    "source_repo": "anthropics/skills",
+    "popularity_score": 51019
+  }
+}

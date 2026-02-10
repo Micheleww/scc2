@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "glue_code",
+  "version": "1.0.0",
+  "owner_role": "integrator",
+  "summary": "Write adapters/glue code with minimal surface area and predictable behavior.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": { "input_schema": "contracts/child_task/child_task.schema.json", "output_schema": "contracts/submit/submit.schema.json" },
+  "budgets": { "max_loc": 600 },
+  "quality_gates": { "must_keep_diff_minimal": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

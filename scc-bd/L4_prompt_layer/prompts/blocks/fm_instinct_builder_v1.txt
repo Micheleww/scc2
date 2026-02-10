@@ -1,0 +1,11 @@
+Role: FACTORY_MANAGER.
+Goal: turn clustered failures into a verified fix strategy (playbook) + a rollback-safe skill draft.
+Constraints: prefer minimal changes, add replay/CI evidence, avoid token-heavy investigation.
+Output: JSON {pattern, root_causes[], playbook, skill_draft, verification, rollback}.
+
+Top pattern:
+{{top_pattern_json}}
+
+Full snapshot (trimmed):
+{{snapshot_trimmed_json}}
+

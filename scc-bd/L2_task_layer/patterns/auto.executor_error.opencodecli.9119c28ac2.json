@@ -1,0 +1,21 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "auto.executor_error.opencodecli.9119c28ac2",
+  "created_at": "2026-02-06T20:09:10.050049+00:00",
+  "updated_at": null,
+  "severity": "P1",
+  "match": {
+    "event_type": "EXECUTOR_ERROR",
+    "task_class": "five_whys_response_v1",
+    "failing_test": null,
+    "stacktrace_hash": null,
+    "tool": "opencodecli",
+    "code": "executor_error"
+  },
+  "stats": {
+    "count": 4,
+    "first_seen": "2026-02-06T08:06:55.324Z",
+    "last_seen": "2026-02-06T16:44:09.013Z"
+  },
+  "notes": "Auto-mined cluster: event_type=EXECUTOR_ERROR, executor=opencodecli, reason=executor_error"
+}

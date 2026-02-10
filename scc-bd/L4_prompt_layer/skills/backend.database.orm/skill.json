@@ -1,0 +1,50 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "backend.database.orm",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Comprehensive orm guidance for backend database scenarios",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "backend",
+      "database",
+      "orm"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1819,
+    "max_files": 39
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "backend",
+    "subcategory": "database",
+    "tags": [
+      "backend",
+      "database",
+      "orm",
+      "imported",
+      "community"
+    ],
+    "complexity": "advanced",
+    "imported_at": "2026-02-09T20:39:53.329Z",
+    "popularity_score": 51
+  }
+}

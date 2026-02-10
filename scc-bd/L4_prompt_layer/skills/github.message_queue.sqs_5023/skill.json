@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.message_queue.sqs_5023",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced sqs techniques and best practices",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "message_queue",
+      "sqs",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2159,
+    "max_files": 43
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "message_queue",
+    "subcategory": "sqs",
+    "tags": [
+      "message_queue",
+      "sqs",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:55.995Z",
+    "source_repo": "pentest/pentest-skills",
+    "popularity_score": 12
+  }
+}

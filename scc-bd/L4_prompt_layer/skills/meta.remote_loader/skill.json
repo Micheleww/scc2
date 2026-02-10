@@ -1,0 +1,61 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "meta.remote_loader",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "从远程源（GitHub、CDN、Registry）动态加载 skills",
+  "description": "## 功能\n- 从 GitHub 加载 skills\n- CDN 加速加载\n- Registry 查询和下载\n- 版本控制和回滚\n- 离线缓存管理\n\n## 使用场景\n- 技能市场\n- 分布式 skills 库\n- 团队协作",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 3000,
+    "max_files": 50
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "capabilities": [
+    "fetch_from_github",
+    "fetch_from_cdn",
+    "query_registry",
+    "version_control",
+    "offline_cache"
+  ],
+  "metadata": {
+    "category": "meta",
+    "subcategory": "remote_loader",
+    "display_name": "远程技能加载器",
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced",
+      "core"
+    ],
+    "complexity": "advanced",
+    "created_at": "2026-02-09T20:48:43.806Z",
+    "source": "scc_meta_library",
+    "is_meta_skill": true
+  }
+}

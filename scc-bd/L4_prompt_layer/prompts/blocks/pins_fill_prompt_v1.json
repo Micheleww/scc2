@@ -1,0 +1,73 @@
+{
+  "schema_version": "scc.pins_fill_prompt.v1",
+  "role": "pins_filler",
+  "output_mode": "JSON_ONLY",
+  "task": {
+    "task_id": "{{pf_task_id}}",
+    "parent_task_id": "{{parent_task_id}}",
+    "goal": "为子任务构建足够且最小的 pins（路径/符号/行窗），满足 preflight 与 allowedTests",
+    "task_class": "{{task_class}}",
+    "repo_root_policy": "repo_root_relative_only",
+    "unknown_policy": "NEED_INPUT"
+  },
+  "inputs": {
+    "ssot_pointers": [],
+    "child_task_contract": {
+      "title": "{{child_title}}",
+      "goal": "{{child_goal}}",
+      "acceptance": "{{child_acceptance}}",
+      "allowed_tests": { "commands": "{{child_allowed_tests}}" },
+      "patch_scope": {
+        "allow_paths": "{{patch_scope_allow_paths}}",
+        "deny_paths": "{{patch_scope_deny_paths}}"
+      }
+    },
+    "existing_pins": {
+      "pins_json_path": null,
+      "pins_md_path": null
+    },
+    "signals": {
+      "preflight_missing": [],
+      "ci_failures": "{{signals_ci_failures}}",
+      "error_snippets": "{{signals_error_snippets}}"
+    }
+  },
+  "rules": {
+    "must": [
+      "pins 只包含与子任务直接相关的最小集合（禁止全仓/大目录）",
+      "每个 pin 必须可解释：为什么需要它（reason）",
+      "优先 pin 入口/接口/配置/测试相关文件，再 pin 具体实现",
+      "如果缺少关键信息（入口路径/模块名/测试命令），输出 NEED_INPUT 并给出具体问题"
+    ],
+    "forbid": [
+      "编造文件路径/符号名",
+      "输出任何非 JSON 文本",
+      "超出 patch_scope 的 pin（除非标注为 read_only 且解释原因）"
+    ],
+    "budgets": { "max_total_pins_tokens": 4000, "max_files": 20, "default_line_window": 120 }
+  },
+  "desired_outputs": {
+    "pins_json": {
+      "required": true,
+      "fields": [
+        "pins[].path",
+        "pins[].symbols[]",
+        "pins[].line_windows[]",
+        "pins[].purpose",
+        "pins[].reason",
+        "pins[].read_only"
+      ]
+    },
+    "pins_md": { "required": false, "notes": "可选：给人看的简版 pins 摘要（不放长原文）" },
+    "recommended_search_queries": { "required": true },
+    "preflight_expectation": { "required": true, "notes": "列出这些 pins 能覆盖哪些 preflight 必需项/测试路径" }
+  },
+  "original_task": {
+    "task_id": "{{original_task_id}}",
+    "role": "{{original_task_role}}",
+    "files": "{{original_task_files}}",
+    "current_pins": "{{original_task_current_pins}}",
+    "failure_reason": "{{original_task_failure_reason}}"
+  }
+}
+

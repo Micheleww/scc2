@@ -1,0 +1,27 @@
+{
+  "schema_version": "scc.map_diff.v1",
+  "generated_at": "2026-02-08T23:11:30.633Z",
+  "previous": {
+    "hash": "sha256:edf3211492a9c37d3c3afbfa6a42a594f883819a7083bcbaf6ab1f7486ffc376",
+    "facts_hash": "sha256:99752875ef2c083ed0e414c00153bd5e6ff27cafdb99b2927671cfa470ec355e"
+  },
+  "current": {
+    "hash": "sha256:ba8d50351159782a78ae202061d101ece8b5bb1faba76c9bc00c02242a23ad23",
+    "facts_hash": "sha256:cf9337f58321e78479241c597b5dcf088ffd4bbb18d1d3a8a338182ef242b31b"
+  },
+  "added": {
+    "modules": [],
+    "entry_points": [],
+    "contracts": [
+      "contracts/context_pack/context_pack.schema.json",
+      "contracts/context_pack/context_pack_proof.schema.json",
+      "contracts/context_pack/context_pack_ref.schema.json"
+    ]
+  },
+  "removed": {
+    "modules": [],
+    "entry_points": [],
+    "contracts": []
+  },
+  "notes": "Map diff is fact-level (modules/entry_points/contracts) and is generated only when a previous map is available."
+}

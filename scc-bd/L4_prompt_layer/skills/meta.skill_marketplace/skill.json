@@ -1,0 +1,61 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "meta.skill_marketplace",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "管理和分发 skills 的完整市场功能",
+  "description": "## 功能\n- 技能发布和订阅\n- 版本管理\n- 评分和评论\n- 搜索和发现\n- 支付和授权\n\n## 使用场景\n- 商业 skills 平台\n- 团队协作\n- 开源社区",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 3000,
+    "max_files": 50
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "capabilities": [
+    "publish_skill",
+    "subscribe_skill",
+    "version_management",
+    "rate_and_review",
+    "search_discover"
+  ],
+  "metadata": {
+    "category": "meta",
+    "subcategory": "skill_marketplace",
+    "display_name": "技能市场",
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced",
+      "core"
+    ],
+    "complexity": "advanced",
+    "created_at": "2026-02-09T20:48:43.807Z",
+    "source": "scc_meta_library",
+    "is_meta_skill": true
+  }
+}

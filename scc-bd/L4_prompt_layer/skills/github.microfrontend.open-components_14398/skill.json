@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.microfrontend.open-components_14398",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Expert-level open-components capabilities for microfrontend development",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "microfrontend",
+      "open-components",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1052,
+    "max_files": 30
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "microfrontend",
+    "subcategory": "open-components",
+    "tags": [
+      "microfrontend",
+      "open-components",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:56.491Z",
+    "source_repo": "GudaStudio/skills",
+    "popularity_score": 1585
+  }
+}

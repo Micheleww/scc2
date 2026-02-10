@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "eval.curate_manifest",
+  "version": "1.0.0",
+  "owner_role": "eval_curator",
+  "summary": "Maintain eval manifests and graders per task_class; enforce smoke/regression split.",
+  "applies_to": { "task_class": ["batchlane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/eval/eval_manifest.schema.json",
+    "output_schema": "contracts/eval/eval_manifest.schema.json"
+  },
+  "budgets": { "max_task_classes": 200 },
+  "quality_gates": { "must_define_smoke": true, "must_define_regression": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

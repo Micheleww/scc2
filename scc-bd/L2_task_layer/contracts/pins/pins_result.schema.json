@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/pins/pins_result.schema.json",
+  "title": "SCC Pins Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "pins"],
+  "properties": {
+    "schema_version": { "const": "scc.pins_result.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "pins": { "$ref": "../child_task/child_task.schema.json#/definitions/pinsSpec" },
+    "recommended_queries": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "preflight_expectation": { "type": "object", "additionalProperties": true }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/submit/submit.schema.json",
+  "title": "SCC Submit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "status", "changed_files", "tests", "artifacts", "exit_code", "needs_input"],
+  "properties": {
+    "schema_version": { "const": "scc.submit.v1" },
+    "task_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "status": { "enum": ["DONE", "NEED_INPUT", "FAILED"] },
+    "reason_code": { "type": "string", "maxLength": 500 },
+"changed_files": { "type": "array", "maxItems": 1000, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "new_files": { "type": "array", "maxItems": 1000, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "touched_files": { "type": "array", "maxItems": 1000, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "allow_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+"read": { "type": "array", "maxItems": 500, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+        "write": { "type": "array", "maxItems": 500, "items": { "type": "string", "minLength": 1, "maxLength": 500 } }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commands", "passed", "summary"],
+      "properties": {
+"commands": { "type": "array", "maxItems": 50, "items": { "type": "string", "minLength": 1, "maxLength": 1000 } },
+        "passed": { "type": "boolean" },
+        "summary": { "type": "string", "maxLength": 1000 }
+      }
+    },
+"ssot_pointers": { "type": "array", "maxItems": 100, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "summary": { "type": "string", "maxLength": 2000 },
+    "payload": { "type": "object", "additionalProperties": true },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report_md", "selftest_log", "evidence_dir", "patch_diff", "submit_json"],
+      "properties": {
+        "report_md": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "selftest_log": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence_dir": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "patch_diff": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "submit_json": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "exit_code": { "type": "integer" },
+    "needs_input": { "type": "array", "maxItems": 20, "items": { "type": "string", "maxLength": 500 } }
+  }
+}

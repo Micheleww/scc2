@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.database.postgresql_7250",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced postgresql techniques and best practices",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "database",
+      "postgresql",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2401,
+    "max_files": 54
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "database",
+    "subcategory": "postgresql",
+    "tags": [
+      "database",
+      "postgresql",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:56.093Z",
+    "source_repo": "typo3/typo3-docs-skill",
+    "popularity_score": 4
+  }
+}

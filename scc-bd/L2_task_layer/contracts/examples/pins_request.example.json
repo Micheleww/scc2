@@ -1,0 +1,23 @@
+{
+  "schema_version": "scc.pins_request.v1",
+  "task_id": "example-task-id",
+  "child_task": {
+    "title": "Validate role system selfcheck",
+    "goal": "Run role system selfcheck and fix any schema/policy/matrix issues until it passes.",
+    "role": "engineer",
+    "files": ["oc-scc-local/src/gateway.mjs"],
+    "allowedTests": ["npm --prefix oc-scc-local run selfcheck:role-system"],
+    "pins": {
+      "allowed_paths": ["oc-scc-local/src/gateway.mjs", "roles/", "skills/", "contracts/"],
+      "forbidden_paths": ["**/secrets/**"],
+      "symbols": [],
+      "line_windows": {},
+      "max_files": 8,
+      "max_loc": 240,
+      "ssot_assumptions": []
+    }
+  },
+  "signals": { "ci_failures": [] },
+  "map_ref": { "path": "map/map.json", "hash": "dev-placeholder" }
+}
+

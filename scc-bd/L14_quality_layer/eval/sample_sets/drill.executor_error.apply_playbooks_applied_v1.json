@@ -1,0 +1,10 @@
+{
+  "schema_version": "scc.eval_sample_set.v1",
+  "pattern_id": "drill.executor_error.apply_playbooks_applied_v1",
+  "updated_at": "2026-02-06T20:00:00Z",
+  "task_ids": ["eval_sample_failed_v1"],
+  "strict_required": true,
+  "min_pass": 1,
+  "notes": "Uses a deterministic selfcheck task that is strict-gate-valid even when status=FAILED."
+}
+

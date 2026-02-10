@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.cloud.fastly_2482",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Master fastly with industry-proven patterns",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "cloud",
+      "fastly",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2567,
+    "max_files": 23
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "cloud",
+    "subcategory": "fastly",
+    "tags": [
+      "cloud",
+      "fastly",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "advanced",
+    "downloaded_at": "2026-02-09T20:48:55.927Z",
+    "source_repo": "IDA-Skill/IDA-Skill",
+    "popularity_score": 10
+  }
+}

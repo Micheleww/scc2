@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.video.videojs_6977",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Master videojs with industry-proven patterns",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "video",
+      "videojs",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2542,
+    "max_files": 31
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "video",
+    "subcategory": "videojs",
+    "tags": [
+      "video",
+      "videojs",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "beginner",
+    "downloaded_at": "2026-02-09T20:48:56.076Z",
+    "source_repo": "terraform-skill/terraform-skill",
+    "popularity_score": 669
+  }
+}

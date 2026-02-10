@@ -1,0 +1,21 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "auto.executor_error.codex.04627ea31a",
+  "created_at": "2026-02-06T20:09:10.050049+00:00",
+  "updated_at": null,
+  "severity": "P1",
+  "match": {
+    "event_type": "EXECUTOR_ERROR",
+    "task_class": "drill_apply_playbooks_applied_v1",
+    "failing_test": null,
+    "stacktrace_hash": null,
+    "tool": "codex",
+    "code": "drill_cancel"
+  },
+  "stats": {
+    "count": 3,
+    "first_seen": "2026-02-06T19:14:19.397Z",
+    "last_seen": "2026-02-06T19:21:11.901Z"
+  },
+  "notes": "Auto-mined cluster: event_type=EXECUTOR_ERROR, executor=codex, reason=drill_cancel"
+}

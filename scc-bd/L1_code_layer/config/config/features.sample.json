@@ -1,0 +1,9 @@
+{
+  "//": "复制为 features.json 后可自定义。true 表示开放该功能/路由。",
+  "exposeScc": true,
+  "exposeOpenCode": true,
+  "exposeSccMcp": true,
+  "exposeOpenCodeMcp": false,
+  "exposeOpenCodeUi": true,
+  "exposeOpenCodeApi": true
+}

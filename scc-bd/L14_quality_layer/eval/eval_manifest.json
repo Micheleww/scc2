@@ -1,0 +1,10 @@
+{
+  "schema_version": "scc.eval_manifest.v1",
+  "updated_at": "2026-02-05",
+  "tiers": {
+    "smoke": { "commands": ["python -m compileall ."], "max_minutes": 5 },
+    "regression": { "commands": ["pytest -q"], "max_minutes": 60 }
+  },
+  "task_classes": {}
+}
+

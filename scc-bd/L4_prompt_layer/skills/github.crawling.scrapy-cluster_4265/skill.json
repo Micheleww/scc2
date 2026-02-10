@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.crawling.scrapy-cluster_4265",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Expert-level scrapy-cluster capabilities for crawling development",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "crawling",
+      "scrapy-cluster",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2673,
+    "max_files": 29
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "crawling",
+    "subcategory": "scrapy-cluster",
+    "tags": [
+      "crawling",
+      "scrapy-cluster",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "advanced",
+    "downloaded_at": "2026-02-09T20:48:55.969Z",
+    "source_repo": "threejs/three-agent-skills",
+    "popularity_score": 6
+  }
+}

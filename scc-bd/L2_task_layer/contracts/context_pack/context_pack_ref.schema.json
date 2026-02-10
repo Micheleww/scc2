@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SCC Context Pack v1 Reference (per task)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "task_id", "context_pack_id", "hash", "rendered_paths", "created_at"],
+  "properties": {
+    "schema_version": { "const": "scc.context_pack_ref.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "context_pack_id": { "type": "string", "minLength": 1 },
+    "hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "created_at": { "type": "string", "minLength": 1 },
+    "proof_required": { "type": ["boolean", "null"] },
+    "proof_algo": { "type": ["string", "null"] },
+    "rendered_paths": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["pack_json", "pack_txt"],
+      "properties": {
+        "pack_json": { "type": "string", "minLength": 1 },
+        "pack_txt": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

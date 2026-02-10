@@ -1,0 +1,47 @@
+{
+  "schema_version": "scc.map_version.v1",
+  "generated_at": "2026-02-08T23:11:30.633Z",
+  "valid_until": "2026-02-15T23:11:30.633Z",
+  "generator": {
+    "name": "scc.map_builder.v1",
+    "version": "1.0.0"
+  },
+  "map_path": "map/map.json",
+  "link_report_path": "map/link_report.json",
+  "hash": "sha256:ba8d50351159782a78ae202061d101ece8b5bb1faba76c9bc00c02242a23ad23",
+  "facts_hash": "sha256:cf9337f58321e78479241c597b5dcf088ffd4bbb18d1d3a8a338182ef242b31b",
+  "coverage": {
+    "roots": [
+      "oc-scc-local",
+      "tools/scc",
+      "scc-top",
+      "contracts",
+      "roles",
+      "skills",
+      "docs"
+    ],
+    "excluded_globs": [
+      "**/.git/**",
+      "**/node_modules/**",
+      "artifacts/**",
+      "**/.scc_secrets/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/coverage/**",
+      "**/_tmp/**",
+      "**/.opencode/**",
+      "**/vendor/**",
+      "**/.venv/**",
+      "**/__pycache__/**"
+    ]
+  },
+  "stats": {
+    "files_indexed": 8806,
+    "modules": 45,
+    "entry_points": 38,
+    "key_symbols": 6000,
+    "test_entry_points": 18,
+    "configs": 2112,
+    "doc_refs": 50
+  }
+}

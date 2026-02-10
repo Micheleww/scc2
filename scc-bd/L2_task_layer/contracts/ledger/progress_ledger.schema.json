@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "scc.progress_ledger.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "parent_id", "updated_at", "phase", "counts", "budgets", "usage", "stall"],
+  "properties": {
+    "schema_version": { "const": "scc.progress_ledger.v1" },
+    "parent_id": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "phase": { "type": "string", "enum": ["needs_split", "splitting", "ready", "executing", "verifying", "done", "failed", "dlq", "quarantine"] },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["children_total", "children_ready", "children_in_progress", "children_done", "children_failed", "children_blocked"],
+      "properties": {
+        "children_total": { "type": "integer", "minimum": 0 },
+        "children_ready": { "type": "integer", "minimum": 0 },
+        "children_in_progress": { "type": "integer", "minimum": 0 },
+        "children_done": { "type": "integer", "minimum": 0 },
+        "children_failed": { "type": "integer", "minimum": 0 },
+        "children_blocked": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_total_attempts", "max_total_tokens_budget", "max_total_verify_minutes"],
+      "properties": {
+        "max_total_attempts": { "type": "integer", "minimum": 1 },
+        "max_total_tokens_budget": { "type": "integer", "minimum": 0 },
+        "max_total_verify_minutes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempts", "tokens_input", "tokens_output", "verify_minutes"],
+      "properties": {
+        "attempts": { "type": "integer", "minimum": 0 },
+        "tokens_input": { "type": "integer", "minimum": 0 },
+        "tokens_output": { "type": "integer", "minimum": 0 },
+        "verify_minutes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "stall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_stalled", "last_progress_at", "minutes_since_progress", "reason"],
+      "properties": {
+        "is_stalled": { "type": "boolean" },
+        "last_progress_at": { "type": ["string", "null"] },
+        "minutes_since_progress": { "type": ["integer", "null"], "minimum": 0 },
+        "reason": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
+

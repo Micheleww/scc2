@@ -1,0 +1,19 @@
+{
+  "name": "scc-mcp-server",
+  "version": "1.0.0",
+  "description": "SCC MCP Server - 为 OpenCode CLI 提供扩展工具支持",
+  "type": "module",
+  "main": "scc_mcp_server.mjs",
+  "bin": {
+    "scc-mcp-server": "./scc_mcp_server.mjs"
+  },
+  "scripts": {
+    "start": "node scc_mcp_server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "glob": "^10.0.0"
+  },
+  "keywords": ["mcp", "opencode", "tools"],
+  "license": "MIT"
+}

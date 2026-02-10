@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.computer_vision.scikit-image_3746",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced scikit-image techniques and best practices",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "computer_vision",
+      "scikit-image",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2449,
+    "max_files": 54
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "computer_vision",
+    "subcategory": "scikit-image",
+    "tags": [
+      "computer_vision",
+      "scikit-image",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "beginner",
+    "downloaded_at": "2026-02-09T20:48:55.955Z",
+    "source_repo": "data-science/data-science-agent-skills",
+    "popularity_score": 2
+  }
+}

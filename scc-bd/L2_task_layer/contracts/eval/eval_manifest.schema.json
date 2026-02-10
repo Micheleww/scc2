@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/eval/eval_manifest.schema.json",
+  "title": "SCC Eval Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "updated_at", "tiers"],
+  "properties": {
+    "schema_version": { "const": "scc.eval_manifest.v1" },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "tiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["smoke", "regression"],
+      "properties": {
+        "smoke": { "$ref": "#/definitions/tier" },
+        "regression": { "$ref": "#/definitions/tier" }
+      }
+    },
+    "task_classes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["smoke"],
+        "properties": {
+          "smoke": { "$ref": "#/definitions/tier" },
+          "regression": { "$ref": "#/definitions/tier" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "tier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commands", "max_minutes"],
+      "properties": {
+        "commands": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "max_minutes": { "type": "integer", "minimum": 1, "maximum": 240 }
+      }
+    }
+  }
+}
+

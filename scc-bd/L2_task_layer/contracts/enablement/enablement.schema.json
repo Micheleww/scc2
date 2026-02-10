@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/enablement/enablement.schema.json",
+  "title": "SCC Enablement v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "rollout"],
+  "properties": {
+    "schema_version": { "const": "scc.enablement.v1" },
+    "status": { "enum": ["active", "gray", "deprecated", "draft"] },
+    "rollout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["all", "percent", "allowlist"] },
+        "percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "allowlist": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "rollback_conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["metric", "op", "threshold"],
+        "properties": {
+          "metric": { "type": "string", "minLength": 1 },
+          "op": { "enum": [">", ">=", "<", "<="] },
+          "threshold": { "type": "number" }
+        }
+      }
+    }
+  }
+}
+

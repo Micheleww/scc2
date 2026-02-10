@@ -1,0 +1,9 @@
+{
+  "default_model": "gpt-4o-mini",
+  "models": {
+    "gpt-4o-mini": {
+      "api_base": "http://localhost:3456/v1",
+      "api_key": "sk-opencode-bridge"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.state.pinia_13270",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced pinia techniques and best practices",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "state",
+      "pinia",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2914,
+    "max_files": 49
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "state",
+    "subcategory": "pinia",
+    "tags": [
+      "state",
+      "pinia",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "advanced",
+    "downloaded_at": "2026-02-09T20:48:56.401Z",
+    "source_repo": "antigravity-awesome-skills/antigravity-awesome-skills",
+    "popularity_score": 1959
+  }
+}

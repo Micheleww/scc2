@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.pins_result.v1",
+  "task_id": "example-task-id",
+  "pins": {
+    "allowed_paths": ["oc-scc-local/src/gateway.mjs", "roles/", "skills/", "contracts/"],
+    "forbidden_paths": ["**/secrets/**"],
+    "symbols": [],
+    "line_windows": {},
+    "max_files": 8,
+    "max_loc": 240,
+    "ssot_assumptions": []
+  },
+  "recommended_queries": ["gateway.mjs dispatchBoardTaskToExecutor", "role_system loadRoleSystem"],
+  "preflight_expectation": { "should_have_allowed_tests": true }
+}
+

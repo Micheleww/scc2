@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.communication.webhook_11180",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced webhook techniques and best practices",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "communication",
+      "webhook",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1165,
+    "max_files": 40
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "communication",
+    "subcategory": "webhook",
+    "tags": [
+      "communication",
+      "webhook",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "beginner",
+    "downloaded_at": "2026-02-09T20:48:56.279Z",
+    "source_repo": "semgrep/skills",
+    "popularity_score": 7
+  }
+}

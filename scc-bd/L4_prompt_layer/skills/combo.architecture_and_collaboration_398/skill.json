@@ -1,0 +1,50 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "combo.architecture_and_collaboration_398",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Comprehensive architecture_collaboration_integration guidance for combo integration scenarios",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "combo",
+      "integration",
+      "architecture_collaboration_integration"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1456,
+    "max_files": 44
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "combo",
+    "subcategory": "integration",
+    "tags": [
+      "combo",
+      "integration",
+      "architecture_collaboration_integration",
+      "imported",
+      "community"
+    ],
+    "complexity": "advanced",
+    "imported_at": "2026-02-09T20:39:53.353Z",
+    "popularity_score": 65
+  }
+}

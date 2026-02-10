@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "REPORT Metadata",
+  "description": "Schema for REPORT metadata files",
+  "type": "object",
+  "required": ["TaskCode", "status", "changed_files", "selftest_cmds", "selftest_log", "rollback", "evidence_paths"],
+  "properties": {
+    "TaskCode": {
+      "type": "string",
+      "description": "Unique identifier for the task"
+    },
+    "status": {
+      "type": "string",
+      "description": "Status of the task",
+      "enum": ["DRAFT", "REVIEW", "ACTIVE", "DEPRECATED", "ARCHIVED", "DONE", "BLOCKED"]
+    },
+    "changed_files": {
+      "type": "array",
+      "description": "List of files changed by this task",
+      "items": {
+        "type": "string",
+        "description": "Relative path to the changed file"
+      },
+      "minItems": 1
+    },
+    "selftest_cmds": {
+      "type": "array",
+      "description": "List of self-test commands executed",
+      "items": {
+        "type": "string",
+        "description": "Self-test command"
+      },
+      "minItems": 1
+    },
+    "selftest_log": {
+      "type": "string",
+      "description": "Relative path to the self-test log file"
+    },
+    "rollback": {
+      "type": "string",
+      "description": "Rollback plan for the task"
+    },
+    "evidence_paths": {
+      "type": "array",
+      "description": "List of paths to evidence files",
+      "items": {
+        "type": "string",
+        "description": "Relative path to an evidence file"
+      },
+      "minItems": 1
+    }
+  }
+}

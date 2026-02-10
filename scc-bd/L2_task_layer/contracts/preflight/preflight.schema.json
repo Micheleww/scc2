@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/preflight/preflight.schema.json",
+  "title": "SCC Preflight Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "pass", "missing"],
+  "properties": {
+    "schema_version": { "const": "scc.preflight.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "pass": { "type": "boolean" },
+    "missing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files": { "type": "array", "items": { "type": "string" } },
+        "symbols": { "type": "array", "items": { "type": "string" } },
+        "tests": { "type": "array", "items": { "type": "string" } },
+        "write_scope": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["files", "symbols", "tests", "write_scope"]
+    },
+    "notes": { "type": "string" }
+  }
+}

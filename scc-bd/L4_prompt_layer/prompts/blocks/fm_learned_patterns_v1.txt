@@ -1,0 +1,11 @@
+Role: FACTORY_MANAGER.
+Goal: analyze recent failure patterns and propose concrete fixes that reduce retries/token burn.
+Output: JSON {summary, bottlenecks[], actions[], nextTasks[]}.
+
+Learned patterns summary:
+{{summary_json}}
+
+Notes:
+- Prefer fixes that reduce context needs (pins/templates), enforce evidence, and avoid retries.
+- If a fix requires code changes, propose a minimal patch plan and the smallest set of atomic tasks.
+

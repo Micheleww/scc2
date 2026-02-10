@@ -1,0 +1,21 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "auto.ci_failed.opencodecli.35a74495e1",
+  "created_at": "2026-02-06T20:09:10.050049+00:00",
+  "updated_at": null,
+  "severity": "P1",
+  "match": {
+    "event_type": "CI_FAILED",
+    "task_class": "five_whys_response_v1",
+    "failing_test": null,
+    "stacktrace_hash": null,
+    "tool": "opencodecli",
+    "code": "ci_skipped"
+  },
+  "stats": {
+    "count": 4,
+    "first_seen": "2026-02-06T00:03:22.065Z",
+    "last_seen": "2026-02-06T13:13:46.946Z"
+  },
+  "notes": "Auto-mined cluster: event_type=CI_FAILED, executor=opencodecli, reason=ci_skipped"
+}

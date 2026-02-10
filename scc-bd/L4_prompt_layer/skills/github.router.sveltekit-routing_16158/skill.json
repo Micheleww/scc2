@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.router.sveltekit-routing_16158",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Master sveltekit-routing with industry-proven patterns",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "router",
+      "sveltekit-routing",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1321,
+    "max_files": 55
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "router",
+    "subcategory": "sveltekit-routing",
+    "tags": [
+      "router",
+      "sveltekit-routing",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "beginner",
+    "downloaded_at": "2026-02-09T20:48:56.648Z",
+    "source_repo": "claude-plugins/registry",
+    "popularity_score": 383
+  }
+}

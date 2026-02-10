@@ -1,0 +1,28 @@
+{
+  "schema_version": "scc.replay_bundle.v1",
+  "task_id": "00000000-0000-0000-0000-000000000000",
+  "created_at": "2026-02-06T00:00:00.000Z",
+  "source": { "job_id": "job-123", "executor": "codex", "model": "gpt-5.2", "job_status": "done", "exit_code": 0 },
+  "board_task_payload": {
+    "title": "Replay example",
+    "goal": "Demonstrate replay bundle format",
+    "role": "engineer",
+    "files": ["README.md"],
+    "allowedTests": ["python -m pytest -q"],
+    "pins": { "allowed_paths": ["README.md"] }
+  },
+  "artifacts": {
+    "submit_json": "artifacts/00000000-0000-0000-0000-000000000000/submit.json",
+    "preflight_json": "artifacts/00000000-0000-0000-0000-000000000000/preflight.json",
+    "pins_json": "artifacts/00000000-0000-0000-0000-000000000000/pins/pins.json",
+    "report_md": "artifacts/00000000-0000-0000-0000-000000000000/report.md",
+    "selftest_log": "artifacts/00000000-0000-0000-0000-000000000000/selftest.log",
+    "evidence_dir": "artifacts/00000000-0000-0000-0000-000000000000/evidence/",
+    "patch_diff": "artifacts/00000000-0000-0000-0000-000000000000/patch.diff"
+  },
+  "replay": {
+    "dispatch_via": "tools/scc/ops/replay_bundle_dispatch.py",
+    "endpoint": "/board/tasks (POST) -> /board/tasks/{id}/dispatch (POST)"
+  }
+}
+

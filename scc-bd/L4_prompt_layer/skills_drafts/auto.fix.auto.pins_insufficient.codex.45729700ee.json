@@ -1,0 +1,39 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "auto.fix.auto.pins_insufficient.codex.45729700ee",
+  "version": "0.1.0",
+  "owner_role": "lessons_miner",
+  "summary": "Auto-draft: mitigate pattern auto.pins_insufficient.codex.45729700ee (PINS_INSUFFICIENT, tool=codex).",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/event/event.schema.json",
+    "output_schema": "contracts/playbook/playbook.schema.json"
+  },
+  "budgets": {
+    "max_files": 16,
+    "max_pins_tokens": 8000
+  },
+  "quality_gates": {
+    "must_include_matcher": true,
+    "must_include_repro": true
+  },
+  "enablement": {
+    "status": "draft",
+    "rollout": {
+      "mode": "percent",
+      "percent": 0
+    }
+  },
+  "notes": {
+    "pattern_id": "auto.pins_insufficient.codex.45729700ee",
+    "suggested_actions": [
+      "Reproduce via replay_bundle, confirm minimal trigger.",
+      "Apply smallest fix or pins tightening; avoid broad changes.",
+      "Run smoke tier; if regression needed, enqueue to batchlane."
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/pattern/pattern.schema.json",
+  "title": "SCC Pattern v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pattern_id", "created_at", "match", "stats"],
+  "properties": {
+    "schema_version": { "const": "scc.pattern.v1" },
+    "pattern_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": ["string", "null"] },
+    "severity": { "enum": ["P0", "P1", "P2"], "default": "P1" },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_type"],
+      "properties": {
+        "event_type": { "type": "string", "minLength": 1 },
+        "task_class": { "type": ["string", "null"] },
+        "failing_test": { "type": ["string", "null"] },
+        "stacktrace_hash": { "type": ["string", "null"] },
+        "tool": { "type": ["string", "null"] },
+        "code": { "type": ["string", "null"] }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "last_seen"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 1 },
+        "last_seen": { "type": "string", "minLength": 1 },
+        "first_seen": { "type": ["string", "null"] }
+      }
+    },
+    "notes": { "type": ["string", "null"] }
+  }
+}
+

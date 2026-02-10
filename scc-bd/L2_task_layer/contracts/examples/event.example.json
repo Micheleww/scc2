@@ -1,0 +1,12 @@
+{
+  "schema_version": "scc.event.v1",
+  "t": "2026-02-05T00:00:00Z",
+  "event_type": "SUCCESS",
+  "task_id": "example-task-id",
+  "parent_id": null,
+  "role": "engineer",
+  "area": "mainlane",
+  "reason": null,
+  "details": { "note": "Example event row." }
+}
+

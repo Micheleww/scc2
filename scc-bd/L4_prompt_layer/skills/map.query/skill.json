@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "map.query",
+  "version": "1.0.0",
+  "owner_role": "pins",
+  "summary": "Query the repository map SSOT for modules, entry points, tests, and key symbols.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_results": 200 },
+  "quality_gates": { "must_reference_map_version": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

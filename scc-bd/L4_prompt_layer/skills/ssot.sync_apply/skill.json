@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "ssot.sync_apply",
+  "version": "1.0.0",
+  "owner_role": "ssot_curator",
+  "summary": "Apply artifacts/<task_id>/ssot_update.json to docs/SSOT/registry.json deterministically (and write ssot_update.patch).",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/ssot/ssot_update.schema.json",
+    "output_schema": "contracts/ssot/ssot_registry.schema.json"
+  },
+  "budgets": { "timeout_ms": 600000 },
+  "quality_gates": { "must_be_deterministic": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

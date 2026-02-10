@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "taskgraph.compile",
+  "version": "1.0.0",
+  "owner_role": "planner",
+  "summary": "Compile a parent goal into a routable task graph with lanes, budgets, and acceptance.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/task_graph/task_graph.schema.json"
+  },
+  "budgets": { "max_children": 30 },
+  "quality_gates": { "must_include_tests": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "acceptance_criteria",
+  "version": "1.0.0",
+  "owner_role": "designer",
+  "summary": "Define explicit acceptance checks and stop conditions for each task.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_acceptance_items": 30 },
+  "quality_gates": { "must_be_testable": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

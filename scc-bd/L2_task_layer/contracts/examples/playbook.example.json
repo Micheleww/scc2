@@ -1,0 +1,14 @@
+{
+  "schema_version": "scc.playbook.v1",
+  "playbook_id": "pb_ci_failed_pytest_collection_v1",
+  "version": "1.0.0",
+  "pattern_id": "pat_ci_failed_pytest_collection",
+  "enablement": { "schema_version": "scc.enablement.v1", "status": "gray", "rollout": { "mode": "percent", "percent": 10 } },
+  "actions": [
+    { "type": "route", "lane": "fastlane", "role": "pinser", "params": { "strategy": "PINS_FIX" } },
+    { "type": "run_smoke", "lane": "fastlane", "role": "eval_curator", "params": { "tier": "smoke" } },
+    { "type": "open_dlq", "lane": "dlq", "role": "retry_orchestrator", "params": { "reason_code": "RETRY_EXHAUSTED" } }
+  ],
+  "notes": "Gray rollout; rollback if CI_FAILED increases."
+}
+

@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.ar_vr.unreal-ar_6617",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced unreal-ar techniques and best practices",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "ar_vr",
+      "unreal-ar",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1039,
+    "max_files": 50
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "ar_vr",
+    "subcategory": "unreal-ar",
+    "tags": [
+      "ar_vr",
+      "unreal-ar",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "advanced",
+    "downloaded_at": "2026-02-09T20:48:56.057Z",
+    "source_repo": "typo3/typo3-docs-skill",
+    "popularity_score": 4
+  }
+}

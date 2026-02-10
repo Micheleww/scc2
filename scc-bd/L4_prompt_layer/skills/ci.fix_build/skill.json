@@ -1,0 +1,13 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "ci.fix_build",
+  "version": "1.0.0",
+  "owner_role": "ci_fixup",
+  "summary": "Fix CI/build/test scripts/config with minimal diff and rerun allowed tests.",
+  "applies_to": { "task_class": ["ci_fixup_v1", "*"] },
+  "contracts": { "input_schema": "contracts/child_task/child_task.schema.json", "output_schema": "contracts/submit/submit.schema.json" },
+  "budgets": { "max_loc": 600 },
+  "quality_gates": { "must_not_change_unrelated": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

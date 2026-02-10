@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/playbook/playbooks_registry.schema.json",
+  "title": "SCC Playbooks Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "updated_at", "playbooks"],
+  "properties": {
+    "schema_version": { "const": "scc.playbooks_registry.v1" },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "playbooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["playbook_id", "path"],
+        "properties": {
+          "playbook_id": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
+

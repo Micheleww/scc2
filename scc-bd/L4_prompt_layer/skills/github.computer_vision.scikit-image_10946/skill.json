@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.computer_vision.scikit-image_10946",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Expert-level scikit-image capabilities for computer_vision development",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "computer_vision",
+      "scikit-image",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1423,
+    "max_files": 36
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "computer_vision",
+    "subcategory": "scikit-image",
+    "tags": [
+      "computer_vision",
+      "scikit-image",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:56.269Z",
+    "source_repo": "streamlit/agent-skills",
+    "popularity_score": 8
+  }
+}

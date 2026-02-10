@@ -43,11 +43,33 @@ const SERVICES = {
   oltCli: {
     name: 'OLT CLI Server',
     cmd: 'node',
-    args: ['L6_execution_layer/scc_server_with_olt.mjs'],
+    args: ['L6_execution_layer/oltcli.mjs'],
     port: 3458,
     required: false,
     dependsOn: ['gateway'],
     delay: 5000
+  },
+  
+  // Job Executor Bridge (任务执行桥接)
+  jobExecutorBridge: {
+    name: 'Job Executor Bridge',
+    cmd: 'node',
+    args: ['L6_agent_layer/orchestrators/job_executor_bridge.mjs'],
+    port: null,
+    required: true,
+    dependsOn: ['gateway', 'parentWatcher'],
+    delay: 2000
+  },
+  
+  // Role Router (角色路由)
+  roleRouter: {
+    name: 'Role Router',
+    cmd: 'node',
+    args: ['L6_agent_layer/orchestrators/role_router.mjs'],
+    port: null,
+    required: true,
+    dependsOn: ['gateway', 'oltCli'],
+    delay: 3000
   }
 };
 

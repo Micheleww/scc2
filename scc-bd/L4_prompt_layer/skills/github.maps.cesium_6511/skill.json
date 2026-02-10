@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.maps.cesium_6511",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Production-ready cesium implementation strategies",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "maps",
+      "cesium",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 2796,
+    "max_files": 23
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "maps",
+    "subcategory": "cesium",
+    "tags": [
+      "maps",
+      "cesium",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "advanced",
+    "downloaded_at": "2026-02-09T20:48:56.053Z",
+    "source_repo": "llm-r/llm-r-skills",
+    "popularity_score": 1
+  }
+}

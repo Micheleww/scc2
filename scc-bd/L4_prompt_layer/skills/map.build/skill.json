@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "map.build",
+  "version": "1.0.0",
+  "owner_role": "map_curator",
+  "summary": "Build/refresh map/map.json and map/version.json as SSOT index.",
+  "applies_to": { "task_class": ["batchlane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_files_indexed": 20000 },
+  "quality_gates": { "must_update_version_hash": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

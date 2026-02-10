@@ -1,0 +1,19 @@
+{
+  "schema_version": "scc.map_version.v1",
+  "generated_at": "2026-02-05T00:00:00Z",
+  "generator": { "name": "scc.map_builder.v1", "version": "1.0.0" },
+  "map_path": "map/map.json",
+  "link_report_path": "map/link_report.json",
+  "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "coverage": { "roots": ["oc-scc-local", "tools/scc"], "excluded_globs": ["**/node_modules/**", "artifacts/**"] },
+  "stats": {
+    "files_indexed": 0,
+    "modules": 0,
+    "entry_points": 0,
+    "key_symbols": 0,
+    "test_entry_points": 0,
+    "configs": 0,
+    "doc_refs": 0
+  }
+}
+

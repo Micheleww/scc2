@@ -1,0 +1,26 @@
+{
+  "schema_version": "scc.playbook.v1",
+  "playbook_id": "pb.drill.apply_playbooks_applied_v1",
+  "version": "1.0.0",
+  "pattern_id": "drill.executor_error.apply_playbooks_applied_v1",
+  "enablement": {
+    "schema_version": "scc.enablement.v1",
+    "status": "active",
+    "rollout": { "mode": "all" },
+    "rollback_conditions": []
+  },
+  "actions": [
+    {
+      "type": "note",
+      "params": { "message": "[drill] playbook applied: route retry to fastlane+retry_orchestrator and record evidence." }
+    },
+    {
+      "type": "route",
+      "lane": "fastlane",
+      "role": "retry_orchestrator",
+      "params": { "reason": "drill_apply_playbooks_applied_v1" }
+    }
+  ],
+  "notes": "Deterministic drill playbook; do not delete until you have real-world playbooks and an alternate verification path."
+}
+

@@ -1,0 +1,19 @@
+{
+  "schema_version": "v0.2",
+  "task_code": "ATA-CONTEXT-SCHEMA-STRICT-v0.2__20260116",
+  "date": "20260116",
+  "owner_role": "Gatekeeper Engineer",
+  "goal": "Test invalid v0.2 ATA context with missing fields",
+  "scope_files": [
+    "tools/gatekeeper/schemas/ata_context.schema.json",
+    "tools/gatekeeper/commands/validate_ata.py"
+  ],
+  "how_to_repro": "Run validate_ata.py on this file",
+  "expected": "Validation should pass",
+  "actual": "Validation failed due to missing fields",
+  "next_actions": [
+    "Fix missing fields",
+    "Run validation again"
+  ],
+  "rollback": "Revert schema file and validation script changes"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": "scc.enablement.v1",
+  "status": "gray",
+  "rollout": { "mode": "percent", "percent": 10 },
+  "rollback_conditions": [{ "metric": "regression_rate", "op": ">", "threshold": 0.02 }]
+}
+

@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "routing.fallback",
+  "version": "1.0.0",
+  "owner_role": "factory_manager",
+  "summary": "Apply fallback routing when executors/tools fail (downgrade, requeue, or escalate).",
+  "applies_to": { "task_class": ["control_plane", "*"] },
+  "contracts": {
+    "input_schema": "contracts/envelope/envelope.schema.json",
+    "output_schema": "contracts/envelope/envelope.schema.json"
+  },
+  "budgets": { "max_retries": 2 },
+  "quality_gates": { "must_record_reason": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

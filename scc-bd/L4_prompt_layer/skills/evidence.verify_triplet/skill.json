@@ -1,0 +1,16 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "evidence.verify_triplet",
+  "version": "1.0.0",
+  "owner_role": "auditor",
+  "summary": "Verify report.md + selftest.log (EXIT_CODE=0) + evidence/ exist and are consistent with SUBMIT.",
+  "applies_to": { "task_class": ["*"] },
+  "contracts": {
+    "input_schema": "contracts/submit/submit.schema.json",
+    "output_schema": "contracts/verdict/verdict.schema.json"
+  },
+  "budgets": { "max_artifacts": 12 },
+  "quality_gates": { "must_fail_closed_on_missing": true },
+  "enablement": { "status": "active", "rollout": { "mode": "all", "percent": 100 } }
+}
+

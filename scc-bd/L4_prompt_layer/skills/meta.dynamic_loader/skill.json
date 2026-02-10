@@ -1,0 +1,61 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "meta.dynamic_loader",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "运行时动态发现和加载 skills，支持热更新和按需加载",
+  "description": "## 功能\n- 运行时扫描 skills 目录\n- 按需加载技能到内存\n- 支持技能热更新\n- 技能版本管理\n- 依赖解析和加载\n\n## 使用场景\n- 大型 skills 库的性能优化\n- 插件化架构\n- 技能市场动态安装",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 3000,
+    "max_files": 50
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": false
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "capabilities": [
+    "scan_skills_directory",
+    "load_skill_on_demand",
+    "hot_reload_skill",
+    "resolve_dependencies",
+    "cache_skill_definitions"
+  ],
+  "metadata": {
+    "category": "meta",
+    "subcategory": "dynamic_loader",
+    "display_name": "动态技能加载器",
+    "tags": [
+      "meta",
+      "dynamic",
+      "self-improving",
+      "advanced",
+      "core"
+    ],
+    "complexity": "advanced",
+    "created_at": "2026-02-09T20:48:43.805Z",
+    "source": "scc_meta_library",
+    "is_meta_skill": true
+  }
+}

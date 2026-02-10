@@ -1,0 +1,42 @@
+{
+  "schema_version": "scc.patterns_registry.v1",
+  "updated_at": "2026-02-06T20:09:12.357319+00:00",
+  "patterns": [
+    {
+      "pattern_id": "auto.ci_failed.opencodecli.35a74495e1",
+      "path": "patterns/auto.ci_failed.opencodecli.35a74495e1.json"
+    },
+    {
+      "pattern_id": "auto.executor_error.codex.04627ea31a",
+      "path": "patterns/auto.executor_error.codex.04627ea31a.json"
+    },
+    {
+      "pattern_id": "auto.executor_error.opencodecli.9119c28ac2",
+      "path": "patterns/auto.executor_error.opencodecli.9119c28ac2.json"
+    },
+    {
+      "pattern_id": "auto.pins_insufficient.codex.45729700ee",
+      "path": "patterns/auto.pins_insufficient.codex.45729700ee.json"
+    },
+    {
+      "pattern_id": "auto.pins_insufficient.unknown.64b751c4de",
+      "path": "patterns/auto.pins_insufficient.unknown.64b751c4de.json"
+    },
+    {
+      "pattern_id": "auto.preflight_failed.unknown.8fbfce8f88",
+      "path": "patterns/auto.preflight_failed.unknown.8fbfce8f88.json"
+    },
+    {
+      "pattern_id": "drill.executor_error.apply_playbooks_applied_v1",
+      "path": "patterns/drill.executor_error.apply_playbooks_applied_v1.json"
+    },
+    {
+      "pattern_id": "timeout.codex",
+      "path": "patterns/timeout.codex.json"
+    },
+    {
+      "pattern_id": "timeout.opencodecli",
+      "path": "patterns/timeout.opencodecli.json"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/map/link_report.schema.json",
+  "title": "SCC Map Link Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "map_hash", "counts", "missing_doc_refs"],
+  "properties": {
+    "schema_version": { "const": "scc.link_report.v1" },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "map_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modules_missing", "entry_points_missing", "key_symbols_missing"],
+      "properties": {
+        "modules_missing": { "type": "integer", "minimum": 0 },
+        "entry_points_missing": { "type": "integer", "minimum": 0 },
+        "key_symbols_missing": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "missing_doc_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modules", "entry_points", "key_symbols"],
+      "properties": {
+        "modules": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "entry_points": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "key_symbols": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
+

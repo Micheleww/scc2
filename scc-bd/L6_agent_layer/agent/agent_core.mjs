@@ -30,13 +30,13 @@ const CONFIG = {
   DEFAULT_EXECUTOR: process.env.DEFAULT_EXECUTOR || "oltcli"
 }
 
-// Agent 状态
+// Agent 状态（hooks 延迟初始化）
 const agentState = {
   roles: new Map(),
   skills: new Map(),
   executors: new Map(),
   taskBox: null,
-  hooks: new HookSystem(),
+  hooks: null,
   isRunning: false
 }
 
@@ -691,6 +691,9 @@ async function initialize() {
   log("info", "==================================")
   log("info", "SCC Unified Agent Initializing...")
   log("info", "==================================")
+  
+  // 初始化 hooks
+  agentState.hooks = new HookSystem()
   
   // 加载所有资源
   await loadRoles()

@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/roles/role_policy.schema.json",
+  "title": "SCC Role Policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "role", "context_mode", "capabilities", "permissions", "required_outputs", "gates", "events"],
+  "properties": {
+    "schema_version": { "const": "scc.role_policy.v1" },
+    "role": { "type": "string", "minLength": 1 },
+    "context_mode": { "enum": ["external_context", "blank_cli"] },
+    "allowed_context_refs": { "type": "array", "items": { "type": "string", "minLength": 1 }, "default": [] },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["can_plan", "can_modify_contracts", "can_write_code", "can_run_tests", "can_emit_events"],
+      "properties": {
+        "can_plan": { "type": "boolean" },
+        "can_modify_contracts": { "type": "boolean" },
+        "can_write_code": { "type": "boolean" },
+        "can_run_tests": { "type": "boolean" },
+        "can_emit_events": { "type": "boolean" }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read", "write", "tools"],
+      "properties": {
+        "read": { "$ref": "#/definitions/readPerms" },
+        "write": { "$ref": "#/definitions/writePerms" },
+        "tools": { "$ref": "#/definitions/toolsPerms" }
+      }
+    },
+    "required_outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts"],
+      "properties": {
+        "artifacts": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "submit_schema": { "type": "string", "minLength": 1 }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preflight_required", "hygiene_required", "max_attempts", "stop_conditions"],
+      "properties": {
+        "preflight_required": { "type": "boolean" },
+        "hygiene_required": { "type": "boolean" },
+        "max_attempts": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "stop_conditions": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["must_emit_on_fail", "must_emit_on_success"],
+      "properties": {
+        "must_emit_on_fail": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "must_emit_on_success": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  },
+  "definitions": {
+    "pathList": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "readPerms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pins_required", "allow_paths", "deny_paths"],
+      "properties": {
+        "pins_required": { "type": "boolean" },
+        "allow_paths": { "$ref": "#/definitions/pathList" },
+        "deny_paths": { "$ref": "#/definitions/pathList" }
+      }
+    },
+    "writePerms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow_paths", "deny_paths"],
+      "properties": {
+        "allow_paths": { "$ref": "#/definitions/pathList" },
+        "deny_paths": { "$ref": "#/definitions/pathList" }
+      }
+    },
+    "toolsPerms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "deny"],
+      "properties": {
+        "allow": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "deny": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

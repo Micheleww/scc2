@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCC 统一入口 | Unified Portal</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 顶部导航 -->
+    <header class="header">
+      <div class="brand">
+        <span class="logo">◈</span>
+        <span class="title">SCC 统一入口</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-view="dashboard">总览</button>
+        <button class="nav-btn" data-view="projects">项目</button>
+        <button class="nav-btn" data-view="services">服务</button>
+        <button class="nav-btn" data-view="devtools">开发工具</button>
+      </nav>
+      <div class="status">
+        <span id="systemStatus" class="status-dot"></span>
+        <span id="lastUpdate">-</span>
+      </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="main">
+      <!-- 总览视图 -->
+      <section id="view-dashboard" class="view active">
+        <div class="grid">
+          <!-- 系统状态卡片 -->
+          <div class="card card-large">
+            <div class="card-header">
+              <h3>系统状态</h3>
+              <span class="badge" id="activeServicesCount">0/0</span>
+            </div>
+            <div class="card-body">
+              <div class="status-grid" id="systemStatusGrid">
+                <div class="status-item loading">加载中...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 快速访问卡片 -->
+          <div class="card">
+            <div class="card-header">
+              <h3>快速访问</h3>
+            </div>
+            <div class="card-body">
+              <div class="quick-links">
+                <a href="/sccdev/" class="quick-link" target="_blank">
+                  <span class="icon">📊</span>
+                  <span>SCC Dev 监控</span>
+                </a>
+                <a href="/plugins/" class="quick-link" target="_blank">
+                  <span class="icon">🔌</span>
+                  <span>插件管理</span>
+                </a>
+                <a href="/health" class="quick-link" target="_blank">
+                  <span class="icon">🏥</span>
+                  <span>健康检查</span>
+                </a>
+                <a href="/executor/" class="quick-link" target="_blank">
+                  <span class="icon">⚙️</span>
+                  <span>执行器</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 项目概览卡片 -->
+          <div class="card card-wide">
+            <div class="card-header">
+              <h3>项目概览</h3>
+              <button class="btn btn-sm" onclick="refreshProjects()">刷新</button>
+            </div>
+            <div class="card-body">
+              <div class="project-list" id="projectList">
+                <div class="project-item loading">加载中...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 项目视图 -->
+      <section id="view-projects" class="view">
+        <div class="section-header">
+          <h2>项目管理</h2>
+          <div class="filters">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="active">运行中</button>
+            <button class="filter-btn" data-filter="stopped">已停止</button>
+          </div>
+        </div>
+        <div class="project-grid" id="projectsGrid">
+          <!-- 项目卡片将动态生成 -->
+        </div>
+      </section>
+
+      <!-- 服务视图 -->
+      <section id="view-services" class="view">
+        <div class="section-header">
+          <h2>服务管理</h2>
+          <button class="btn btn-primary" onclick="installNewService()">+ 安装新服务</button>
+        </div>
+        <div class="services-table-wrap">
+          <table class="services-table">
+            <thead>
+              <tr>
+                <th>服务名称</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>端点</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="servicesTableBody">
+              <!-- 服务列表将动态生成 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 开发工具视图 -->
+      <section id="view-devtools" class="view">
+        <div class="section-header">
+          <h2>开发工具</h2>
+        </div>
+        <div class="devtools-grid">
+          <div class="tool-card">
+            <div class="tool-icon">🐍</div>
+            <h3>Quantsys 量化系统</h3>
+            <p>量化交易策略引擎与回测系统</p>
+            <div class="tool-actions">
+              <a href="/api/quantsys/" class="btn" target="_blank">API 文档</a>
+              <button class="btn btn-secondary" onclick="checkService('quantsys')">检查状态</button>
+            </div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">📈</div>
+            <h3>YME 数据报表</h3>
+            <p>销售数据分析与报表系统</p>
+            <div class="tool-actions">
+              <a href="/api/yme/" class="btn" target="_blank">API 文档</a>
+              <button class="btn btn-secondary" onclick="checkService('yme')">检查状态</button>
+            </div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">🤖</div>
+            <h3>MCP Bus</h3>
+            <p>Model Context Protocol 总线服务</p>
+            <div class="tool-actions">
+              <a href="/mcp/" class="btn" target="_blank">打开</a>
+              <button class="btn btn-secondary" onclick="checkService('mcp')">检查状态</button>
+            </div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">🌐</div>
+            <h3>OpenCode</h3>
+            <p>OpenCode UI/Server 代理</p>
+            <div class="tool-actions">
+              <a href="/opencode/" class="btn" target="_blank">打开</a>
+              <button class="btn btn-secondary" onclick="checkService('opencode')">检查状态</button>
+            </div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">🦞</div>
+            <h3>OpenClaw</h3>
+            <p>OpenClaw Gateway 代理</p>
+            <div class="tool-actions">
+              <a href="/clawdbot/" class="btn" target="_blank">打开</a>
+              <button class="btn btn-secondary" onclick="checkService('clawdbot')">检查状态</button>
+            </div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">📊</div>
+            <h3>LangGraph</h3>
+            <p>LangGraph 工作流编排</p>
+            <div class="tool-actions">
+              <a href="/langgraph/" class="btn" target="_blank">打开</a>
+              <button class="btn btn-secondary" onclick="checkService('langgraph')">检查状态</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 底部信息 -->
+    <footer class="footer">
+      <div class="footer-left">
+        <span>SCC Unified Server</span>
+        <span id="serverVersion">v1.0.0</span>
+      </div>
+      <div class="footer-right">
+        <span id="serverUptime">-</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 项目详情模态框 -->
+  <div id="projectModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">项目详情</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- 动态内容 -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

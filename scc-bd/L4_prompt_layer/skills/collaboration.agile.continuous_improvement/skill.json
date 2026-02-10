@@ -1,0 +1,50 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "collaboration.agile.continuous_improvement",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Advanced continuous_improvement techniques and best practices for agile",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "collaboration",
+      "agile",
+      "continuous_improvement"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1286,
+    "max_files": 36
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "collaboration",
+    "subcategory": "agile",
+    "tags": [
+      "collaboration",
+      "agile",
+      "continuous_improvement",
+      "imported",
+      "community"
+    ],
+    "complexity": "beginner",
+    "imported_at": "2026-02-09T20:39:53.329Z",
+    "popularity_score": 31
+  }
+}

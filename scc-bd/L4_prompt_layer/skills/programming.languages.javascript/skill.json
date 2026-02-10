@@ -1,0 +1,50 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "programming.languages.javascript",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Master javascript in languages with industry best practices",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "programming",
+      "languages",
+      "javascript"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1841,
+    "max_files": 45
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "programming",
+    "subcategory": "languages",
+    "tags": [
+      "programming",
+      "languages",
+      "javascript",
+      "imported",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "imported_at": "2026-02-09T20:39:53.327Z",
+    "popularity_score": 87
+  }
+}

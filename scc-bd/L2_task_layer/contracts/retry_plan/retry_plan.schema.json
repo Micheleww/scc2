@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "contracts/retry_plan/retry_plan.schema.json",
+  "title": "SCC Retry Plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "attempt", "max_attempts", "route", "strategy", "budgets", "stop_conditions"],
+  "properties": {
+    "schema_version": { "const": "scc.retry_plan.v1" },
+    "task_id": { "type": "string", "minLength": 1 },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "max_attempts": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "strategy": { "enum": ["PINS_FIX", "SHRINK_RADIUS", "SPLIT_V2", "SWITCH_EXECUTOR", "SWITCH_MODEL", "DLQ"] },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lane", "next_role"],
+      "properties": {
+        "lane": { "enum": ["fastlane", "mainlane", "batchlane", "quarantine", "dlq"] },
+        "next_role": { "type": "string", "minLength": 1 },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_total_attempts", "max_verify_minutes", "max_children", "max_depth"],
+      "properties": {
+        "max_total_attempts": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "max_verify_minutes": { "type": "integer", "minimum": 1, "maximum": 240 },
+        "max_children": { "type": "integer", "minimum": 0, "maximum": 50 },
+        "max_depth": { "type": "integer", "minimum": 0, "maximum": 10 }
+      }
+    },
+    "pins_adjustments": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "add": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "drop": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "stop_conditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "dlq_on_fail": { "type": "boolean", "default": true }
+  }
+}
+

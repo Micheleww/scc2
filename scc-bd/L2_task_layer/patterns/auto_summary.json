@@ -1,0 +1,11 @@
+{
+  "schema_version": "scc.lesson_miner_summary.v1",
+  "t": "2026-02-06T20:09:10.052042+00:00",
+  "events_tail": 2000,
+  "min_count": 3,
+  "patterns_written": 6,
+  "skill_drafts_written": 0,
+  "out_patterns": "patterns",
+  "out_playbooks_drafts": "playbooks/drafts",
+  "out_skills_drafts": "skills_drafts"
+}

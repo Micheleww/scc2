@@ -1,0 +1,52 @@
+{
+  "schema_version": "scc.skill.v1",
+  "skill_id": "github.payment.adyen_8315",
+  "version": "1.0.0",
+  "owner_role": "workbench_dev",
+  "summary": "Expert-level adyen capabilities for payment development",
+  "applies_to": {
+    "task_class": [
+      "*"
+    ],
+    "tags": [
+      "payment",
+      "adyen",
+      "github",
+      "downloaded"
+    ]
+  },
+  "contracts": {
+    "input_schema": "contracts/child_task/child_task.schema.json",
+    "output_schema": "contracts/submit/submit.schema.json"
+  },
+  "budgets": {
+    "max_loc": 1160,
+    "max_files": 43
+  },
+  "quality_gates": {
+    "must_run_allowedTests": true,
+    "must_keep_diff_minimal": true
+  },
+  "enablement": {
+    "status": "active",
+    "rollout": {
+      "mode": "all",
+      "percent": 100
+    }
+  },
+  "metadata": {
+    "category": "payment",
+    "subcategory": "adyen",
+    "tags": [
+      "payment",
+      "adyen",
+      "github",
+      "downloaded",
+      "community"
+    ],
+    "complexity": "intermediate",
+    "downloaded_at": "2026-02-09T20:48:56.158Z",
+    "source_repo": "data-science/data-science-agent-skills",
+    "popularity_score": 2
+  }
+}

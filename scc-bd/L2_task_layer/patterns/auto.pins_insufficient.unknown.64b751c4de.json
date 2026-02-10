@@ -1,0 +1,21 @@
+{
+  "schema_version": "scc.pattern.v1",
+  "pattern_id": "auto.pins_insufficient.unknown.64b751c4de",
+  "created_at": "2026-02-06T20:09:10.050049+00:00",
+  "updated_at": null,
+  "severity": "P1",
+  "match": {
+    "event_type": "PINS_INSUFFICIENT",
+    "task_class": null,
+    "failing_test": null,
+    "stacktrace_hash": null,
+    "tool": "unknown",
+    "code": "pins_insufficient"
+  },
+  "stats": {
+    "count": 7,
+    "first_seen": "2026-02-06T13:16:49.735Z",
+    "last_seen": "2026-02-06T17:26:37.026Z"
+  },
+  "notes": "Auto-mined cluster: event_type=PINS_INSUFFICIENT, executor=unknown, reason=pins_insufficient"
+}

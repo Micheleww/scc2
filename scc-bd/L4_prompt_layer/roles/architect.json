@@ -1,0 +1,22 @@
+{
+  "schema_version": "scc.role_policy.v1",
+  "role": "architect",
+  "context_mode": "external_context",
+  "allowed_context_refs": ["docs", "map", "events"],
+  "capabilities": {
+    "can_plan": true,
+    "can_modify_contracts": false,
+    "can_write_code": false,
+    "can_run_tests": false,
+    "can_emit_events": true
+  },
+  "permissions": {
+    "read": { "pins_required": false, "allow_paths": ["docs/**", "map/**", "artifacts/**"], "deny_paths": ["**/secrets/**"] },
+    "write": { "allow_paths": [], "deny_paths": ["**"] },
+    "tools": { "allow": ["node"], "deny": ["git", "network"] }
+  },
+  "required_outputs": { "artifacts": ["artifacts/report.md"], "submit_schema": "contracts/envelope/envelope.schema.json" },
+  "gates": { "preflight_required": true, "hygiene_required": false, "max_attempts": 2, "stop_conditions": ["PINS_INSUFFICIENT", "PREFLIGHT_FAILED"] },
+  "events": { "must_emit_on_fail": ["PINS_INSUFFICIENT", "PREFLIGHT_FAILED", "POLICY_VIOLATION"], "must_emit_on_success": ["SUCCESS"] }
+}
+
