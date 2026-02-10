@@ -31,7 +31,8 @@ const ROLE_EXECUTOR_MAP = {
   "qa": "opencodecli",
   "doc": "opencodecli",
   "architect": "opencodecli",
-  "integrator": "opencodecli"
+  "integrator": "opencodecli",
+  "workspace_janitor": "opencodecli"
 }
 
 // 简单的日志函数
