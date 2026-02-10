@@ -275,3 +275,32 @@ scc-bd/
 - `state` - 状态存储相关
 - `job` - 任务相关
 - `orchestrator` - 编排器相关
+
+---
+
+## ⚠️ AI 助手操作限制（重要）
+
+### 🚫 禁止操作
+
+| 操作 | 状态 | 说明 |
+|------|------|------|
+| **构建 Docker 镜像** | ❌ 禁止 | 不要执行 `docker build` 或修改 Dockerfile |
+| **启动/停止 Docker 容器** | ❌ 禁止 | 不要执行 `docker-compose up/down` |
+| **修改 Docker 配置** | ❌ 禁止 | 不要修改 docker-compose.yml 或 entrypoint.sh |
+
+### ✅ 允许操作
+
+| 操作 | 状态 | 说明 |
+|------|------|------|
+| **推送 Git** | ✅ 允许 | 执行 `git add`, `git commit`, `git push` |
+| **修改源代码** | ✅ 允许 | 修改 scc-bd/ 目录下的代码文件 |
+| **创建文档** | ✅ 允许 | 添加或修改文档 |
+
+### 📝 为什么禁止 Docker 操作？
+
+Docker 构建和配置由专门的运维流程管理。AI 助手只需：
+1. 修改源代码
+2. 提交到 Git
+3. 代码会自动同步到 Docker 容器（通过 Git Hook）
+
+**需要 Docker 变更？** 请联系运维人员或创建 Issue。
