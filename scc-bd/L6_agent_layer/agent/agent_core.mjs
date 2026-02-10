@@ -2,23 +2,22 @@
 /**
  * SCC Unified Agent Core
  * 
- * 统一的任务执行平台，整合：
- * - Role 库 (L4_prompt_layer/roles/)
- * - 执行器库 (L6_agent_layer/executors/)
- * - Skills 库 (L4_prompt_layer/skills/)
- * - 任务状态管理
+ * 统一任务执行平台，整合：
+ * - TaskBox: 统一任务容器（父子任务）
+ * - ExecutorRegistry: 可插拔执行器（oltcli/codexcli）
+ * - RoleRegistry: 可插拔 Role
+ * - SkillRegistry: 可插拔 Skills
+ * - ContextRenderer: 上下文渲染（基于现有 opencode_executor）
+ * - HookSystem: 统一 Hook
  * 
- * 职责：
- * 1. 统一接收任务（替代 parent_inbox_watcher + job_executor_bridge + role_router）
- * 2. 根据任务选择合适的 Role
- * 3. 调用执行器执行任务
- * 4. 管理任务全生命周期
+ * 工作流：任务目标 → 父任务Box → Hook → Agent → 分解到子任务Box → Hook → Agent执行
  */
 
 import fs from "node:fs"
 import path from "node:path"
 import { spawn } from "node:child_process"
 import process from "node:process"
+import { EventEmitter } from "node:events"
 
 // 配置
 const CONFIG = {
@@ -26,10 +25,9 @@ const CONFIG = {
   JOBS_FILE: process.env.JOBS_FILE || "/app/artifacts/executor_logs/exec_state.json",
   ROLE_DIR: process.env.ROLE_DIR || "/app/scc-bd/L4_prompt_layer/roles",
   SKILLS_DIR: process.env.SKILLS_DIR || "/app/scc-bd/L4_prompt_layer/skills",
-  EXECUTORS_DIR: process.env.EXECUTORS_DIR || "/app/scc-bd/L6_agent_layer/executors",
   ARTIFACTS_DIR: process.env.ARTIFACTS_DIR || "/app/artifacts",
   POLL_INTERVAL_MS: Number(process.env.POLL_INTERVAL_MS || "3000"),
-  OLTCLI_PATH: process.env.OLTCLI_PATH || "node /app/scc-bd/L6_execution_layer/oltcli.mjs"
+  DEFAULT_EXECUTOR: process.env.DEFAULT_EXECUTOR || "oltcli"
 }
 
 // Agent 状态
@@ -37,7 +35,8 @@ const agentState = {
   roles: new Map(),
   skills: new Map(),
   executors: new Map(),
-  jobs: new Map(),
+  taskBox: null,
+  hooks: new HookSystem(),
   isRunning: false
 }
 
@@ -46,6 +45,101 @@ function log(level, message, meta = {}) {
   const timestamp = new Date().toISOString()
   const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : ""
   console.log(`[${timestamp}] [${level.toUpperCase()}] ${message} ${metaStr}`)
+}
+
+/**
+ * ==================== Hook System ====================
+ */
+class HookSystem extends EventEmitter {
+  constructor() {
+    super()
+    this.hooks = {
+      beforeTask: [],
+      afterTask: [],
+      beforeExecute: [],
+      afterExecute: [],
+      onError: [],
+      beforeDecompose: [],
+      afterDecompose: []
+    }
+  }
+  
+  register(name, fn) {
+    if (this.hooks[name]) {
+      this.hooks[name].push(fn)
+    }
+    return this
+  }
+  
+  async run(name, context) {
+    if (!this.hooks[name]) return context
+    
+    let result = context
+    for (const fn of this.hooks[name]) {
+      try {
+        result = await fn(result) || result
+      } catch (e) {
+        log("error", `Hook ${name} failed: ${e.message}`)
+      }
+    }
+    return result
+  }
+}
+
+/**
+ * ==================== Context Renderer ====================
+ */
+class ContextRenderer {
+  render(task, role, skills, context = {}) {
+    const parts = []
+    
+    // 1. 系统提示词（Role）
+    if (role) {
+      parts.push("=== System ===")
+      parts.push(role.systemPrompt || `You are a ${role.name} agent.`)
+      parts.push("")
+    }
+    
+    // 2. Skills 上下文
+    if (skills && skills.length > 0) {
+      parts.push("=== Skills ===")
+      for (const skill of skills) {
+        parts.push(`## ${skill.name}`)
+        parts.push(skill.prompt || "")
+        parts.push("")
+      }
+      parts.push("")
+    }
+    
+    // 3. 任务上下文包（基于现有 opencode_executor）
+    if (context.contextPack) {
+      parts.push("=== Context ===")
+      parts.push(context.contextPack)
+      parts.push("")
+    }
+    
+    // 4. 任务描述
+    if (task.description) {
+      parts.push("=== Task Description ===")
+      parts.push(task.description)
+      parts.push("")
+    }
+    
+    // 5. 提示词
+    if (task.prompt || task.goal) {
+      parts.push("=== Instructions ===")
+      parts.push(task.prompt || task.goal)
+    }
+    
+    // 6. 输出格式
+    if (task.outputFormat) {
+      parts.push("")
+      parts.push("=== Output Format ===")
+      parts.push(task.outputFormat)
+    }
+    
+    return parts.join("\n")
+  }
 }
 
 /**
@@ -210,8 +304,110 @@ function findRelevantSkills(task, roleName) {
 }
 
 /**
- * ==================== 执行器管理 ====================
+ * ==================== 执行器管理（可插拔） ====================
  */
+
+/**
+ * 执行器基类
+ */
+class Executor {
+  constructor(name, config = {}) {
+    this.name = name
+    this.config = config
+    this.type = config.type || "cli"
+  }
+  
+  async execute(task, context) {
+    throw new Error("execute() must be implemented")
+  }
+}
+
+/**
+ * Oltcli 执行器
+ */
+class OltcliExecutor extends Executor {
+  constructor(config = {}) {
+    super("oltcli", config)
+    this.command = config.command || "node /app/scc-bd/L6_execution_layer/oltcli.mjs"
+  }
+  
+  async execute(task, context) {
+    const startTime = Date.now()
+    
+    return new Promise((resolve, reject) => {
+      let stdout = ""
+      let stderr = ""
+      
+      const child = spawn(this.command, [], {
+        env: context.env,
+        shell: true,
+        cwd: context.workingDir,
+        timeout: context.timeout || 600000
+      })
+      
+      child.stdout.on("data", (data) => { stdout += data.toString() })
+      child.stderr.on("data", (data) => { stderr += data.toString() })
+      
+      child.on("close", (code) => {
+        resolve({
+          ok: code === 0,
+          exitCode: code,
+          stdout,
+          stderr,
+          duration: Date.now() - startTime
+        })
+      })
+      
+      child.on("error", reject)
+    })
+  }
+}
+
+/**
+ * Codexcli 执行器
+ */
+class CodexcliExecutor extends Executor {
+  constructor(config = {}) {
+    super("codexcli", config)
+    this.command = config.command || "codex"
+  }
+  
+  async execute(task, context) {
+    const startTime = Date.now()
+    
+    return new Promise((resolve, reject) => {
+      let stdout = ""
+      let stderr = ""
+      
+      const args = [
+        "--model", task.model || "gpt-4",
+        "--prompt", context.prompt
+      ]
+      
+      const child = spawn(this.command, args, {
+        env: context.env,
+        shell: true,
+        cwd: context.workingDir,
+        timeout: context.timeout || 600000
+      })
+      
+      child.stdout.on("data", (data) => { stdout += data.toString() })
+      child.stderr.on("data", (data) => { stderr += data.toString() })
+      
+      child.on("close", (code) => {
+        resolve({
+          ok: code === 0,
+          exitCode: code,
+          stdout,
+          stderr,
+          duration: Date.now() - startTime
+        })
+      })
+      
+      child.on("error", reject)
+    })
+  }
+}
 
 /**
  * 初始化执行器
@@ -219,116 +415,103 @@ function findRelevantSkills(task, roleName) {
 async function loadExecutors() {
   log("info", "Initializing executors")
   
-  // 目前主要使用 oltcli
-  agentState.executors.set("oltcli", {
-    name: "oltcli",
-    path: CONFIG.OLTCLI_PATH,
-    type: "cli"
-  })
+  // 注册 oltcli
+  agentState.executors.set("oltcli", new OltcliExecutor())
+  
+  // 注册 codexcli（如果可用）
+  try {
+    const codexExecutor = new CodexcliExecutor()
+    agentState.executors.set("codexcli", codexExecutor)
+  } catch (e) {
+    log("warn", "Codexcli not available")
+  }
   
   log("info", `Initialized ${agentState.executors.size} executors`)
 }
 
 /**
- * 执行任务
+ * 获取执行器
+ */
+function getExecutor(name) {
+  return agentState.executors.get(name || CONFIG.DEFAULT_EXECUTOR)
+}
+
+/**
+ * 执行任务（使用可插拔执行器）
  */
 async function executeTask(jobId, task, roleName) {
-  log("info", `Executing task ${jobId}`, { role: roleName, title: task.title })
+  log("info", `Executing task ${jobId}`, { role: roleName, title: task.title, executor: task.executor })
   
-  const startTime = Date.now()
+  // 1. 获取执行器
+  const executor = getExecutor(task.executor)
+  if (!executor) {
+    throw new Error(`Executor not found: ${task.executor}`)
+  }
   
-  // 准备环境变量
+  // 2. 获取 Role
+  const role = agentState.roles.get(roleName)
+  
+  // 3. 获取 Skills
+  const skills = findRelevantSkills(task, roleName)
+  
+  // 4. 渲染上下文（基于现有 opencode_executor 的 buildPrompt）
+  const renderer = new ContextRenderer()
+  const prompt = renderer.render(task, role, skills, {
+    contextPack: task.context?.contextPack,
+    files: task.files
+  })
+  
+  // 5. 创建工作目录
+  const jobDir = path.join(CONFIG.ARTIFACTS_DIR, jobId)
+  fs.mkdirSync(jobDir, { recursive: true })
+  
+  // 6. 准备环境变量
   const env = {
     ...process.env,
     SCC_JOB_ID: jobId,
     SCC_ROLE: roleName,
     SCC_TASK_PROMPT: task.prompt || task.goal || task.title,
-    SCC_SYSTEM_PROMPT: getRoleSystemPrompt(roleName, task),
-    SCC_TASK_MODEL: task.model || "opencode/kimi-k2.5-free"
+    SCC_SYSTEM_PROMPT: role?.systemPrompt || `You are a ${roleName} agent.`,
+    SCC_TASK_MODEL: task.model || "opencode/kimi-k2.5-free",
+    SCC_RENDERED_PROMPT: prompt
   }
   
-  // 添加相关 skills 到环境变量
-  const relevantSkills = findRelevantSkills(task, roleName)
-  if (relevantSkills.length > 0) {
-    env.SCC_RELEVANT_SKILLS = JSON.stringify(relevantSkills)
-  }
+  // 7. 执行前 Hook
+  await agentState.hooks.run("beforeExecute", { task, jobId, roleName, executor: executor.name })
   
-  // 创建工作目录
-  const jobDir = path.join(CONFIG.ARTIFACTS_DIR, jobId)
-  fs.mkdirSync(jobDir, { recursive: true })
-  
-  return new Promise((resolve, reject) => {
-    let stdout = ""
-    let stderr = ""
-    
-    const child = spawn(CONFIG.OLTCLI_PATH, [], {
-      env,
-      timeout: 600000, // 10分钟超时
-      shell: true,
-      cwd: jobDir
-    })
-    
-    child.stdout.on("data", (data) => {
-      stdout += data.toString()
-    })
-    
-    child.stderr.on("data", (data) => {
-      stderr += data.toString()
-    })
-    
-    child.on("close", (code) => {
-      const duration = Date.now() - startTime
-      
-      // 保存输出到 artifacts
-      fs.writeFileSync(path.join(jobDir, "output.log"), stdout, "utf-8")
-      if (stderr) {
-        fs.writeFileSync(path.join(jobDir, "error.log"), stderr, "utf-8")
-      }
-      
-      // 保存元数据
-      fs.writeFileSync(
-        path.join(jobDir, "metadata.json"),
-        JSON.stringify({
-          jobId,
-          role: roleName,
-          title: task.title,
-          startTime,
-          endTime: Date.now(),
-          duration,
-          exitCode: code
-        }, null, 2),
-        "utf-8"
-      )
-      
-      if (code === 0) {
-        log("info", `Task ${jobId} completed in ${duration}ms`)
-        resolve({
-          ok: true,
-          exitCode: code,
-          stdout,
-          stderr,
-          duration,
-          artifactsDir: jobDir
-        })
-      } else {
-        log("error", `Task ${jobId} failed with code ${code}`)
-        resolve({
-          ok: false,
-          exitCode: code,
-          stdout,
-          stderr,
-          duration,
-          error: `Process exited with code ${code}`,
-          artifactsDir: jobDir
-        })
-      }
-    })
-    
-    child.on("error", (err) => {
-      log("error", `Failed to execute task ${jobId}: ${err.message}`)
-      reject(err)
-    })
+  // 8. 执行
+  const result = await executor.execute(task, {
+    env,
+    workingDir: jobDir,
+    prompt,
+    timeout: role?.timeout || 600000
   })
+  
+  // 9. 保存输出
+  fs.writeFileSync(path.join(jobDir, "output.log"), result.stdout || "", "utf-8")
+  if (result.stderr) {
+    fs.writeFileSync(path.join(jobDir, "error.log"), result.stderr, "utf-8")
+  }
+  fs.writeFileSync(
+    path.join(jobDir, "metadata.json"),
+    JSON.stringify({
+      jobId,
+      role: roleName,
+      executor: executor.name,
+      title: task.title,
+      duration: result.duration,
+      exitCode: result.exitCode
+    }, null, 2),
+    "utf-8"
+  )
+  
+  // 10. 执行后 Hook
+  await agentState.hooks.run("afterExecute", { task, jobId, result })
+  
+  return {
+    ...result,
+    artifactsDir: jobDir
+  }
 }
 
 /**
