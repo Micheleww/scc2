@@ -1,4 +1,4 @@
-// 简单测试桥接服务器 - 自动同步测试 (2026-02-10)
+// 简单测试桥接服务器 - 隐患修复验证 (2026-02-10)
 const response = await fetch('http://localhost:3456/v1/chat/completions', {
   method: 'POST',
   headers: {
