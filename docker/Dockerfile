@@ -87,8 +87,9 @@ COPY scc-bd/L17_ontology_layer /app/L17_ontology_layer
 # Copy scripts
 COPY scc-bd/scripts /app/scripts
 
-# Copy entrypoint from L1_code_layer/docker
+# Copy entrypoint and service manager from L1_code_layer/docker
 COPY scc-bd/L1_code_layer/docker/entrypoint.sh /app/entrypoint.sh
+COPY scc-bd/L1_code_layer/docker/service-manager.mjs /app/L1_code_layer/docker/service-manager.mjs
 
 # ============================================
 # 阶段 5: 创建必要目录
